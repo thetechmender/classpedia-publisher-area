@@ -244,7 +244,7 @@ export default function BookPreviewer({ book, onClose }) {
       setDisplayPage(next);
       setAnimating(false);
       setDirection(null);
-    }, 420);
+    }, 300);
   };
 
   useEffect(() => {
@@ -258,17 +258,9 @@ export default function BookPreviewer({ book, onClose }) {
   }, [currentPage, animating]);
 
   const jumpTo = (i) => {
-    if (animating || i === currentPage) return;
-    const dir = i > currentPage ? 'next' : 'prev';
-    setDirection(dir);
-    setAnimating(true);
-    clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      setCurrentPage(i);
-      setDisplayPage(i);
-      setAnimating(false);
-      setDirection(null);
-    }, 420);
+    if (i === currentPage) return;
+    setDisplayPage(i);
+    setCurrentPage(i);
   };
 
   const renderPage = (pageIndex) => {
@@ -363,22 +355,33 @@ export default function BookPreviewer({ book, onClose }) {
                 key={i}
                 onClick={() => jumpTo(i)}
                 className={cn(
-                  'group relative rounded-lg overflow-hidden border-2 transition-all text-left',
+                  'group relative w-full rounded-lg overflow-hidden border-2 transition-all text-left flex flex-col',
                   i === displayPage
                     ? 'border-primary shadow-lg shadow-primary/20'
-                    : 'border-transparent hover:border-white/10'
+                    : 'border-white/10 hover:border-white/20'
                 )}
               >
-                <div className="aspect-[3/4] w-full overflow-hidden">
-                  <div className="w-full h-full scale-[0.5] origin-top-left" style={{ width: '200%', height: '200%' }}>
-                    {renderPage(i)}
-                  </div>
+                <div
+                  className="w-full flex items-center justify-center text-center px-2 py-4"
+                  style={{
+                    background: (p.id === 'cover' || p.id === 'back')
+                      ? 'linear-gradient(135deg, #1e2030 0%, #0f1117 100%)'
+                      : '#fafaf8',
+                    minHeight: 72,
+                  }}
+                >
+                  <span className={cn(
+                    'text-[10px] font-medium leading-snug line-clamp-2',
+                    (p.id === 'cover' || p.id === 'back') ? 'text-white/50' : 'text-slate-400'
+                  )}>
+                    {p.label}
+                  </span>
                 </div>
                 <div className={cn(
-                  'absolute inset-x-0 bottom-0 px-2 py-1.5 text-[9px] font-medium truncate transition-colors',
-                  i === displayPage ? 'bg-primary/90 text-white' : 'bg-black/60 text-white/50 group-hover:text-white/80'
+                  'px-2 py-1.5 text-[9px] font-medium truncate transition-colors shrink-0',
+                  i === displayPage ? 'bg-primary text-white' : 'bg-black/40 text-white/40 group-hover:text-white/70'
                 )}>
-                  {p.label}
+                  {i + 1}. {p.label}
                 </div>
               </button>
             ))}
@@ -425,13 +428,9 @@ export default function BookPreviewer({ book, onClose }) {
                 <div
                   className="w-full h-full rounded-xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.7)]"
                   style={{
-                    transformStyle: 'preserve-3d',
-                    transition: animating ? 'transform 0.42s cubic-bezier(0.25,0.46,0.45,0.94)' : 'none',
-                    transform: animating && direction === 'next'
-                      ? 'rotateY(-12deg) scale(0.97)'
-                      : animating && direction === 'prev'
-                        ? 'rotateY(12deg) scale(0.97)'
-                        : 'rotateY(0deg) scale(1)',
+                    transition: 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.15s ease',
+                    transform: animating ? 'scale(0.96)' : 'scale(1)',
+                    opacity: animating ? 0.6 : 1,
                   }}
                 >
                   {/* Left spine shadow */}
