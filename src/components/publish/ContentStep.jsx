@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import {
-  ChevronLeft, ChevronRight, Upload, FileText, ImageIcon, Shield,
-  X, Info, Cpu, Eye, BookOpen, CheckCircle2, AlertCircle
+  ChevronLeft, ChevronRight, Upload, FileText, ImageIcon,
+  X, Info, Cpu, Eye, BookOpen, CheckCircle2, AlertCircle, Layers
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { base44 } from '@/api/base44Client';
@@ -52,7 +52,8 @@ const SUPPORTED_FORMATS = ['EPUB', 'MOBI', 'KPF', 'DOC', 'DOCX', 'PDF'];
 export default function ContentStep({ data, onChange, errors, onNext, onBack }) {
   const manuscriptRef = useRef(null);
   const coverRef = useRef(null);
-  const [uploading, setUploading] = useState({ manuscript: false, cover: false });
+  const sampleRef = useRef(null);
+  const [uploading, setUploading] = useState({ manuscript: false, cover: false, sample: false });
   const [showPreviewer, setShowPreviewer] = useState(false);
 
   const handleFileUpload = async (type, file) => {
@@ -61,6 +62,8 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     if (type === 'manuscript') {
       onChange({ manuscript_url: file_url, manuscript_filename: file.name });
+    } else if (type === 'sample') {
+      onChange({ sample_url: file_url, sample_filename: file.name });
     } else {
       onChange({ cover_url: file_url });
     }
@@ -189,7 +192,68 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
         </div>
       </Section>
 
-      {/* ── 2. BOOK COVER ── */}
+      {/* ── 2. SAMPLE CHAPTER ── */}
+      <Section icon={Layers} title="Sample Chapter" subtitle="Give readers a free preview to boost conversions">
+        <p className="text-sm text-muted-foreground mb-1">
+          A sample chapter lets potential readers try before they buy. Classpedia displays it as a free excerpt on your book's product page.
+        </p>
+        <p className="text-xs text-muted-foreground mb-4">
+          Upload the first chapter or an introductory excerpt (PDF, EPUB, DOCX). Typically 10–20% of the full book. <span className="font-medium text-foreground">Optional but strongly recommended.</span>
+        </p>
+
+        <input
+          ref={sampleRef}
+          type="file"
+          accept=".epub,.doc,.docx,.pdf"
+          className="hidden"
+          onChange={(e) => handleFileUpload('sample', e.target.files[0])}
+        />
+
+        {data.sample_url ? (
+          <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Layers className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{data.sample_filename || 'Sample chapter uploaded'}</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                <CheckCircle2 className="w-3 h-3 text-green-500" /> Uploaded successfully
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => sampleRef.current?.click()} className="shrink-0">
+              Replace
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => onChange({ sample_url: '', sample_filename: '' })}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : (
+          <button
+            onClick={() => sampleRef.current?.click()}
+            disabled={uploading.sample}
+            className={cn(
+              'w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-3 transition-colors',
+              'hover:border-primary hover:bg-primary/5 border-border'
+            )}
+          >
+            {uploading.sample ? (
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Layers className="w-6 h-6 text-primary" />
+              </div>
+            )}
+            <div className="text-center">
+              <p className="text-sm font-semibold text-foreground">
+                {uploading.sample ? 'Uploading sample…' : 'Upload Sample Chapter'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">PDF, EPUB or DOCX · Optional</p>
+            </div>
+          </button>
+        )}
+      </Section>
+
+      {/* ── 3. BOOK COVER ── */}
       <Section icon={ImageIcon} title="Book Cover" subtitle="Upload a high-quality cover image for your eBook">
         <p className="text-xs text-muted-foreground mb-4">
           Your cover is the first thing readers see. Use a high-resolution image for the best impression.

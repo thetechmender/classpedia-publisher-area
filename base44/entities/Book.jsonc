@@ -119,6 +119,14 @@
       "type": "string",
       "description": "Original manuscript filename"
     },
+    "sample_url": {
+      "type": "string",
+      "description": "Uploaded sample chapter file URL"
+    },
+    "sample_filename": {
+      "type": "string",
+      "description": "Original sample chapter filename"
+    },
     "cover_url": {
       "type": "string",
       "description": "Book cover image URL"
