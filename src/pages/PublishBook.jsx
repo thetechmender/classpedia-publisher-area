@@ -16,6 +16,9 @@ const validateStep1 = (data) => {
   if (!data.description?.trim()) errors.description = 'Description is required';
   else if (data.description.length > 4000) errors.description = 'Description must be under 4,000 characters';
   if (!data.language) errors.language = 'Please select a language';
+  if (data.preorder_type === 'preorder' && !data.preorder_date) {
+    errors.preorder_date = 'Please set a pre-order release date';
+  }
   return errors;
 };
 

@@ -58,22 +58,41 @@
     },
     "categories": {
       "type": "array",
-      "description": "Up to 2 browse categories",
+      "description": "Up to 3 browse categories",
       "items": {
         "type": "string"
       }
     },
-    "age_range": {
+    "sexually_explicit": {
+      "type": "boolean",
+      "description": "Contains sexually explicit content"
+    },
+    "reading_age_min": {
+      "type": "string",
+      "description": "Minimum reading age"
+    },
+    "reading_age_max": {
+      "type": "string",
+      "description": "Maximum reading age"
+    },
+    "primary_marketplace": {
+      "type": "string",
+      "description": "Primary marketplace for sales",
+      "default": "classpedia.ai"
+    },
+    "preorder_type": {
       "type": "string",
       "enum": [
-        "not_specified",
-        "4_6",
-        "7_9",
-        "10_12",
-        "13_17",
-        "18_plus"
+        "release_now",
+        "preorder"
       ],
-      "description": "Target age range"
+      "default": "release_now",
+      "description": "Release now or make available for pre-order"
+    },
+    "preorder_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Pre-order release date"
     },
     "publication_date": {
       "type": "string",
