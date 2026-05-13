@@ -1,66 +1,116 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   X, ChevronLeft, ChevronRight, BookOpen, Monitor, Smartphone, Tablet,
-  FileText, Eye, Info, Maximize2
+  FileText, ZoomIn, ZoomOut, Maximize2, RotateCcw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// ─── Static page content (cover, title, toc, back) ──────────────────────────
+// ─── Sound engine (Web Audio API — no external deps) ─────────────────────────
+function playPageFlipSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const duration = 0.18;
+    const buf = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / ctx.sampleRate;
+      const env = Math.exp(-t * 28);
+      // layered noise + low thump for paper rustle
+      data[i] = (Math.random() * 2 - 1) * env * 0.55
+        + Math.sin(2 * Math.PI * 120 * t) * Math.exp(-t * 60) * 0.3;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.9, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    src.connect(gain);
+    gain.connect(ctx.destination);
+    src.start();
+    src.stop(ctx.currentTime + duration);
+  } catch (_) {}
+}
+
+// ─── Page content components ──────────────────────────────────────────────────
 
 function CoverPage({ book }) {
   return (
-    <div className="w-full h-full flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950">
+    <div className="w-full h-full relative overflow-hidden select-none">
       {book.cover_url ? (
         <img src={book.cover_url} alt="Cover" className="w-full h-full object-cover" />
       ) : (
-        <>
+        <div className="w-full h-full flex flex-col bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950">
           <div className="absolute inset-0"
-            style={{
-              backgroundImage: 'radial-gradient(circle at 30% 30%, rgba(99,102,241,0.25) 0%, transparent 60%), radial-gradient(circle at 70% 80%, rgba(14,165,233,0.15) 0%, transparent 50%)'
-            }}
-          />
+            style={{ backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(99,102,241,0.35) 0%, transparent 55%), radial-gradient(circle at 75% 75%, rgba(14,165,233,0.2) 0%, transparent 50%)' }} />
           <div className="flex-1 flex flex-col items-center justify-center px-8 text-center relative z-10">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center mb-6">
-              <BookOpen className="w-7 h-7 text-white/70" />
+            <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center mb-8 shadow-2xl">
+              <BookOpen className="w-8 h-8 text-white/80" />
             </div>
-            <h1 className="text-2xl font-bold text-white leading-tight mb-3">{book.title || 'Your Book Title'}</h1>
-            {book.subtitle && <p className="text-sm text-white/50 leading-relaxed">{book.subtitle}</p>}
+            <h1 className="text-2xl font-bold text-white leading-tight mb-4 drop-shadow-lg">
+              {book.title || 'Your Book Title'}
+            </h1>
+            {book.subtitle && <p className="text-sm text-white/50 leading-relaxed italic">{book.subtitle}</p>}
           </div>
-          <div className="relative z-10 px-8 pb-8 text-center">
-            <div className="w-8 h-px bg-white/20 mx-auto mb-4" />
-            <p className="text-sm font-medium text-white/70">{book.author_name || 'Author Name'}</p>
-            <div className="flex items-center justify-center gap-1.5 mt-3">
-              <div className="w-3 h-3 rounded-full bg-primary/80" />
-              <p className="text-[10px] text-white/30 uppercase tracking-widest">Classpedia</p>
+          <div className="relative z-10 px-8 pb-10 text-center">
+            <div className="w-12 h-px bg-white/20 mx-auto mb-5" />
+            <p className="text-sm font-semibold text-white/80 tracking-wide">{book.author_name || 'Author Name'}</p>
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <div className="w-3 h-3 rounded-full bg-indigo-400/80" />
+              <p className="text-[10px] text-white/30 uppercase tracking-[0.25em]">Classpedia</p>
             </div>
           </div>
-        </>
+        </div>
       )}
+      {/* Spine shadow overlay on right edge */}
+      <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/50 to-transparent pointer-events-none" />
+    </div>
+  );
+}
+
+function RightBlankPage() {
+  return (
+    <div className="w-full h-full bg-[#f8f6f1] flex items-center justify-center">
+      <div className="w-full h-full" style={{
+        backgroundImage: 'repeating-linear-gradient(transparent, transparent 27px, #e8e4dc 28px)',
+        backgroundPositionY: '40px',
+        opacity: 0.4
+      }} />
     </div>
   );
 }
 
 function TitlePage({ book }) {
   return (
-    <div className="w-full h-full bg-[#fafaf8] flex flex-col px-10 py-12 relative">
-      <p className="text-[9px] text-slate-300 uppercase tracking-[0.2em] mb-auto">Classpedia · Digital Edition</p>
+    <div className="w-full h-full bg-[#faf9f5] flex flex-col px-10 py-14 relative">
+      <div className="absolute inset-0 opacity-[0.03]"
+        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")' }} />
+      <p className="text-[8px] text-slate-300 uppercase tracking-[0.25em] mb-auto font-medium">Classpedia · Digital Edition</p>
       <div className="my-auto text-center">
-        <h1 className="text-2xl font-serif font-bold text-slate-800 leading-snug mb-2">{book.title || 'Your Book Title'}</h1>
-        {book.subtitle && <p className="text-sm font-serif text-slate-400 italic mb-6">{book.subtitle}</p>}
-        <div className="flex items-center gap-3 justify-center my-6">
+        <h1 className="text-2xl font-serif font-bold text-slate-800 leading-snug mb-3">
+          {book.title || 'Your Book Title'}
+        </h1>
+        {book.subtitle && <p className="text-sm font-serif text-slate-400 italic mb-8">{book.subtitle}</p>}
+        <div className="flex items-center gap-3 justify-center my-7">
           <div className="flex-1 h-px bg-slate-200" />
-          <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+          <div className="flex gap-1">
+            <div className="w-1 h-1 rounded-full bg-slate-300" />
+            <div className="w-1 h-1 rounded-full bg-slate-400" />
+            <div className="w-1 h-1 rounded-full bg-slate-300" />
+          </div>
           <div className="flex-1 h-px bg-slate-200" />
         </div>
-        <p className="text-sm text-slate-600 font-medium">{book.author_name || 'Author Name'}</p>
+        <p className="text-sm text-slate-700 font-semibold tracking-wide">{book.author_name || 'Author Name'}</p>
         {(book.contributors || []).slice(0, 2).map((c, i) => (
-          <p key={i} className="text-[11px] text-slate-400 mt-1">{c.role}: {c.name}</p>
+          <p key={i} className="text-[11px] text-slate-400 mt-1.5">{c.role}: {c.name}</p>
         ))}
         {book.edition_number && (
-          <p className="text-[11px] text-slate-400 mt-3">{book.edition_number} Edition</p>
+          <p className="text-[10px] text-slate-400 mt-4 uppercase tracking-widest">{book.edition_number} Edition</p>
+        )}
+        {book.series_name && (
+          <p className="text-[10px] text-slate-400 mt-1 italic">{book.series_name}</p>
         )}
       </div>
-      <p className="text-[9px] text-slate-300 text-center mt-auto">
+      <p className="text-[8px] text-slate-300 text-center mt-auto leading-relaxed">
         © {new Date().getFullYear()} {book.author_name || 'Author'} · All rights reserved
       </p>
     </div>
@@ -68,47 +118,72 @@ function TitlePage({ book }) {
 }
 
 function TocPage({ book }) {
-  const chapters = ['Introduction', 'Chapter One', 'Chapter Two', 'Chapter Three', 'Conclusion', 'About the Author'];
+  const entries = [
+    { label: 'Introduction', pg: 1 },
+    { label: 'Chapter One', pg: 14 },
+    { label: 'Chapter Two', pg: 28 },
+    { label: 'Chapter Three', pg: 42 },
+    { label: 'Chapter Four', pg: 58 },
+    { label: 'Conclusion', pg: 74 },
+    { label: 'About the Author', pg: 88 },
+    { label: 'Index', pg: 92 },
+  ];
   return (
-    <div className="w-full h-full bg-[#fafaf8] px-10 py-12 flex flex-col">
-      <h2 className="text-[9px] font-semibold text-slate-400 uppercase tracking-[0.18em] mb-8">Contents</h2>
-      <div className="flex-1 space-y-1">
-        {chapters.map((ch, i) => (
-          <div key={i} className="flex items-center gap-2 py-2 border-b border-slate-100 last:border-0">
-            <span className="text-[10px] text-slate-300 w-5 text-right shrink-0">{i + 1}</span>
-            <span className="text-sm text-slate-700 flex-1">{ch}</span>
-            <span className="text-[10px] text-slate-300 tabular-nums">{(i + 1) * 14}</span>
+    <div className="w-full h-full bg-[#faf9f5] px-10 py-12 flex flex-col">
+      <div className="mb-8">
+        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em]">Table of Contents</p>
+        <div className="w-8 h-0.5 bg-slate-300 mt-2" />
+      </div>
+      <div className="flex-1 space-y-0.5">
+        {entries.map((e, i) => (
+          <div key={i} className="flex items-center gap-2 py-2 group">
+            <span className="text-[9px] text-slate-300 w-4 text-right shrink-0 font-mono">{i + 1}</span>
+            <span className="text-[11px] text-slate-700 flex-1 font-medium">{e.label}</span>
+            <div className="flex-1 border-b border-dotted border-slate-200 mx-1" />
+            <span className="text-[9px] text-slate-400 tabular-nums font-mono">{e.pg}</span>
           </div>
         ))}
       </div>
-      <p className="text-[9px] text-slate-300 mt-6">{book.title}</p>
+      <p className="text-[8px] text-slate-300 mt-6 truncate">{book.title}</p>
     </div>
   );
 }
 
-function ContentPage({ book, num }) {
-  const paragraphs = [
-    `This is a preview of how your content will appear to readers on Classpedia. Your uploaded manuscript "${book.manuscript_filename || 'manuscript'}" will be rendered here with beautiful typography.`,
-    `The reading experience on Classpedia is optimized for all screen sizes — from mobile phones to desktop monitors. Readers can customize font size, line spacing, and background theme to their preference.`,
-    `Chapter content, images, tables, and other elements from your manuscript will display inline, maintaining the structure and formatting you've carefully crafted for your readers.`,
+function ContentPage({ book, num, side }) {
+  const paras = [
+    `This is a preview of how your content will appear to readers on Classpedia. Your uploaded manuscript will be rendered here with beautiful typography and generous leading.`,
+    `The reading experience is optimized for all screen sizes. Readers can adjust font size, line spacing, and background color to their preference.`,
+    `Chapter content, images, tables, and other elements from your manuscript display inline, maintaining the careful structure you've crafted for your readers.`,
   ];
+  const pg = num * 14 + (side === 'right' ? 1 : 0);
   return (
-    <div className="w-full h-full bg-[#fafaf8] px-10 py-10 flex flex-col relative">
-      <div className="flex items-center justify-between mb-6">
-        <p className="text-[9px] text-slate-300 uppercase tracking-widest truncate max-w-[60%]">{book.title}</p>
-        <p className="text-[9px] text-slate-300">{num * 14}</p>
+    <div className="w-full h-full bg-[#faf9f5] px-9 py-10 flex flex-col relative">
+      <div className="flex items-center justify-between mb-5">
+        <p className="text-[8px] text-slate-300 uppercase tracking-widest truncate max-w-[60%] font-medium">{book.title}</p>
+        <p className="text-[8px] text-slate-300 font-mono">{pg}</p>
       </div>
-      <h2 className="text-lg font-serif font-bold text-slate-800 mb-5">Chapter {num}</h2>
-      <div className="flex-1 space-y-4 overflow-hidden">
-        {paragraphs.map((p, i) => (
-          <p key={i} className="text-sm text-slate-600 leading-[1.75] text-justify">{p}</p>
+      {side === 'left' && (
+        <h2 className="text-base font-serif font-bold text-slate-800 mb-5 leading-snug">Chapter {num}</h2>
+      )}
+      <div className="flex-1 space-y-3.5 overflow-hidden">
+        {paras.map((p, i) => (
+          <p key={i} className="text-[11px] text-slate-600 leading-[1.85] text-justify">{p}</p>
         ))}
-        <div className="mt-6 pt-4 border-t border-slate-100">
-          <p className="text-xs text-slate-400 italic">
-            "{book.description ? book.description.slice(0, 100) + '…' : 'Your book description excerpt will appear in pull quotes like this.'}"
-          </p>
-        </div>
+        {side === 'right' && book.description && (
+          <div className="mt-5 pt-4 border-t border-slate-100 border-l-2 border-l-slate-300 pl-3">
+            <p className="text-[10px] text-slate-500 italic leading-relaxed">
+              "{book.description.slice(0, 120)}…"
+            </p>
+          </div>
+        )}
       </div>
+      {/* Spine shadow */}
+      {side === 'left' && (
+        <div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-black/[0.07] to-transparent pointer-events-none" />
+      )}
+      {side === 'right' && (
+        <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/[0.07] to-transparent pointer-events-none" />
+      )}
     </div>
   );
 }
@@ -116,94 +191,191 @@ function ContentPage({ book, num }) {
 function ManuscriptPage({ book }) {
   const ext = (book.manuscript_filename || '').split('.').pop().toLowerCase();
   const isPdf = ext === 'pdf';
-  const isDoc = ['doc', 'docx'].includes(ext);
-  const isEpub = ['epub', 'mobi', 'kpf'].includes(ext);
-
-  if (isPdf && book.manuscript_url) {
-    return (
-      <div className="w-full h-full bg-white flex flex-col">
-        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border-b border-slate-100 shrink-0">
-          <FileText className="w-3.5 h-3.5 text-slate-400" />
-          <p className="text-[10px] text-slate-500 truncate">{book.manuscript_filename}</p>
-        </div>
+  return (
+    <div className="w-full h-full bg-white flex flex-col">
+      <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border-b border-slate-100 shrink-0">
+        <FileText className="w-3 h-3 text-slate-400" />
+        <p className="text-[9px] text-slate-500 truncate font-medium">{book.manuscript_filename}</p>
+        <span className="ml-auto text-[8px] px-1.5 py-0.5 bg-slate-100 rounded text-slate-400 uppercase font-bold">{ext}</span>
+      </div>
+      {isPdf && book.manuscript_url ? (
         <iframe
-          src={`${book.manuscript_url}#toolbar=0&navpanes=0&scrollbar=0`}
+          src={`${book.manuscript_url}#toolbar=0&navpanes=0&scrollbar=0&page=1`}
           className="flex-1 w-full border-0"
           title="Manuscript Preview"
         />
-      </div>
-    );
-  }
-
-  // For EPUB / MOBI / DOC — show a rich "content extracted" preview
-  return (
-    <div className="w-full h-full bg-[#fafaf8] flex flex-col items-center justify-center px-8 text-center gap-4">
-      <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-        <FileText className="w-7 h-7 text-primary" />
-      </div>
-      <div>
-        <p className="text-sm font-semibold text-slate-700">{book.manuscript_filename}</p>
-        <p className="text-xs text-slate-400 mt-1">
-          {isEpub ? 'EPUB/MOBI files will be rendered in the full Classpedia reader.' : ''}
-          {isDoc ? 'Word documents are converted to eBook format during publishing.' : ''}
-        </p>
-      </div>
-      <div className="w-full max-w-xs bg-white border border-slate-200 rounded-xl p-4 text-left">
-        <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-3">File details</p>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-xs text-slate-500">Format</span>
-            <span className="text-xs font-medium text-slate-700 uppercase">{ext}</span>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4 bg-[#faf9f5]">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+            <FileText className="w-7 h-7 text-indigo-400" />
           </div>
-          <div className="flex justify-between">
-            <span className="text-xs text-slate-500">Status</span>
-            <span className="text-xs font-medium text-green-600">✓ Uploaded</span>
+          <div>
+            <p className="text-sm font-semibold text-slate-700">{book.manuscript_filename}</p>
+            <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed max-w-[200px]">
+              {['epub', 'mobi', 'kpf'].includes(ext)
+                ? 'Rendered in the full Classpedia reader after publishing.'
+                : 'Converted to eBook format during the publishing process.'}
+            </p>
           </div>
-          <div className="flex justify-between">
-            <span className="text-xs text-slate-500">DRM</span>
-            <span className="text-xs font-medium text-slate-700">{book.drm ? 'Enabled' : 'Disabled'}</span>
+          <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <p className="text-[10px] text-green-700 font-medium">Uploaded successfully</p>
           </div>
         </div>
-      </div>
-      <p className="text-[10px] text-slate-300 leading-relaxed">
-        Full interactive reading experience will be available after publishing.
-      </p>
+      )}
     </div>
   );
 }
 
 function BackCoverPage({ book }) {
   return (
-    <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 flex flex-col">
+    <div className="w-full h-full relative overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 flex flex-col">
       <div className="absolute inset-0"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 70% 20%, rgba(99,102,241,0.2) 0%, transparent 50%)'
-        }}
-      />
+        style={{ backgroundImage: 'radial-gradient(circle at 70% 25%, rgba(99,102,241,0.25) 0%, transparent 55%)' }} />
       {book.cover_url && (
-        <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 opacity-[0.06]">
           <img src={book.cover_url} alt="" className="w-full h-full object-cover" />
         </div>
       )}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-10 text-center gap-5">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-10 text-center gap-6">
         {book.cover_url && (
-          <img src={book.cover_url} alt="Cover" className="w-16 h-24 object-cover rounded-lg shadow-2xl opacity-80" />
+          <img src={book.cover_url} alt="" className="w-14 h-20 object-cover rounded-lg shadow-2xl opacity-70 ring-1 ring-white/10" />
         )}
-        <div className="w-8 h-px bg-white/20" />
-        <p className="text-sm text-white/70 leading-relaxed font-serif italic">
+        <div className="w-10 h-px bg-white/20" />
+        <p className="text-sm text-white/70 leading-relaxed font-serif italic max-w-[220px]">
           &ldquo;{book.description
-            ? book.description.slice(0, 180) + (book.description.length > 180 ? '…' : '')
+            ? book.description.slice(0, 200) + (book.description.length > 200 ? '…' : '')
             : 'Your book description will appear here on the back cover.'}&rdquo;
         </p>
-        <div className="w-8 h-px bg-white/20" />
-        <p className="text-xs text-white/40 font-medium">{book.author_name || 'Author Name'}</p>
+        <div className="w-10 h-px bg-white/20" />
+        <p className="text-xs text-white/50 font-semibold tracking-wide">{book.author_name || 'Author Name'}</p>
       </div>
-      <div className="relative z-10 flex items-center justify-center gap-2 pb-6">
-        <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-          <BookOpen className="w-2.5 h-2.5 text-white" />
+      <div className="relative z-10 flex items-center justify-center gap-2 pb-7">
+        <div className="w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
+          <BookOpen className="w-3 h-3 text-white" />
         </div>
-        <span className="text-[10px] text-white/30 uppercase tracking-widest">Classpedia Publishing</span>
+        <span className="text-[9px] text-white/30 uppercase tracking-[0.2em]">Classpedia Publishing</span>
       </div>
+      {/* Spine shadow on left edge */}
+      <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/50 to-transparent pointer-events-none" />
+    </div>
+  );
+}
+
+// ─── Two-page spread config ───────────────────────────────────────────────────
+// We display pages in spreads: [cover | blank], [title | toc], [ch1L | ch1R], …
+// Each "spread" has a left and right component
+
+function buildSpreads(book) {
+  const hasMs = !!(book.manuscript_url && book.manuscript_filename);
+  const spreads = [
+    // Spread 0: cover + blank verso
+    { left: (b) => <CoverPage book={b} />, right: () => <RightBlankPage />, leftLabel: 'Cover', rightLabel: '' },
+    // Spread 1: title + toc
+    { left: (b) => <TitlePage book={b} />, right: (b) => <TocPage book={b} />, leftLabel: 'Title Page', rightLabel: 'Contents' },
+    // Spread 2: maybe manuscript (full width if PDF, else left side)
+    ...(hasMs ? [{ left: (b) => <ManuscriptPage book={b} />, right: (b) => <ContentPage book={b} num={1} side="right" />, leftLabel: 'Manuscript', rightLabel: 'Chapter 1' }] : []),
+    // Chapters
+    { left: (b) => <ContentPage book={b} num={1} side="left" />, right: (b) => <ContentPage book={b} num={1} side="right" />, leftLabel: 'Chapter 1', rightLabel: '' },
+    { left: (b) => <ContentPage book={b} num={2} side="left" />, right: (b) => <ContentPage book={b} num={2} side="right" />, leftLabel: 'Chapter 2', rightLabel: '' },
+    // Back cover: blank + back cover (reversed)
+    { left: () => <RightBlankPage />, right: (b) => <BackCoverPage book={b} />, leftLabel: '', rightLabel: 'Back Cover' },
+  ];
+  return spreads;
+}
+
+// ─── Flip Page animation ──────────────────────────────────────────────────────
+// Uses CSS 3D: the "flipping leaf" rotates around the center spine.
+// Technique: two halves (front/back of the turning page) share a rotateY.
+
+function FlipLeaf({ direction, fromContent, toContent, pageH, pageW }) {
+  // The leaf covers the full width during animation then disappears
+  const [phase, setPhase] = useState('start'); // start → mid → end
+  const leafRef = useRef(null);
+
+  useEffect(() => {
+    // Force reflow then animate
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setPhase('end');
+      });
+    });
+    const t = setTimeout(() => setPhase('done'), 600);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (phase === 'done') return null;
+
+  const goingNext = direction === 'next';
+
+  return (
+    <div
+      className="absolute inset-0 pointer-events-none"
+      style={{ zIndex: 20, perspective: '2000px', perspectiveOrigin: '50% 50%' }}
+    >
+      {/* The turning leaf — pivots around its left (next) or right (prev) edge */}
+      <div
+        ref={leafRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          [goingNext ? 'left' : 'right']: '50%',
+          width: '50%',
+          height: '100%',
+          transformOrigin: goingNext ? 'left center' : 'right center',
+          transformStyle: 'preserve-3d',
+          transform: phase === 'end'
+            ? `rotateY(${goingNext ? '-180deg' : '180deg'})`
+            : 'rotateY(0deg)',
+          transition: 'transform 0.55s cubic-bezier(0.645, 0.045, 0.355, 1.000)',
+        }}
+      >
+        {/* Front face */}
+        <div style={{
+          position: 'absolute', inset: 0, backfaceVisibility: 'hidden',
+          background: 'linear-gradient(to right, rgba(0,0,0,0.12) 0%, transparent 8%)',
+          boxShadow: goingNext ? '-8px 0 20px rgba(0,0,0,0.25)' : '8px 0 20px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+          borderRadius: goingNext ? '0 2px 2px 0' : '2px 0 0 2px',
+        }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            transform: goingNext ? 'translateX(0)' : 'translateX(-100%)',
+            width: '200%',
+          }}>
+            {fromContent}
+          </div>
+        </div>
+        {/* Back face */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backfaceVisibility: 'hidden',
+          transform: 'rotateY(180deg)',
+          background: 'linear-gradient(to left, rgba(0,0,0,0.12) 0%, transparent 8%)',
+          overflow: 'hidden',
+          borderRadius: goingNext ? '2px 0 0 2px' : '0 2px 2px 0',
+        }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            transform: goingNext ? 'translateX(-100%) scaleX(-1)' : 'translateX(0) scaleX(-1)',
+            width: '200%',
+          }}>
+            {toContent}
+          </div>
+        </div>
+      </div>
+      {/* Fold shadow that sweeps across */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: goingNext ? '50%' : 0,
+        right: goingNext ? 0 : '50%',
+        height: '100%',
+        background: 'linear-gradient(to right, rgba(0,0,0,0.18) 0%, transparent 40%)',
+        pointerEvents: 'none',
+        opacity: phase === 'end' ? 0 : 0.6,
+        transition: 'opacity 0.55s ease',
+      }} />
     </div>
   );
 }
@@ -211,41 +383,27 @@ function BackCoverPage({ book }) {
 // ─── Main Previewer ───────────────────────────────────────────────────────────
 
 export default function BookPreviewer({ book, onClose }) {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [direction, setDirection] = useState(null); // 'next' | 'prev'
-  const [animating, setAnimating] = useState(false);
-  const [device, setDevice] = useState('tablet');
-  const [displayPage, setDisplayPage] = useState(0);
-  const timeoutRef = useRef(null);
+  const [spreadIndex, setSpreadIndex] = useState(0);
+  const [flipping, setFlipping] = useState(null); // { direction, fromSpread, toSpread }
+  const [device, setDevice] = useState('desktop');
 
-  const hasManuscript = !!(book.manuscript_url && book.manuscript_filename);
+  const SPREADS = buildSpreads(book);
+  const total = SPREADS.length;
 
-  const PAGES = [
-    { id: 'cover', label: 'Cover' },
-    { id: 'title', label: 'Title Page' },
-    { id: 'toc', label: 'Contents' },
-    ...(hasManuscript ? [{ id: 'manuscript', label: 'Manuscript' }] : []),
-    { id: 'chapter1', label: 'Chapter 1' },
-    { id: 'chapter2', label: 'Chapter 2' },
-    { id: 'back', label: 'Back Cover' },
-  ];
+  const navigate = useCallback((dir) => {
+    if (flipping) return;
+    const next = dir === 'next' ? spreadIndex + 1 : spreadIndex - 1;
+    if (next < 0 || next >= total) return;
 
-  const totalPages = PAGES.length;
+    playPageFlipSound();
+    const from = spreadIndex;
+    setFlipping({ direction: dir, fromSpread: from, toSpread: next });
 
-  const navigate = (dir) => {
-    if (animating) return;
-    const next = dir === 'next' ? currentPage + 1 : currentPage - 1;
-    if (next < 0 || next >= totalPages) return;
-    setDirection(dir);
-    setAnimating(true);
-    clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      setCurrentPage(next);
-      setDisplayPage(next);
-      setAnimating(false);
-      setDirection(null);
-    }, 300);
-  };
+    setTimeout(() => {
+      setSpreadIndex(next);
+      setFlipping(null);
+    }, 580);
+  }, [spreadIndex, flipping, total]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -254,57 +412,51 @@ export default function BookPreviewer({ book, onClose }) {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handler);
-    return () => { window.removeEventListener('keydown', handler); clearTimeout(timeoutRef.current); };
-  }, [currentPage, animating]);
+    return () => window.removeEventListener('keydown', handler);
+  }, [navigate, onClose]);
 
-  const jumpTo = (i) => {
-    if (i === currentPage) return;
-    setDisplayPage(i);
-    setCurrentPage(i);
-  };
-
-  const renderPage = (pageIndex) => {
-    const page = PAGES[pageIndex];
-    if (!page) return null;
-    if (page.id === 'cover') return <CoverPage book={book} />;
-    if (page.id === 'title') return <TitlePage book={book} />;
-    if (page.id === 'toc') return <TocPage book={book} />;
-    if (page.id === 'manuscript') return <ManuscriptPage book={book} />;
-    if (page.id === 'chapter1') return <ContentPage book={book} num={1} />;
-    if (page.id === 'chapter2') return <ContentPage book={book} num={2} />;
-    if (page.id === 'back') return <BackCoverPage book={book} />;
-    return null;
-  };
-
+  // Device configs: [bookW, bookH] = full two-page width x height
   const deviceConfig = {
-    desktop: { w: 520, h: 680 },
-    tablet: { w: 400, h: 540 },
-    mobile: { w: 280, h: 460 },
+    desktop: { w: 900, h: 580 },
+    tablet:  { w: 720, h: 480 },
+    mobile:  { w: 360, h: 520 },  // single page on mobile
   }[device];
 
-  const isCover = PAGES[displayPage]?.id === 'cover';
-  const isBack = PAGES[displayPage]?.id === 'back';
-  const isDark = isCover || isBack;
+  const isMobile = device === 'mobile';
+  const pageW = isMobile ? deviceConfig.w : deviceConfig.w / 2;
+  const pageH = deviceConfig.h;
+
+  const currentSpread = SPREADS[spreadIndex];
+  const displaySpread = flipping ? SPREADS[flipping.fromSpread] : currentSpread;
+  const nextSpread = flipping ? SPREADS[flipping.toSpread] : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-stretch bg-[#0f1117]" onClick={onClose}>
-      <div className="flex flex-col w-full" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#0c0e14' }} onClick={onClose}>
+      {/* Grain overlay */}
+      <div className="absolute inset-0 opacity-[0.025] pointer-events-none"
+        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 512 512\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.75\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")' }} />
+
+      <div className="flex flex-col w-full h-full" onClick={e => e.stopPropagation()}>
 
         {/* ── Top bar ── */}
-        <div className="flex items-center justify-between px-6 py-3 bg-[#0f1117]/90 backdrop-blur border-b border-white/[0.06] shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 shrink-0 z-30"
+          style={{ background: 'rgba(12,14,20,0.95)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
               <BookOpen className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-white font-semibold text-sm leading-none">{book.title || 'Book Preview'}</p>
-              <p className="text-white/30 text-[11px] mt-0.5">Classpedia eBook Preview</p>
+              <p className="text-white font-semibold text-sm leading-none truncate max-w-[200px]">
+                {book.title || 'Book Preview'}
+              </p>
+              <p className="text-white/30 text-[10px] mt-0.5 tracking-wide">Classpedia eBook Previewer</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Device switcher */}
-            <div className="flex items-center gap-1 bg-white/[0.07] rounded-lg p-1">
+            <div className="flex items-center gap-0.5 bg-white/[0.06] rounded-lg p-1">
               {[
                 { key: 'desktop', Icon: Monitor, label: 'Desktop' },
                 { key: 'tablet', Icon: Tablet, label: 'Tablet' },
@@ -316,9 +468,7 @@ export default function BookPreviewer({ book, onClose }) {
                   title={label}
                   className={cn(
                     'flex items-center gap-1.5 px-2.5 h-7 rounded-md text-[11px] font-medium transition-all',
-                    device === key
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-white/40 hover:text-white/70'
+                    device === key ? 'bg-white text-slate-900 shadow-sm' : 'text-white/40 hover:text-white/70'
                   )}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -327,18 +477,15 @@ export default function BookPreviewer({ book, onClose }) {
               ))}
             </div>
 
-            {/* Manuscript badge */}
-            {hasManuscript && (
-              <div className="flex items-center gap-1.5 bg-green-500/10 border border-green-500/20 rounded-lg px-2.5 py-1">
-                <FileText className="w-3 h-3 text-green-400" />
-                <span className="text-[10px] text-green-400 font-medium">Manuscript loaded</span>
-              </div>
-            )}
+            {/* Page counter */}
+            <div className="hidden sm:flex items-center gap-1.5 bg-white/[0.06] rounded-lg px-3 h-8">
+              <span className="text-white/60 text-[11px] font-medium tabular-nums">
+                {spreadIndex + 1} <span className="text-white/20">/</span> {total}
+              </span>
+            </div>
 
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-white/[0.07] hover:bg-white/[0.12] flex items-center justify-center text-white/50 hover:text-white transition-colors"
-            >
+            <button onClick={onClose}
+              className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center text-white/40 hover:text-white transition-colors ml-1">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -347,142 +494,221 @@ export default function BookPreviewer({ book, onClose }) {
         {/* ── Main area ── */}
         <div className="flex flex-1 overflow-hidden">
 
-          {/* Left sidebar — page thumbnails */}
-          <div className="w-44 shrink-0 bg-[#080a0f] border-r border-white/[0.05] overflow-y-auto py-4 px-3 hidden md:flex flex-col gap-2">
-            <p className="text-[9px] text-white/20 uppercase tracking-widest px-1 mb-2">Pages</p>
-            {PAGES.map((p, i) => (
+          {/* Left sidebar — spread thumbnails */}
+          <div className="w-40 shrink-0 py-4 px-3 overflow-y-auto hidden md:flex flex-col gap-2"
+            style={{ background: 'rgba(8,9,14,0.9)', borderRight: '1px solid rgba(255,255,255,0.04)' }}>
+            <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] px-1 mb-2 font-semibold">Spreads</p>
+            {SPREADS.map((s, i) => (
               <button
                 key={i}
-                onClick={() => jumpTo(i)}
+                onClick={() => {
+                  if (i === spreadIndex || flipping) return;
+                  playPageFlipSound();
+                  setSpreadIndex(i);
+                }}
                 className={cn(
-                  'group relative w-full rounded-lg overflow-hidden border-2 transition-all text-left flex flex-col',
-                  i === displayPage
-                    ? 'border-primary shadow-lg shadow-primary/20'
-                    : 'border-white/10 hover:border-white/20'
+                  'w-full rounded-lg overflow-hidden border transition-all text-left',
+                  i === spreadIndex
+                    ? 'border-indigo-500/60 shadow-lg shadow-indigo-500/10'
+                    : 'border-white/[0.07] hover:border-white/20'
                 )}
               >
-                <div
-                  className="w-full flex items-center justify-center text-center px-2 py-4"
-                  style={{
-                    background: (p.id === 'cover' || p.id === 'back')
-                      ? 'linear-gradient(135deg, #1e2030 0%, #0f1117 100%)'
-                      : '#fafaf8',
-                    minHeight: 72,
-                  }}
-                >
-                  <span className={cn(
-                    'text-[10px] font-medium leading-snug line-clamp-2',
-                    (p.id === 'cover' || p.id === 'back') ? 'text-white/50' : 'text-slate-400'
-                  )}>
-                    {p.label}
-                  </span>
+                <div className="flex" style={{ height: 52 }}>
+                  {/* Left mini-page */}
+                  <div className="flex-1 flex items-center justify-center border-r border-black/30"
+                    style={{
+                      background: s.leftLabel === 'Cover' || s.leftLabel === '' 
+                        ? 'linear-gradient(135deg, #1a1c2e, #0f1117)'
+                        : '#f5f3ee',
+                      fontSize: 6,
+                      color: s.leftLabel === 'Cover' || s.leftLabel === '' ? 'rgba(255,255,255,0.3)' : '#999',
+                      padding: '4px 3px',
+                      textAlign: 'center',
+                      lineHeight: 1.3,
+                    }}>
+                    {s.leftLabel || '·'}
+                  </div>
+                  {/* Right mini-page */}
+                  <div className="flex-1 flex items-center justify-center"
+                    style={{
+                      background: s.rightLabel === 'Back Cover' || s.rightLabel === ''
+                        ? 'linear-gradient(135deg, #1a1c2e, #0f1117)'
+                        : '#f5f3ee',
+                      fontSize: 6,
+                      color: s.rightLabel === 'Back Cover' || s.rightLabel === '' ? 'rgba(255,255,255,0.3)' : '#999',
+                      padding: '4px 3px',
+                      textAlign: 'center',
+                      lineHeight: 1.3,
+                    }}>
+                    {s.rightLabel || '·'}
+                  </div>
                 </div>
                 <div className={cn(
-                  'px-2 py-1.5 text-[9px] font-medium truncate transition-colors shrink-0',
-                  i === displayPage ? 'bg-primary text-white' : 'bg-black/40 text-white/40 group-hover:text-white/70'
+                  'px-2 py-1 text-[8px] font-medium truncate',
+                  i === spreadIndex ? 'bg-indigo-500/20 text-indigo-300' : 'bg-black/30 text-white/30'
                 )}>
-                  {i + 1}. {p.label}
+                  {i + 1}. {s.leftLabel || s.rightLabel}
                 </div>
               </button>
             ))}
           </div>
 
-          {/* Center — book viewer */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 relative overflow-hidden"
-            style={{
-              background: 'radial-gradient(ellipse at center, #1a1d27 0%, #0f1117 100%)'
-            }}
-          >
-            {/* Ambient glow behind book */}
-            <div
-              className="absolute w-96 h-96 rounded-full opacity-20 blur-3xl pointer-events-none"
-              style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }}
-            />
+          {/* ── Center canvas ── */}
+          <div className="flex-1 flex flex-col items-center justify-center gap-7 relative overflow-hidden">
 
-            {/* Nav + Book */}
-            <div className="flex items-center gap-5 z-10">
+            {/* Ambient glow */}
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 55%, rgba(99,102,241,0.07) 0%, transparent 70%)' }} />
+
+            {/* Nav + Book spread */}
+            <div className="flex items-center gap-6 z-10">
+
+              {/* Prev button */}
               <button
                 onClick={() => navigate('prev')}
-                disabled={currentPage === 0 || animating}
-                className="w-11 h-11 rounded-full bg-white/[0.07] hover:bg-white/[0.13] border border-white/[0.07] flex items-center justify-center text-white/60 hover:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed shadow-lg"
+                disabled={spreadIndex === 0 || !!flipping}
+                className="w-12 h-12 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              {/* Book with 3D flip effect */}
-              <div
-                className="relative"
+              {/* Book spread container */}
+              <div className="relative"
                 style={{
                   width: deviceConfig.w,
                   height: deviceConfig.h,
-                  perspective: '2000px',
+                  filter: 'drop-shadow(0 40px 60px rgba(0,0,0,0.8)) drop-shadow(0 0 40px rgba(99,102,241,0.08))',
                 }}
               >
-                {/* Drop shadow / glow */}
-                <div
-                  className="absolute -bottom-4 left-1/2 -translate-x-1/2 rounded-full blur-2xl opacity-40"
-                  style={{ width: deviceConfig.w * 0.8, height: 40, background: '#6366f1' }}
-                />
+                {/* Book surface */}
+                <div className="absolute inset-0 rounded-sm overflow-hidden"
+                  style={{ boxShadow: '0 2px 0 rgba(255,255,255,0.04) inset' }}>
 
-                {/* Book container with flip */}
-                <div
-                  className="w-full h-full rounded-xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.7)]"
-                  style={{
-                    transition: 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.15s ease',
-                    transform: animating ? 'scale(0.96)' : 'scale(1)',
-                    opacity: animating ? 0.6 : 1,
-                  }}
-                >
-                  {/* Left spine shadow */}
-                  <div className="absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-black/40 to-transparent z-20 pointer-events-none" />
-                  {/* Right edge shadow */}
-                  <div className="absolute inset-y-0 right-0 w-3 bg-gradient-to-l from-black/20 to-transparent z-20 pointer-events-none" />
-                  {/* Top sheen */}
-                  <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-white/10 to-transparent z-20 pointer-events-none rounded-t-xl" />
+                  {isMobile ? (
+                    /* Single page on mobile */
+                    <div className="w-full h-full">
+                      {displaySpread.left(book)}
+                    </div>
+                  ) : (
+                    /* Two-page spread */
+                    <div className="flex w-full h-full">
+                      {/* Left page */}
+                      <div className="flex-1 relative overflow-hidden">
+                        {displaySpread.left(book)}
+                      </div>
 
-                  {renderPage(displayPage)}
+                      {/* Center spine */}
+                      <div className="w-px shrink-0 relative z-10"
+                        style={{
+                          background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.3) 100%)',
+                          boxShadow: '-4px 0 12px rgba(0,0,0,0.25), 4px 0 12px rgba(0,0,0,0.25)',
+                        }} />
+
+                      {/* Right page */}
+                      <div className="flex-1 relative overflow-hidden">
+                        {displaySpread.right(book)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Flip animation overlay */}
+                  {flipping && nextSpread && (
+                    <FlipLeaf
+                      direction={flipping.direction}
+                      fromContent={
+                        <div className="flex w-full h-full" style={{ width: deviceConfig.w, height: deviceConfig.h }}>
+                          <div className="flex-1">{displaySpread.left(book)}</div>
+                          <div className="flex-1">{displaySpread.right(book)}</div>
+                        </div>
+                      }
+                      toContent={
+                        <div className="flex w-full h-full" style={{ width: deviceConfig.w, height: deviceConfig.h }}>
+                          <div className="flex-1">{nextSpread.left(book)}</div>
+                          <div className="flex-1">{nextSpread.right(book)}</div>
+                        </div>
+                      }
+                      pageW={pageW}
+                      pageH={pageH}
+                    />
+                  )}
+
+                  {/* Persistent spine highlight */}
+                  {!isMobile && (
+                    <>
+                      <div className="absolute inset-y-0 left-0 w-5 pointer-events-none z-[15]"
+                        style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.25) 0%, transparent 100%)' }} />
+                      <div className="absolute inset-y-0 right-0 w-5 pointer-events-none z-[15]"
+                        style={{ background: 'linear-gradient(to left, rgba(0,0,0,0.18) 0%, transparent 100%)' }} />
+                      <div className="absolute inset-x-0 top-0 h-1 pointer-events-none z-[15]"
+                        style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.12) 0%, transparent 100%)' }} />
+                    </>
+                  )}
+                </div>
+
+                {/* Bottom reflection */}
+                <div className="absolute top-full left-0 right-0 h-20 rounded-b-sm overflow-hidden pointer-events-none"
+                  style={{ transform: 'scaleY(-1)', opacity: 0.07, filter: 'blur(4px)', transformOrigin: 'top' }}>
+                  <div className="w-full h-full flex">
+                    <div className="flex-1 bg-[#f5f3ee]" />
+                    <div className="flex-1 bg-slate-900" />
+                  </div>
                 </div>
               </div>
 
+              {/* Next button */}
               <button
                 onClick={() => navigate('next')}
-                disabled={currentPage === totalPages - 1 || animating}
-                className="w-11 h-11 rounded-full bg-white/[0.07] hover:bg-white/[0.13] border border-white/[0.07] flex items-center justify-center text-white/60 hover:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed shadow-lg"
+                disabled={spreadIndex === total - 1 || !!flipping}
+                className="w-12 h-12 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Dot indicators */}
-            <div className="flex items-center gap-2 z-10">
-              {PAGES.map((p, i) => (
-                <button
-                  key={i}
-                  onClick={() => jumpTo(i)}
-                  title={p.label}
-                  className={cn(
-                    'rounded-full transition-all duration-300',
-                    i === displayPage
-                      ? 'w-5 h-2 bg-primary'
-                      : 'w-2 h-2 bg-white/20 hover:bg-white/40'
-                  )}
-                />
-              ))}
-            </div>
-
-            {/* Page label + hint */}
-            <div className="flex flex-col items-center gap-1 z-10">
-              <p className="text-white/60 text-xs font-medium">{PAGES[displayPage]?.label}</p>
-              <p className="text-white/20 text-[10px]">
-                {displayPage + 1} / {totalPages} · Arrow keys to navigate · Esc to close
-              </p>
+            {/* Spread dots + label */}
+            <div className="flex flex-col items-center gap-3 z-10">
+              <div className="flex items-center gap-2">
+                {SPREADS.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      if (i === spreadIndex || flipping) return;
+                      playPageFlipSound();
+                      setSpreadIndex(i);
+                    }}
+                    className={cn('rounded-full transition-all duration-300',
+                      i === spreadIndex
+                        ? 'w-6 h-2 bg-indigo-400'
+                        : 'w-2 h-2 hover:bg-white/40'
+                    )}
+                    style={{ background: i === spreadIndex ? undefined : 'rgba(255,255,255,0.2)' }}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <p className="text-white/50 text-[11px] font-medium">
+                  {[currentSpread.leftLabel, currentSpread.rightLabel].filter(Boolean).join(' · ') || `Spread ${spreadIndex + 1}`}
+                </p>
+                <span className="text-white/15 text-[10px]">·</span>
+                <p className="text-white/20 text-[10px]">← → Arrow keys · Esc to close</p>
+              </div>
             </div>
           </div>
 
           {/* Right info panel */}
-          <div className="w-56 shrink-0 bg-[#080a0f] border-l border-white/[0.05] py-5 px-4 hidden lg:flex flex-col gap-5">
+          <div className="w-52 shrink-0 py-5 px-4 hidden lg:flex flex-col gap-5 overflow-y-auto"
+            style={{ background: 'rgba(8,9,14,0.9)', borderLeft: '1px solid rgba(255,255,255,0.04)' }}>
+
+            {book.cover_url && (
+              <div className="flex justify-center">
+                <img src={book.cover_url} alt="" className="w-24 h-32 object-cover rounded-lg shadow-2xl ring-1 ring-white/10" />
+              </div>
+            )}
+
             <div>
-              <p className="text-[9px] text-white/20 uppercase tracking-widest mb-3">Book Info</p>
+              <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] mb-3 font-semibold">Book Info</p>
               <div className="space-y-3">
                 {[
                   { label: 'Title', value: book.title },
@@ -491,24 +717,24 @@ export default function BookPreviewer({ book, onClose }) {
                   { label: 'Edition', value: book.edition_number },
                 ].filter(r => r.value).map((row, i) => (
                   <div key={i}>
-                    <p className="text-[9px] text-white/20 uppercase tracking-wider">{row.label}</p>
+                    <p className="text-[8px] text-white/20 uppercase tracking-wider">{row.label}</p>
                     <p className="text-[11px] text-white/70 font-medium truncate mt-0.5">{row.value}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            {hasManuscript && (
+            {!!(book.manuscript_url) && (
               <div>
-                <p className="text-[9px] text-white/20 uppercase tracking-widest mb-3">Manuscript</p>
-                <div className="bg-white/[0.04] rounded-lg p-3 border border-white/[0.06]">
+                <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] mb-3 font-semibold">Manuscript</p>
+                <div className="rounded-lg p-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <FileText className="w-3.5 h-3.5 text-primary/70 shrink-0" />
-                    <p className="text-[10px] text-white/60 truncate font-medium">{book.manuscript_filename}</p>
+                    <FileText className="w-3 h-3 text-indigo-400 shrink-0" />
+                    <p className="text-[9px] text-white/50 truncate">{book.manuscript_filename}</p>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                    <p className="text-[10px] text-green-400">Ready to publish</p>
+                    <p className="text-[9px] text-green-400">Ready to publish</p>
                   </div>
                 </div>
               </div>
@@ -516,11 +742,11 @@ export default function BookPreviewer({ book, onClose }) {
 
             {(book.categories || []).length > 0 && (
               <div>
-                <p className="text-[9px] text-white/20 uppercase tracking-widest mb-3">Categories</p>
+                <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] mb-3 font-semibold">Categories</p>
                 <div className="space-y-1.5">
                   {book.categories.map((c, i) => (
-                    <div key={i} className="bg-white/[0.04] border border-white/[0.06] rounded-md px-2.5 py-1.5">
-                      <p className="text-[10px] text-white/50">{c}</p>
+                    <div key={i} className="rounded-md px-2.5 py-1.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <p className="text-[9px] text-white/45 leading-snug">{c}</p>
                     </div>
                   ))}
                 </div>
@@ -528,26 +754,21 @@ export default function BookPreviewer({ book, onClose }) {
             )}
 
             <div className="mt-auto">
-              <p className="text-[9px] text-white/20 uppercase tracking-widest mb-3">Settings</p>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-white/30">DRM</span>
-                  <span className={cn('text-[10px] font-medium', book.drm ? 'text-blue-400' : 'text-white/30')}>
-                    {book.drm ? 'On' : 'Off'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-white/30">AI Content</span>
-                  <span className="text-[10px] text-white/30">
-                    {book.ai_generated == null ? '—' : book.ai_generated ? 'Yes' : 'No'}
-                  </span>
-                </div>
-                {book.list_price && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-white/30">Price</span>
-                    <span className="text-[10px] text-white/60 font-medium">${book.list_price.toFixed(2)}</span>
+              <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] mb-3 font-semibold">Settings</p>
+              <div className="space-y-2.5">
+                {[
+                  { label: 'DRM', value: book.drm == null ? '—' : book.drm ? 'Enabled' : 'Disabled', highlight: book.drm },
+                  { label: 'AI Content', value: book.ai_generated == null ? '—' : book.ai_generated ? 'Yes' : 'No' },
+                  ...(book.list_price ? [{ label: 'Price', value: `$${Number(book.list_price).toFixed(2)}` }] : []),
+                  ...(book.royalty_plan ? [{ label: 'Royalty', value: `${book.royalty_plan}%` }] : []),
+                ].map((row, i) => (
+                  <div key={i} className="flex justify-between items-center">
+                    <span className="text-[9px] text-white/25">{row.label}</span>
+                    <span className={cn('text-[9px] font-medium', row.highlight ? 'text-indigo-400' : 'text-white/45')}>
+                      {row.value}
+                    </span>
                   </div>
-                )}
+                ))}
               </div>
             </div>
           </div>
