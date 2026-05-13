@@ -38,11 +38,7 @@ const READING_AGES = [
 ];
 
 const MARKETPLACES = [
-  { value: 'classpedia.ai', label: 'Classpedia.ai', badge: 'Primary', description: 'Your main publishing platform' },
-  { value: 'amazon', label: 'Amazon KDP', description: 'Kindle Store worldwide' },
-  { value: 'google_play', label: 'Google Play Books', description: 'Google Play Store' },
-  { value: 'apple_books', label: 'Apple Books', description: 'Apple Books Store' },
-  { value: 'barnes_noble', label: 'Barnes & Noble', description: 'Nook platform' },
+  { value: 'classpedia.ai', label: 'Classpedia.ai', badge: 'Only', description: 'Your publishing platform for all eBook sales' },
 ];
 
 // Section wrapper for visual grouping
@@ -566,19 +562,6 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
           </label>
         </RadioGroup>
       </Section>
-
-      {/* ── 7. PUBLICATION DATE ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-card border rounded-xl px-5 py-4">
-          <FieldLabel label="Publication Date" tooltip="The official publication date shown on your book's product page" />
-          <Input
-            type="date"
-            value={data.publication_date || ''}
-            onChange={(e) => onChange({ publication_date: e.target.value })}
-            className="bg-background"
-          />
-        </div>
-      </div>
 
       {/* Next Button */}
       <div className="flex justify-end pt-2">
