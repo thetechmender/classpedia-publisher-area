@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { X, Plus, ChevronRight, BookOpen, Info, Users, Store, Tag, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Plus, ChevronRight, BookOpen, Info, Users, Tag, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -33,17 +33,10 @@ const CONTRIBUTOR_ROLES = [
   'Co-author', 'Editor', 'Illustrator', 'Translator', 'Foreword', 'Narrator', 'Photographer'
 ];
 
-const READING_AGES = [
-  'Select', '0-2', '3-5', '6-8', '9-11', '12-14', '15-17', '18+', 'Adult'
-];
+const READING_AGES = ['0-2', '3-5', '6-8', '9-11', '12-14', '15-17', '18+', 'Adult'];
 
-const MARKETPLACES = [
-  { value: 'classpedia.ai', label: 'Classpedia.ai', badge: 'Only', description: 'Your publishing platform for all eBook sales' },
-];
-
-// Section wrapper for visual grouping
-const Section = ({ icon: Icon, title, subtitle, children, className }) => (
-  <div className={cn('rounded-xl border border-border bg-card shadow-sm overflow-hidden', className)}>
+const Section = ({ icon: Icon, title, subtitle, children }) => (
+  <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
     <div className="flex items-start gap-3 px-5 py-4 bg-secondary/40 border-b border-border">
       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
         <Icon className="w-4 h-4 text-primary" />
@@ -130,12 +123,13 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
       </div>
 
       {/* ── 1. BOOK IDENTITY ── */}
-      <Section icon={BookOpen} title="Book Identity" subtitle="Core information about your title">
+      <Section icon={BookOpen} title="Book Identity" subtitle="Core information about your title and author">
+
         {/* Language */}
         <div className="mb-5">
           <FieldLabel label="Language" required tooltip="The primary language your book is written in" />
           <Select value={data.language || ''} onValueChange={(v) => onChange({ language: v })}>
-            <SelectTrigger className={errors.language ? 'border-destructive' : ''}>
+            <SelectTrigger className={cn('bg-background', errors.language && 'border-destructive')}>
               <SelectValue placeholder="Select language…" />
             </SelectTrigger>
             <SelectContent>
@@ -153,12 +147,12 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
               value={data.title || ''}
               onChange={(e) => onChange({ title: e.target.value })}
               placeholder="Enter your book title"
-              className={cn('bg-background', errors.title && 'border-destructive focus-visible:ring-destructive')}
+              className={cn('bg-background', errors.title && 'border-destructive')}
             />
             <ErrorMsg msg={errors.title} />
           </div>
           <div>
-            <FieldLabel label="Subtitle" tooltip="Optional subtitle for your book" />
+            <FieldLabel label="Subtitle" tooltip="An optional subtitle for your book" />
             <Input
               value={data.subtitle || ''}
               onChange={(e) => onChange({ subtitle: e.target.value })}
@@ -168,7 +162,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
           </div>
         </div>
 
-        {/* Series */}
+        {/* Series & Edition */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
           <div>
             <FieldLabel label="Series Name" tooltip="If this book is part of a series, enter the series name" />
@@ -179,26 +173,14 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
               className="bg-background"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <FieldLabel label="Volume #" />
-              <Input
-                type="number"
-                value={data.series_number || ''}
-                onChange={(e) => onChange({ series_number: e.target.value ? Number(e.target.value) : '' })}
-                placeholder="e.g. 1"
-                className="bg-background"
-              />
-            </div>
-            <div>
-              <FieldLabel label="Edition" />
-              <Input
-                value={data.edition_number || ''}
-                onChange={(e) => onChange({ edition_number: e.target.value })}
-                placeholder="e.g. 2nd"
-                className="bg-background"
-              />
-            </div>
+          <div>
+            <FieldLabel label="Edition" tooltip="Leave blank if this is the first edition" />
+            <Input
+              value={data.edition_number || ''}
+              onChange={(e) => onChange({ edition_number: e.target.value })}
+              placeholder="e.g. 2nd Edition"
+              className="bg-background"
+            />
           </div>
         </div>
 
@@ -246,10 +228,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
               </SelectContent>
             </Select>
             <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={addContributor}
+              type="button" variant="outline" size="icon" onClick={addContributor}
               disabled={!newContributor.name || !newContributor.role}
               className="border-primary/30 hover:bg-primary/10 hover:text-primary"
             >
@@ -260,10 +239,9 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
       </Section>
 
       {/* ── 2. DESCRIPTION & KEYWORDS ── */}
-      <Section icon={Tag} title="Description & Discovery" subtitle="Help readers find and understand your book">
-        {/* Description */}
+      <Section icon={Tag} title="Description & Keywords" subtitle="Help readers find and understand your book">
         <div className="mb-5">
-          <FieldLabel label="Book Description" required tooltip="A compelling description that will appear on the product page." />
+          <FieldLabel label="Book Description" required tooltip="A compelling description that will appear on the product page" />
           <Textarea
             value={data.description || ''}
             onChange={(e) => onChange({ description: e.target.value })}
@@ -271,7 +249,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             className={cn('min-h-[150px] bg-background resize-none', errors.description && 'border-destructive')}
             maxLength={4000}
           />
-          <div className="flex justify-between items-center mt-1">
+          <div className="flex justify-between items-start mt-1">
             <ErrorMsg msg={errors.description} />
             <span className={cn('text-xs ml-auto', (data.description || '').length > 3800 ? 'text-destructive' : 'text-muted-foreground')}>
               {(data.description || '').length} / 4,000
@@ -279,13 +257,12 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
           </div>
         </div>
 
-        {/* Keywords */}
         <div>
           <FieldLabel label="Keywords" tooltip="Up to 7 keywords to help readers discover your book through search" />
           {(data.keywords || []).length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
               {data.keywords.map(kw => (
-                <Badge key={kw} className="gap-1.5 py-1 px-2.5 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15">
+                <Badge key={kw} className="gap-1.5 py-1 px-2.5 bg-primary/10 text-primary border border-primary/20">
                   {kw}
                   <button onClick={() => removeKeyword(kw)} className="hover:text-destructive transition-colors">
                     <X className="w-3 h-3" />
@@ -310,16 +287,64 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             </div>
           )}
           <p className="text-xs text-muted-foreground mt-1.5">
-            {(data.keywords || []).length}/7 keywords added
-            {(data.keywords || []).length === 7 && (
-              <span className="ml-2 text-primary font-medium">✓ Maximum reached</span>
-            )}
+            {(data.keywords || []).length}/7 keywords
+            {(data.keywords || []).length === 7 && <span className="ml-2 text-primary font-medium">✓ Maximum reached</span>}
           </p>
         </div>
       </Section>
 
-      {/* ── 3. PRIMARY AUDIENCE ── */}
+      {/* ── 3. CATEGORIES ── */}
+      <Section icon={Tag} title="Categories" subtitle="Choose up to 3 categories that best describe your book">
+        <p className="text-xs text-muted-foreground mb-4">
+          Categories help readers browse and discover your title on Classpedia.
+        </p>
+
+        {(data.categories || []).length > 0 && (
+          <div className="mb-4 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Selected categories:</p>
+            {data.categories.map((cat, i) => (
+              <div key={cat} className="flex items-center gap-2 bg-primary/5 border border-primary/15 rounded-lg px-3 py-2">
+                <span className="w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] flex items-center justify-center font-bold shrink-0">
+                  {i + 1}
+                </span>
+                <span className="text-sm flex-1 font-medium text-foreground">{cat}</span>
+                <button
+                  onClick={() => removeCategory(cat)}
+                  className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded-md hover:bg-destructive/10"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(data.categories || []).length < 3 && (
+          <Select onValueChange={addCategory}>
+            <SelectTrigger className={cn('bg-background', errors.categories && 'border-destructive')}>
+              <SelectValue placeholder="+ Select a category…" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.filter(c => !(data.categories || []).includes(c)).map(c => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        <div className="flex items-center justify-between mt-3">
+          <p className="text-xs text-muted-foreground">{(data.categories || []).length}/3 categories selected</p>
+          {(data.categories || []).length === 3 && (
+            <p className="text-xs text-primary font-medium flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Maximum reached
+            </p>
+          )}
+        </div>
+      </Section>
+
+      {/* ── 4. PRIMARY AUDIENCE ── */}
       <Section icon={Users} title="Primary Audience" subtitle="Define who your book is intended for">
+
         {/* Sexually Explicit */}
         <div className="mb-5">
           <p className="text-sm font-medium text-foreground mb-1">Sexually Explicit Images or Title</p>
@@ -344,7 +369,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
               <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-700">
-                Books with explicit content have restricted distribution and may not be available in all marketplaces or territories.
+                Books with explicit content have restricted distribution and may not be available in all territories.
               </p>
             </div>
           )}
@@ -358,12 +383,12 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             Reading Age <span className="text-muted-foreground font-normal">(Optional)</span>
           </p>
           <p className="text-xs text-muted-foreground mb-3">
-            Select the appropriate age range for children's and young adult books. For other books, leave reading age blank.
+            Select the appropriate age range. Recommended for children's and young adult books.
           </p>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <FieldLabel label="Minimum" />
-              <Select value={data.reading_age_min || ''} onValueChange={(v) => onChange({ reading_age_min: v === 'Select' ? '' : v })}>
+              <FieldLabel label="Minimum Age" />
+              <Select value={data.reading_age_min || ''} onValueChange={(v) => onChange({ reading_age_min: v })}>
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -373,8 +398,8 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
               </Select>
             </div>
             <div>
-              <FieldLabel label="Maximum" />
-              <Select value={data.reading_age_max || ''} onValueChange={(v) => onChange({ reading_age_max: v === 'Select' ? '' : v })}>
+              <FieldLabel label="Maximum Age" />
+              <Select value={data.reading_age_max || ''} onValueChange={(v) => onChange({ reading_age_max: v })}>
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -387,127 +412,13 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
         </div>
       </Section>
 
-      {/* ── 4. PRIMARY MARKETPLACE ── */}
-      <Section icon={Store} title="Primary Marketplace" subtitle="Choose where you expect the majority of your book sales">
-        <p className="text-xs text-muted-foreground mb-4">
-          Changing your primary marketplace may impact your list price and royalty rates.
-        </p>
-        <div className="space-y-2.5">
-          {MARKETPLACES.map((mp) => {
-            const isSelected = (data.primary_marketplace || 'classpedia.ai') === mp.value;
-            return (
-              <label
-                key={mp.value}
-                className={cn(
-                  'flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 cursor-pointer transition-all',
-                  isSelected
-                    ? 'border-primary bg-primary/5 shadow-sm'
-                    : 'border-border hover:border-primary/40 hover:bg-secondary/50'
-                )}
-              >
-                <input
-                  type="radio"
-                  name="primary_marketplace"
-                  value={mp.value}
-                  checked={isSelected}
-                  onChange={() => onChange({ primary_marketplace: mp.value })}
-                  className="hidden"
-                />
-                <div className={cn(
-                  'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
-                  isSelected ? 'border-primary' : 'border-border'
-                )}>
-                  {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className={cn('text-sm font-medium', isSelected ? 'text-primary' : 'text-foreground')}>
-                      {mp.label}
-                    </span>
-                    {mp.badge && (
-                      <Badge className="text-[10px] py-0 px-1.5 bg-primary/15 text-primary border-none">
-                        {mp.badge}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{mp.description}</p>
-                </div>
-                {isSelected && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
-              </label>
-            );
-          })}
-        </div>
-      </Section>
-
-      {/* ── 5. CATEGORIES ── */}
-      <Section icon={Tag} title="Categories" subtitle="Choose up to 3 categories that best describe your book">
-        <p className="text-xs text-muted-foreground mb-3">
-          Note: You must select your primary marketplace and audience first. Categories help readers browse and discover your title.
-        </p>
-
-        {/* Current categories breadcrumb-style */}
-        {(data.categories || []).length > 0 && (
-          <div className="mb-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Your title's current categories:</p>
-            <div className="space-y-2">
-              {data.categories.map((cat, i) => (
-                <div key={cat} className="flex items-center gap-2 bg-primary/5 border border-primary/15 rounded-lg px-3 py-2">
-                  <span className="w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] flex items-center justify-center font-bold shrink-0">
-                    {i + 1}
-                  </span>
-                  <span className="text-sm flex-1">
-                    <span className="text-muted-foreground">Classpedia.ai</span>
-                    <span className="text-muted-foreground mx-1">›</span>
-                    <span className="font-medium text-foreground">{cat}</span>
-                  </span>
-                  <button
-                    onClick={() => removeCategory(cat)}
-                    className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded-md hover:bg-destructive/10"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {(data.categories || []).length < 3 && (
-          <div>
-            <Select onValueChange={addCategory}>
-              <SelectTrigger className={cn('bg-background', errors.categories && 'border-destructive')}>
-                <SelectValue placeholder="+ Select a category…" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.filter(c => !(data.categories || []).includes(c)).map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <ErrorMsg msg={errors.categories} />
-          </div>
-        )}
-
-        <div className="flex items-center justify-between mt-3">
-          <p className="text-xs text-muted-foreground">
-            {(data.categories || []).length}/3 categories selected
-          </p>
-          {(data.categories || []).length === 3 && (
-            <p className="text-xs text-primary font-medium flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Maximum reached
-            </p>
-          )}
-        </div>
-      </Section>
-
-      {/* ── 6. PRE-ORDER ── */}
-      <Section icon={Clock} title="Pre-order" subtitle="Choose when your book becomes available to readers">
+      {/* ── 5. PRE-ORDER ── */}
+      <Section icon={Clock} title="Release & Pre-order" subtitle="Choose when your book becomes available to readers">
         <RadioGroup
           value={data.preorder_type || 'release_now'}
           onValueChange={(v) => onChange({ preorder_type: v, preorder_date: v === 'release_now' ? '' : data.preorder_date })}
           className="space-y-3"
         >
-          {/* Release Now */}
           <label className={cn(
             'flex items-start gap-3 rounded-xl border-2 px-4 py-4 cursor-pointer transition-all',
             (data.preorder_type || 'release_now') === 'release_now'
@@ -525,7 +436,6 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             </div>
           </label>
 
-          {/* Pre-order */}
           <label className={cn(
             'flex items-start gap-3 rounded-xl border-2 px-4 py-4 cursor-pointer transition-all',
             data.preorder_type === 'preorder'
@@ -538,7 +448,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
                 Make my eBook available for Pre-order
               </p>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                Allow readers to purchase your book before the release date. Pre-orders count toward your launch-day sales rank.
+                Allow readers to purchase before the release date. Pre-orders count toward your launch-day sales rank.
               </p>
               {data.preorder_type === 'preorder' && (
                 <div className="mt-4 pt-3 border-t border-primary/15">
