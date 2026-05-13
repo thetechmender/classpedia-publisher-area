@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   X, ChevronLeft, ChevronRight, BookOpen, Monitor, Smartphone, Tablet,
-  FileText, ZoomIn, ZoomOut, Maximize2, RotateCcw
+  FileText, AlertCircle, MessageCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -494,65 +494,6 @@ export default function BookPreviewer({ book, onClose }) {
         {/* ── Main area ── */}
         <div className="flex flex-1 overflow-hidden">
 
-          {/* Left sidebar — spread thumbnails */}
-          <div className="w-40 shrink-0 py-4 px-3 overflow-y-auto hidden md:flex flex-col gap-2"
-            style={{ background: 'rgba(8,9,14,0.9)', borderRight: '1px solid rgba(255,255,255,0.04)' }}>
-            <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] px-1 mb-2 font-semibold">Spreads</p>
-            {SPREADS.map((s, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  if (i === spreadIndex || flipping) return;
-                  playPageFlipSound();
-                  setSpreadIndex(i);
-                }}
-                className={cn(
-                  'w-full rounded-lg overflow-hidden border transition-all text-left',
-                  i === spreadIndex
-                    ? 'border-indigo-500/60 shadow-lg shadow-indigo-500/10'
-                    : 'border-white/[0.07] hover:border-white/20'
-                )}
-              >
-                <div className="flex" style={{ height: 52 }}>
-                  {/* Left mini-page */}
-                  <div className="flex-1 flex items-center justify-center border-r border-black/30"
-                    style={{
-                      background: s.leftLabel === 'Cover' || s.leftLabel === '' 
-                        ? 'linear-gradient(135deg, #1a1c2e, #0f1117)'
-                        : '#f5f3ee',
-                      fontSize: 6,
-                      color: s.leftLabel === 'Cover' || s.leftLabel === '' ? 'rgba(255,255,255,0.3)' : '#999',
-                      padding: '4px 3px',
-                      textAlign: 'center',
-                      lineHeight: 1.3,
-                    }}>
-                    {s.leftLabel || '·'}
-                  </div>
-                  {/* Right mini-page */}
-                  <div className="flex-1 flex items-center justify-center"
-                    style={{
-                      background: s.rightLabel === 'Back Cover' || s.rightLabel === ''
-                        ? 'linear-gradient(135deg, #1a1c2e, #0f1117)'
-                        : '#f5f3ee',
-                      fontSize: 6,
-                      color: s.rightLabel === 'Back Cover' || s.rightLabel === '' ? 'rgba(255,255,255,0.3)' : '#999',
-                      padding: '4px 3px',
-                      textAlign: 'center',
-                      lineHeight: 1.3,
-                    }}>
-                    {s.rightLabel || '·'}
-                  </div>
-                </div>
-                <div className={cn(
-                  'px-2 py-1 text-[8px] font-medium truncate',
-                  i === spreadIndex ? 'bg-indigo-500/20 text-indigo-300' : 'bg-black/30 text-white/30'
-                )}>
-                  {i + 1}. {s.leftLabel || s.rightLabel}
-                </div>
-              </button>
-            ))}
-          </div>
-
           {/* ── Center canvas ── */}
           <div className="flex-1 flex flex-col items-center justify-center gap-7 relative overflow-hidden">
 
@@ -697,81 +638,25 @@ export default function BookPreviewer({ book, onClose }) {
             </div>
           </div>
 
-          {/* Right info panel */}
-          <div className="w-52 shrink-0 py-5 px-4 hidden lg:flex flex-col gap-5 overflow-y-auto"
-            style={{ background: 'rgba(8,9,14,0.9)', borderLeft: '1px solid rgba(255,255,255,0.04)' }}>
+        </div>
 
-            {book.cover_url && (
-              <div className="flex justify-center">
-                <img src={book.cover_url} alt="" className="w-24 h-32 object-cover rounded-lg shadow-2xl ring-1 ring-white/10" />
-              </div>
-            )}
-
-            <div>
-              <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] mb-3 font-semibold">Book Info</p>
-              <div className="space-y-3">
-                {[
-                  { label: 'Title', value: book.title },
-                  { label: 'Author', value: book.author_name },
-                  { label: 'Language', value: book.language },
-                  { label: 'Edition', value: book.edition_number },
-                ].filter(r => r.value).map((row, i) => (
-                  <div key={i}>
-                    <p className="text-[8px] text-white/20 uppercase tracking-wider">{row.label}</p>
-                    <p className="text-[11px] text-white/70 font-medium truncate mt-0.5">{row.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {!!(book.manuscript_url) && (
-              <div>
-                <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] mb-3 font-semibold">Manuscript</p>
-                <div className="rounded-lg p-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="w-3 h-3 text-indigo-400 shrink-0" />
-                    <p className="text-[9px] text-white/50 truncate">{book.manuscript_filename}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                    <p className="text-[9px] text-green-400">Ready to publish</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {(book.categories || []).length > 0 && (
-              <div>
-                <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] mb-3 font-semibold">Categories</p>
-                <div className="space-y-1.5">
-                  {book.categories.map((c, i) => (
-                    <div key={i} className="rounded-md px-2.5 py-1.5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <p className="text-[9px] text-white/45 leading-snug">{c}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-auto">
-              <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] mb-3 font-semibold">Settings</p>
-              <div className="space-y-2.5">
-                {[
-                  { label: 'DRM', value: book.drm == null ? '—' : book.drm ? 'Enabled' : 'Disabled', highlight: book.drm },
-                  { label: 'AI Content', value: book.ai_generated == null ? '—' : book.ai_generated ? 'Yes' : 'No' },
-                  ...(book.list_price ? [{ label: 'Price', value: `$${Number(book.list_price).toFixed(2)}` }] : []),
-                  ...(book.royalty_plan ? [{ label: 'Royalty', value: `${book.royalty_plan}%` }] : []),
-                ].map((row, i) => (
-                  <div key={i} className="flex justify-between items-center">
-                    <span className="text-[9px] text-white/25">{row.label}</span>
-                    <span className={cn('text-[9px] font-medium', row.highlight ? 'text-indigo-400' : 'text-white/45')}>
-                      {row.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* ── Bottom quality-check bar ── */}
+        <div className="shrink-0 flex items-center justify-between px-6 py-2.5 gap-4"
+          style={{ background: 'rgba(10,11,18,0.95)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="flex items-center gap-2 text-amber-400/70">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <p className="text-[11px] leading-snug">
+              Check for margin issues, cut-off text, or formatting problems before publishing.
+              {' '}<span className="text-amber-400/50">If something looks wrong and you can't fix it,</span>
+            </p>
           </div>
+          <a
+            href="mailto:support@classpedia.ai"
+            className="flex items-center gap-1.5 shrink-0 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            Contact Support
+          </a>
         </div>
       </div>
     </div>
