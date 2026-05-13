@@ -1,0 +1,145 @@
+{
+  "name": "Book",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Book title"
+    },
+    "subtitle": {
+      "type": "string",
+      "description": "Book subtitle"
+    },
+    "series_name": {
+      "type": "string",
+      "description": "Series name if part of a series"
+    },
+    "series_number": {
+      "type": "number",
+      "description": "Volume number in the series"
+    },
+    "edition_number": {
+      "type": "string",
+      "description": "Edition number"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Primary author name"
+    },
+    "contributors": {
+      "type": "array",
+      "description": "Additional contributors",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "description": {
+      "type": "string",
+      "description": "Book description / blurb"
+    },
+    "language": {
+      "type": "string",
+      "description": "Primary language"
+    },
+    "keywords": {
+      "type": "array",
+      "description": "Up to 7 search keywords",
+      "items": {
+        "type": "string"
+      }
+    },
+    "categories": {
+      "type": "array",
+      "description": "Up to 2 browse categories",
+      "items": {
+        "type": "string"
+      }
+    },
+    "age_range": {
+      "type": "string",
+      "enum": [
+        "not_specified",
+        "4_6",
+        "7_9",
+        "10_12",
+        "13_17",
+        "18_plus"
+      ],
+      "description": "Target age range"
+    },
+    "publication_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Publication date"
+    },
+    "isbn": {
+      "type": "string",
+      "description": "ISBN number"
+    },
+    "drm": {
+      "type": "boolean",
+      "description": "Digital Rights Management enabled"
+    },
+    "manuscript_url": {
+      "type": "string",
+      "description": "Uploaded manuscript file URL"
+    },
+    "manuscript_filename": {
+      "type": "string",
+      "description": "Original manuscript filename"
+    },
+    "cover_url": {
+      "type": "string",
+      "description": "Book cover image URL"
+    },
+    "royalty_plan": {
+      "type": "string",
+      "enum": [
+        "35",
+        "70"
+      ],
+      "description": "Royalty percentage plan"
+    },
+    "list_price": {
+      "type": "number",
+      "description": "List price in USD"
+    },
+    "currency": {
+      "type": "string",
+      "description": "Price currency"
+    },
+    "territories": {
+      "type": "string",
+      "enum": [
+        "worldwide",
+        "specific"
+      ],
+      "description": "Distribution territories"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in_review",
+        "published",
+        "unpublished"
+      ],
+      "default": "draft",
+      "description": "Publishing status"
+    }
+  },
+  "required": [
+    "title",
+    "author_name",
+    "description",
+    "language"
+  ]
+}
