@@ -107,6 +107,10 @@
       "type": "boolean",
       "description": "Digital Rights Management enabled"
     },
+    "ai_generated": {
+      "type": "boolean",
+      "description": "Whether AI tools were used in creating the content"
+    },
     "manuscript_url": {
       "type": "string",
       "description": "Uploaded manuscript file URL"
