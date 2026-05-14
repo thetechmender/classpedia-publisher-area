@@ -275,7 +275,7 @@ export default function PublishBook() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top bar */}
           <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-            <div className="px-6 py-4 flex items-center justify-between">
+            <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="lg:hidden w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                   <BookOpen className="w-4 h-4 text-primary-foreground" />
@@ -289,14 +289,14 @@ export default function PublishBook() {
               </div>
               <Link
                 to="/"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors text-sm font-medium"
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors text-sm font-medium"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Dashboard
               </Link>
             </div>
             {/* Mobile step progress */}
-            <div className="lg:hidden px-6 pb-3">
+            <div className="lg:hidden px-4 sm:px-6 lg:px-8 pb-3">
               <div className="flex gap-2">
                 {STEP_INFO.map(({ step }) => (
                   <div key={step} className={`flex-1 h-1 rounded-full transition-all ${
@@ -307,8 +307,9 @@ export default function PublishBook() {
             </div>
           </div>
 
-          <div className="flex-1 px-5 md:px-8 py-7 max-w-3xl mx-auto w-full">
-            <div className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm">
+          <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+            <div className="max-w-3xl mx-auto w-full">
+              <div className="bg-card border rounded-2xl p-5 sm:p-6 lg:p-8 shadow-sm">
               {currentStep === 1 && (
                 <BookDetailsStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep1, 2)} />
               )}
@@ -321,6 +322,7 @@ export default function PublishBook() {
               {currentStep === 4 && (
                 <ReviewStep data={bookData} onBack={() => goToStep(3)} onPublish={handlePublish} onEdit={goToStep} publishing={publishing} validationErrors={validateAll(bookData)} />
               )}
+              </div>
             </div>
           </div>
         </div>
