@@ -123,7 +123,7 @@ export default function PublishBook() {
           </div>
           <div>
             <h1 className="text-lg font-semibold">Create New eBook</h1>
-            <p className="text-xs text-muted-foreground">Kindle Direct Publishing</p>
+            <p className="text-xs text-muted-foreground">Classpedia Publishing</p>
           </div>
         </div>
       </div>

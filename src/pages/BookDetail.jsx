@@ -93,7 +93,7 @@ export default function BookDetail() {
           </Button>
           <div>
             <h1 className="text-lg font-semibold">Book Details</h1>
-            <p className="text-xs text-muted-foreground">Kindle Direct Publishing</p>
+            <p className="text-xs text-muted-foreground">Classpedia Publishing</p>
           </div>
         </div>
       </div>
