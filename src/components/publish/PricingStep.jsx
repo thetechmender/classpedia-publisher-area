@@ -5,23 +5,40 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import {
   ChevronLeft, ChevronRight, DollarSign, Globe, Info,
-  Percent, AlertCircle
+  Percent, AlertCircle, X, Search
 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-// ── Policy constants (change these to update platform rules) ──────────────
-const SELECT_MIN_PRICE_FREE = 1.99;   // minimum price after free promotion ends
-const SELECT_FREE_DAYS = 3;           // number of free days per enrollment period
-const SELECT_ENROLLMENT_DAYS = 60;    // enrollment window in days
-
-const AUTHOR_ROYALTY = 70;   // % paid to the author
-const PLATFORM_CUT   = 30;   // % kept by Classpedia
+// ── Policy constants ──────────────────────────────────────────────────────────
+const SELECT_MIN_PRICE_FREE = 1.99;
+const SELECT_FREE_DAYS = 3;
+const SELECT_ENROLLMENT_DAYS = 60;
+const AUTHOR_ROYALTY = 70;
+const PLATFORM_CUT   = 30;
 const PRICE_MIN = 1.99;
 const PRICE_MAX = 199.99;
-// ─────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+
+const COUNTRIES = [
+  'Afghanistan','Albania','Algeria','Argentina','Armenia','Australia','Austria',
+  'Azerbaijan','Bahrain','Bangladesh','Belgium','Bolivia','Bosnia and Herzegovina',
+  'Brazil','Bulgaria','Cambodia','Canada','Chile','China','Colombia','Costa Rica',
+  'Croatia','Cyprus','Czech Republic','Denmark','Dominican Republic','Ecuador',
+  'Egypt','El Salvador','Estonia','Ethiopia','Finland','France','Georgia','Germany',
+  'Ghana','Greece','Guatemala','Honduras','Hungary','India','Indonesia','Iran',
+  'Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya',
+  'Kuwait','Latvia','Lebanon','Lithuania','Luxembourg','Malaysia','Malta','Mexico',
+  'Morocco','Nepal','Netherlands','New Zealand','Nicaragua','Nigeria','Norway',
+  'Pakistan','Panama','Paraguay','Peru','Philippines','Poland','Portugal','Qatar',
+  'Romania','Russia','Saudi Arabia','Senegal','Serbia','Singapore','Slovakia',
+  'Slovenia','South Africa','South Korea','Spain','Sri Lanka','Sweden','Switzerland',
+  'Taiwan','Tanzania','Thailand','Trinidad and Tobago','Tunisia','Turkey','Uganda',
+  'Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay',
+  'Uzbekistan','Venezuela','Vietnam','Zimbabwe',
+];
 
 const Section = ({ title, children }) => (
   <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
@@ -39,6 +56,96 @@ const InfoBox = ({ children }) => (
   </div>
 );
 
+function TerritoryPicker({ selected = [], onChange }) {
+  const [search, setSearch] = useState('');
+  const filtered = COUNTRIES.filter(c =>
+    c.toLowerCase().includes(search.toLowerCase())
+  );
+  const toggle = (country) => {
+    if (selected.includes(country)) {
+      onChange(selected.filter(c => c !== country));
+    } else {
+      onChange([...selected, country]);
+    }
+  };
+  const selectAll = () => onChange([...COUNTRIES]);
+  const clearAll = () => onChange([]);
+
+  return (
+    <div className="mt-4 rounded-xl border border-border overflow-hidden">
+      {/* Search + actions bar */}
+      <div className="flex items-center gap-2 px-3 py-2.5 bg-secondary/30 border-b border-border">
+        <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+        <input
+          type="text"
+          placeholder="Search countries…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+        />
+        <button onClick={selectAll} className="text-xs text-primary hover:underline shrink-0">All</button>
+        <span className="text-muted-foreground text-xs">·</span>
+        <button onClick={clearAll} className="text-xs text-muted-foreground hover:underline shrink-0">None</button>
+      </div>
+
+      {/* Country grid */}
+      <div className="max-h-52 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-px bg-border">
+        {filtered.map(country => (
+          <button
+            key={country}
+            onClick={() => toggle(country)}
+            className={cn(
+              'flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors',
+              selected.includes(country)
+                ? 'bg-primary/8 text-primary font-medium'
+                : 'bg-card text-foreground hover:bg-secondary/60'
+            )}
+          >
+            <div className={cn(
+              'w-3.5 h-3.5 rounded border shrink-0 flex items-center justify-center',
+              selected.includes(country) ? 'bg-primary border-primary' : 'border-border'
+            )}>
+              {selected.includes(country) && (
+                <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
+                  <path d="M1.5 5L4 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+            {country}
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <div className="col-span-3 px-4 py-6 text-center text-xs text-muted-foreground bg-card">
+            No countries found
+          </div>
+        )}
+      </div>
+
+      {/* Selected chips */}
+      {selected.length > 0 && (
+        <div className="px-3 py-2.5 border-t border-border bg-card flex flex-wrap gap-1.5">
+          {selected.map(c => (
+            <span key={c} className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[11px] font-medium rounded-full px-2 py-0.5">
+              {c}
+              <button onClick={() => toggle(c)} className="hover:text-destructive transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="px-3 py-2 border-t border-border bg-secondary/20">
+        <p className="text-xs text-muted-foreground">
+          {selected.length === 0
+            ? 'No countries selected'
+            : `${selected.length} ${selected.length === 1 ? 'country' : 'countries'} selected`}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function PricingStep({ data, onChange, errors, onNext, onBack }) {
   const [selectExpanded, setSelectExpanded] = useState(false);
 
@@ -55,11 +162,11 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
         </div>
         <div>
           <h2 className="text-xl font-semibold font-serif text-foreground">Pricing, Royalty & Distribution</h2>
-          <p className="text-sm text-muted-foreground">Set your eBook price, royalty plan, and distribution rights</p>
+          <p className="text-sm text-muted-foreground">Set your eBook price and distribution rights</p>
         </div>
       </div>
 
-      {/* ── 1. Classpedia Select Enrollment ── */}
+      {/* ── 1. Classpedia Select ── */}
       <Section title="Classpedia Select Enrollment">
         <p className="text-sm text-muted-foreground leading-relaxed">
           <span className="font-medium text-foreground">Reach more readers. Maximize your sales potential.</span>
@@ -114,7 +221,6 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
           <InfoBox>
             By enrolling, you confirm this eBook will be exclusive to Classpedia for {SELECT_ENROLLMENT_DAYS} days.
             You can run up to {SELECT_FREE_DAYS} free-promotion days per enrollment window.
-            Visit the Promotions page to manage your Classpedia Select promotions.
           </InfoBox>
         )}
       </Section>
@@ -122,11 +228,11 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
       {/* ── 2. Territories ── */}
       <Section title="Territories">
         <p className="text-sm text-muted-foreground mb-4">
-          Select the territories where you have rights to sell this book. This determines where your eBook will be available for sale.
+          Select the territories where you have rights to sell this book.
         </p>
         <RadioGroup
           value={data.territories || 'worldwide'}
-          onValueChange={(v) => onChange({ territories: v })}
+          onValueChange={(v) => onChange({ territories: v, selected_countries: v === 'worldwide' ? [] : (data.selected_countries || []) })}
           className="space-y-2"
         >
           <label className={cn(
@@ -153,17 +259,34 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
             </div>
           </label>
         </RadioGroup>
+
+        {data.territories === 'specific' && (
+          <TerritoryPicker
+            selected={data.selected_countries || []}
+            onChange={(countries) => onChange({ selected_countries: countries })}
+          />
+        )}
       </Section>
 
-      {/* ── 3. Pricing, Royalty & Distribution ── */}
-      <Section title="Pricing, Royalty & Distribution">
-        {/* Fixed royalty info */}
-        <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 mb-5">
-          <Percent className="w-4 h-4 text-primary shrink-0" />
-          <p className="text-sm text-foreground">
-            Authors earn <span className="font-semibold text-primary">{AUTHOR_ROYALTY}%</span> royalty on every sale.
-            Classpedia retains <span className="font-semibold">{PLATFORM_CUT}%</span> to cover platform, distribution, and support costs.
-          </p>
+      {/* ── 3. Pricing & Royalty ── */}
+      <Section title="Pricing & Royalty">
+        {/* Royalty split visual */}
+        <div className="rounded-xl border border-border overflow-hidden mb-5">
+          <div className="flex">
+            <div className="flex-1 bg-primary px-4 py-3 text-center" style={{ flex: AUTHOR_ROYALTY }}>
+              <p className="text-2xl font-bold text-white">{AUTHOR_ROYALTY}%</p>
+              <p className="text-xs text-white/80 font-medium mt-0.5">Your Royalty</p>
+            </div>
+            <div className="bg-secondary px-4 py-3 text-center" style={{ flex: PLATFORM_CUT }}>
+              <p className="text-2xl font-bold text-foreground">{PLATFORM_CUT}%</p>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">Classpedia Fee</p>
+            </div>
+          </div>
+          <div className="px-4 py-2.5 bg-secondary/20 border-t border-border">
+            <p className="text-xs text-muted-foreground text-center">
+              Fixed revenue split — no hidden fees or per-sale delivery charges
+            </p>
+          </div>
         </div>
 
         <Separator className="mb-5" />
@@ -243,10 +366,10 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
       {/* ── 4. Terms & Conditions ── */}
       <Section title="Terms & Conditions">
         <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-          It can take up to 72 hours for your title to be available for purchase on Classpedia.
+          After submission, your book will be reviewed before going live. This typically takes up to 72 hours.
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          By clicking <span className="font-medium text-foreground">Publish</span> below, I confirm that I agree to
+          By clicking <span className="font-medium text-foreground">Review & Submit</span> below, I confirm that I agree to
           and am in compliance with the{' '}
           <span className="text-primary cursor-pointer hover:underline">Classpedia Terms and Conditions</span>{' '}
           and that I have all rights necessary to make the content I am uploading available for marketing,
@@ -260,7 +383,7 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
         <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
-          Save & Continue <ChevronRight className="w-4 h-4" />
+          Review & Submit <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
     </div>

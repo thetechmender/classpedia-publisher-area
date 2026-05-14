@@ -33,12 +33,14 @@ const validateStep3 = (data) => {
   const errors = {};
   if (!data.list_price || data.list_price <= 0) {
     errors.list_price = 'Please enter a valid price';
-  } else if (data.royalty_plan === '70' && (data.list_price < 2.99 || data.list_price > 9.99)) {
-    errors.list_price = 'For 70% royalty, price must be between $2.99 and $9.99';
-  } else if (data.royalty_plan === '35' && data.list_price > 200) {
-    errors.list_price = 'Price cannot exceed $200.00';
+  } else if (data.list_price < 1.99) {
+    errors.list_price = 'Price must be at least $1.99';
+  } else if (data.list_price > 199.99) {
+    errors.list_price = 'Price cannot exceed $199.99';
   }
-  if (!data.royalty_plan) errors.royalty_plan = 'Please select a royalty plan';
+  if (data.territories === 'specific' && (!data.selected_countries || data.selected_countries.length === 0)) {
+    errors.territories = 'Please select at least one country';
+  }
   return errors;
 };
 
@@ -51,10 +53,6 @@ const validateAll = (data) => {
   if (!data.manuscript_url) errors.push('Manuscript upload is required');
   if (!data.cover_url) errors.push('Cover image is required');
   if (!data.list_price || data.list_price <= 0) errors.push('Valid price is required');
-  if (!data.royalty_plan) errors.push('Royalty plan is required');
-  if (data.royalty_plan === '70' && (data.list_price < 2.99 || data.list_price > 9.99)) {
-    errors.push('For 70% royalty, price must be between $2.99 and $9.99');
-  }
   return errors;
 };
 
@@ -66,7 +64,6 @@ export default function PublishBook() {
   const [publishing, setPublishing] = useState(false);
   const [bookData, setBookData] = useState({
     language: 'English',
-    royalty_plan: '70',
     territories: 'worldwide',
     currency: 'USD',
     drm: false,
