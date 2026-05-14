@@ -88,7 +88,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
         <p className="text-sm text-muted-foreground mb-1">
           Upload your manuscript (your book's interior content). We recommend using an EPUB file for best results.
         </p>
-        <p className="text-xs text-muted-foreground mb-4">
+        <p className="text-xs text-muted-foreground mb-4 hidden">
           For help formatting your manuscript with professional themes, chapter titles, or images, refer to our{' '}
           <span className="text-primary cursor-pointer hover:underline">eBook Formatting Guide</span>.
         </p>
