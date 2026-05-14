@@ -242,7 +242,7 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
             <RadioGroupItem value="worldwide" />
             <div>
               <p className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Globe className="w-4 h-4 text-primary hidden" />
+                
                 All territories (worldwide rights)
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">Distribute your eBook everywhere Classpedia operates</p>
