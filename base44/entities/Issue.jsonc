@@ -1,0 +1,92 @@
+{
+  "name": "Issue",
+  "type": "object",
+  "properties": {
+    "book_id": {
+      "type": "string",
+      "description": "ID of the book with the issue"
+    },
+    "book_title": {
+      "type": "string",
+      "description": "Title of the book (denormalized for display)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Issue title/summary"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the issue"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "medium",
+      "description": "Issue severity level"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "urgent",
+        "normal",
+        "low"
+      ],
+      "default": "normal",
+      "description": "Priority for resolving the issue"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "resolved",
+        "closed"
+      ],
+      "default": "open",
+      "description": "Issue status"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "formatting",
+        "content",
+        "technical",
+        "cover",
+        "metadata",
+        "other"
+      ],
+      "description": "Category of the issue"
+    },
+    "reporter_name": {
+      "type": "string",
+      "description": "Name of the person who reported the issue"
+    },
+    "reporter_email": {
+      "type": "string",
+      "description": "Email of the reporter"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "Email of team member assigned to resolve"
+    },
+    "resolution_notes": {
+      "type": "string",
+      "description": "Notes on how the issue was resolved"
+    },
+    "resolved_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the issue was resolved"
+    }
+  },
+  "required": [
+    "book_id",
+    "book_title",
+    "title",
+    "severity"
+  ]
+}

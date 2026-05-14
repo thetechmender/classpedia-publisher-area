@@ -26,7 +26,7 @@ const NAV_SECTIONS = [
     items: [
       { id: 'royalties', label: 'Sales & Royalties', icon: TrendingUp },
       { id: 'payments',  label: 'Payments',          icon: CreditCard },
-      { id: 'analytics', label: 'Analytics',         icon: BarChart3 },
+
     ]
   },
   {

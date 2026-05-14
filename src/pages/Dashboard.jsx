@@ -15,7 +15,7 @@ import PaymentsTab from '@/components/dashboard/PaymentsTab';
 import AuthorProfileTab from '@/components/dashboard/AuthorProfileTab';
 import ReviewsTab from '@/components/dashboard/ReviewsTab';
 import RoyaltiesTab from '@/components/dashboard/RoyaltiesTab';
-import AnalyticsTab from '@/components/dashboard/AnalyticsTab';
+
 import TaxTab from '@/components/dashboard/TaxTab';
 import SupportTab from '@/components/dashboard/SupportTab';
 
@@ -120,7 +120,7 @@ export default function Dashboard() {
           {resolvedTab === 'reviews'   && <ReviewsTab books={books} />}
           {resolvedTab === 'royalties' && <RoyaltiesTab books={books} />}
           {resolvedTab === 'payments'  && <PaymentsTab books={books} authorProfile={authorProfile} />}
-          {resolvedTab === 'analytics' && <AnalyticsTab books={books} />}
+
           {resolvedTab === 'profile'   && <AuthorProfileTab authorProfile={authorProfile} onProfileUpdated={() => queryClient.invalidateQueries({ queryKey: ['author-profile'] })} />}
           {resolvedTab === 'tax'       && <TaxTab authorProfile={authorProfile} />}
           {resolvedTab === 'support'   && <SupportTab />}
