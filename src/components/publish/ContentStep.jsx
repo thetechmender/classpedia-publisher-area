@@ -6,15 +6,15 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import {
   ChevronLeft, ChevronRight, Upload, FileText, ImageIcon,
-  X, Info, Cpu, Eye, BookOpen, CheckCircle2, AlertCircle, Layers
-} from 'lucide-react';
+  X, Info, Cpu, Eye, BookOpen, CheckCircle2, AlertCircle, Layers } from
+'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
 import BookPreviewer from './BookPreviewer';
 
-const Section = ({ icon: Icon, title, subtitle, children }) => (
-  <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+const Section = ({ icon: Icon, title, subtitle, children }) =>
+<div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
     <div className="flex items-start gap-3 px-5 py-4 bg-secondary/40 border-b border-border">
       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
         <Icon className="w-4 h-4 text-primary" />
@@ -25,17 +25,17 @@ const Section = ({ icon: Icon, title, subtitle, children }) => (
       </div>
     </div>
     <div className="px-5 py-5">{children}</div>
-  </div>
-);
+  </div>;
 
-const FieldLabel = ({ label, required, tooltip }) => (
-  <div className="flex items-center gap-1.5 mb-1.5">
+
+const FieldLabel = ({ label, required, tooltip }) =>
+<div className="flex items-center gap-1.5 mb-1.5">
     <Label className="text-sm font-medium text-foreground">
       {label}
       {required && <span className="text-destructive ml-0.5">*</span>}
     </Label>
-    {tooltip && (
-      <TooltipProvider>
+    {tooltip &&
+  <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
@@ -43,9 +43,9 @@ const FieldLabel = ({ label, required, tooltip }) => (
           <TooltipContent className="max-w-xs text-xs">{tooltip}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
-    )}
-  </div>
-);
+  }
+  </div>;
+
 
 const SUPPORTED_FORMATS = ['EPUB', 'MOBI', 'KPF', 'DOC', 'DOCX', 'PDF'];
 
@@ -58,7 +58,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
 
   const handleFileUpload = async (type, file) => {
     if (!file) return;
-    setUploading(prev => ({ ...prev, [type]: true }));
+    setUploading((prev) => ({ ...prev, [type]: true }));
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     if (type === 'manuscript') {
       onChange({ manuscript_url: file_url, manuscript_filename: file.name });
@@ -67,7 +67,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
     } else {
       onChange({ cover_url: file_url });
     }
-    setUploading(prev => ({ ...prev, [type]: false }));
+    setUploading((prev) => ({ ...prev, [type]: false }));
   };
 
   return (
@@ -98,11 +98,11 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           type="file"
           accept=".epub,.mobi,.doc,.docx,.pdf,.kpf"
           className="hidden"
-          onChange={(e) => handleFileUpload('manuscript', e.target.files[0])}
-        />
+          onChange={(e) => handleFileUpload('manuscript', e.target.files[0])} />
+        
 
-        {data.manuscript_url ? (
-          <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
+        {data.manuscript_url ?
+        <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <FileText className="w-5 h-5 text-primary" />
             </div>
@@ -118,24 +118,24 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
             <Button variant="ghost" size="icon" onClick={() => onChange({ manuscript_url: '', manuscript_filename: '' })}>
               <X className="w-4 h-4" />
             </Button>
-          </div>
-        ) : (
-          <button
-            onClick={() => manuscriptRef.current?.click()}
-            disabled={uploading.manuscript}
-            className={cn(
-              'w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 transition-colors mb-4',
-              'hover:border-primary hover:bg-primary/5',
-              errors.manuscript_url ? 'border-destructive' : 'border-border'
-            )}
-          >
-            {uploading.manuscript ? (
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+          </div> :
+
+        <button
+          onClick={() => manuscriptRef.current?.click()}
+          disabled={uploading.manuscript}
+          className={cn(
+            'w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 transition-colors mb-4',
+            'hover:border-primary hover:bg-primary/5',
+            errors.manuscript_url ? 'border-destructive' : 'border-border'
+          )}>
+          
+            {uploading.manuscript ?
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /> :
+
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Upload className="w-6 h-6 text-primary" />
               </div>
-            )}
+          }
             <div className="text-center">
               <p className="text-sm font-semibold text-foreground">
                 {uploading.manuscript ? 'Uploading manuscript…' : 'Upload Manuscript'}
@@ -145,12 +145,12 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
               </p>
             </div>
           </button>
-        )}
-        {errors.manuscript_url && (
-          <p className="flex items-center gap-1 text-xs text-destructive mb-4">
+        }
+        {errors.manuscript_url &&
+        <p className="flex items-center gap-1 text-xs text-destructive mb-4">
             <AlertCircle className="w-3 h-3" /> {errors.manuscript_url}
           </p>
-        )}
+        }
 
         <Separator className="my-5" />
 
@@ -166,8 +166,8 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           <RadioGroup
             value={data.drm ? 'yes' : 'no'}
             onValueChange={(v) => onChange({ drm: v === 'yes' })}
-            className="space-y-2"
-          >
+            className="space-y-2">
+            
             <label className={cn(
               'flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all',
               data.drm ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
@@ -197,8 +197,8 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
         <p className="text-sm text-muted-foreground mb-1">
           A sample chapter lets potential readers try before they buy. Classpedia displays it as a free excerpt on your book's product page.
         </p>
-        <p className="text-xs text-muted-foreground mb-4">
-          Upload the first chapter or an introductory excerpt (PDF, EPUB, DOCX). Typically 10–20% of the full book. <span className="font-medium text-foreground">Optional but strongly recommended.</span>
+        <p className="text-xs text-muted-foreground mb-4">Upload the first chapter or an introductory excerpt (PDF, EPUB, DOCX). Optional but strongly recommended.
+
         </p>
 
         <input
@@ -206,11 +206,11 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           type="file"
           accept=".epub,.doc,.docx,.pdf"
           className="hidden"
-          onChange={(e) => handleFileUpload('sample', e.target.files[0])}
-        />
+          onChange={(e) => handleFileUpload('sample', e.target.files[0])} />
+        
 
-        {data.sample_url ? (
-          <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4">
+        {data.sample_url ?
+        <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Layers className="w-5 h-5 text-primary" />
             </div>
@@ -226,23 +226,23 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
             <Button variant="ghost" size="icon" onClick={() => onChange({ sample_url: '', sample_filename: '' })}>
               <X className="w-4 h-4" />
             </Button>
-          </div>
-        ) : (
-          <button
-            onClick={() => sampleRef.current?.click()}
-            disabled={uploading.sample}
-            className={cn(
-              'w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-3 transition-colors',
-              'hover:border-primary hover:bg-primary/5 border-border'
-            )}
-          >
-            {uploading.sample ? (
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+          </div> :
+
+        <button
+          onClick={() => sampleRef.current?.click()}
+          disabled={uploading.sample}
+          className={cn(
+            'w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-3 transition-colors',
+            'hover:border-primary hover:bg-primary/5 border-border'
+          )}>
+          
+            {uploading.sample ?
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /> :
+
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Layers className="w-6 h-6 text-primary" />
               </div>
-            )}
+          }
             <div className="text-center">
               <p className="text-sm font-semibold text-foreground">
                 {uploading.sample ? 'Uploading sample…' : 'Upload Sample Chapter'}
@@ -250,7 +250,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
               <p className="text-xs text-muted-foreground mt-1">PDF, EPUB or DOCX · Optional</p>
             </div>
           </button>
-        )}
+        }
       </Section>
 
       {/* ── 3. BOOK COVER ── */}
@@ -265,11 +265,11 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={(e) => handleFileUpload('cover', e.target.files[0])}
-        />
+          onChange={(e) => handleFileUpload('cover', e.target.files[0])} />
+        
 
-        {data.cover_url ? (
-          <div className="flex items-start gap-5 bg-primary/5 border border-primary/20 rounded-xl p-4">
+        {data.cover_url ?
+        <div className="flex items-start gap-5 bg-primary/5 border border-primary/20 rounded-xl p-4">
             <img src={data.cover_url} alt="Book cover" className="w-24 h-36 object-cover rounded-lg shadow-md shrink-0" />
             <div className="flex-1 pt-1">
               <p className="text-sm font-semibold text-foreground">Cover uploaded</p>
@@ -285,24 +285,24 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
                 </Button>
               </div>
             </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => coverRef.current?.click()}
-            disabled={uploading.cover}
-            className={cn(
-              'w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 transition-colors',
-              'hover:border-primary hover:bg-primary/5',
-              errors.cover_url ? 'border-destructive' : 'border-border'
-            )}
-          >
-            {uploading.cover ? (
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+          </div> :
+
+        <button
+          onClick={() => coverRef.current?.click()}
+          disabled={uploading.cover}
+          className={cn(
+            'w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 transition-colors',
+            'hover:border-primary hover:bg-primary/5',
+            errors.cover_url ? 'border-destructive' : 'border-border'
+          )}>
+          
+            {uploading.cover ?
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /> :
+
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <ImageIcon className="w-6 h-6 text-primary" />
               </div>
-            )}
+          }
             <div className="text-center">
               <p className="text-sm font-semibold text-foreground">
                 {uploading.cover ? 'Uploading cover…' : 'Upload Cover Image'}
@@ -310,12 +310,12 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
               <p className="text-xs text-muted-foreground mt-1">JPEG or PNG · Recommended 2560 × 1600 px</p>
             </div>
           </button>
-        )}
-        {errors.cover_url && (
-          <p className="flex items-center gap-1 text-xs text-destructive mt-2">
+        }
+        {errors.cover_url &&
+        <p className="flex items-center gap-1 text-xs text-destructive mt-2">
             <AlertCircle className="w-3 h-3" /> {errors.cover_url}
           </p>
-        )}
+        }
       </Section>
 
       {/* ── 3. AI-GENERATED CONTENT ── */}
@@ -327,10 +327,10 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           Did you use AI tools in creating texts, images, and/or translations in your book?
         </p>
         <RadioGroup
-          value={data.ai_generated != null ? (data.ai_generated ? 'yes' : 'no') : ''}
+          value={data.ai_generated != null ? data.ai_generated ? 'yes' : 'no' : ''}
           onValueChange={(v) => onChange({ ai_generated: v === 'yes' })}
-          className="space-y-2"
-        >
+          className="space-y-2">
+          
           <label className={cn(
             'flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all',
             data.ai_generated === true ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
@@ -346,14 +346,14 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
             <span className="text-sm font-medium">No</span>
           </label>
         </RadioGroup>
-        {data.ai_generated && (
-          <div className="mt-4 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+        {data.ai_generated &&
+        <div className="mt-4 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
             <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
             <p className="text-xs text-blue-700">
               AI-generated content is permitted on Classpedia. Disclosing its use helps maintain reader trust and platform transparency.
             </p>
           </div>
-        )}
+        }
       </Section>
 
       {/* ── 4. CLASSPEDIA PREVIEW ── */}
@@ -369,15 +369,15 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           disabled={!data.manuscript_url && !data.cover_url}
           className={cn(
             'gap-2 border-primary/30 hover:bg-primary/10 hover:text-primary',
-            (!data.manuscript_url && !data.cover_url) && 'opacity-50 cursor-not-allowed'
-          )}
-        >
+            !data.manuscript_url && !data.cover_url && 'opacity-50 cursor-not-allowed'
+          )}>
+          
           <Eye className="w-4 h-4" />
           Launch Preview
         </Button>
-        {!data.manuscript_url && !data.cover_url && (
-          <p className="text-xs text-muted-foreground mt-2">Upload a manuscript or cover to enable the preview.</p>
-        )}
+        {!data.manuscript_url && !data.cover_url &&
+        <p className="text-xs text-muted-foreground mt-2">Upload a manuscript or cover to enable the preview.</p>
+        }
       </Section>
 
       {/* ── 5. ISBN ── */}
@@ -391,8 +391,8 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
             value={data.isbn || ''}
             onChange={(e) => onChange({ isbn: e.target.value })}
             placeholder="e.g. 978-3-16-148410-0"
-            className="bg-background max-w-sm"
-          />
+            className="bg-background max-w-sm" />
+          
         </div>
       </Section>
 
@@ -407,12 +407,12 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
       </div>
 
       {/* Book Previewer Modal */}
-      {showPreviewer && (
-        <BookPreviewer
-          book={data}
-          onClose={() => setShowPreviewer(false)}
-        />
-      )}
-    </div>
-  );
+      {showPreviewer &&
+      <BookPreviewer
+        book={data}
+        onClose={() => setShowPreviewer(false)} />
+
+      }
+    </div>);
+
 }
