@@ -197,8 +197,8 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
         <p className="text-sm text-muted-foreground mb-1">
           A sample chapter lets potential readers try before they buy. Classpedia displays it as a free excerpt on your book's product page.
         </p>
-        <p className="text-xs text-muted-foreground mb-4">Upload the first chapter or an introductory excerpt (PDF, EPUB, DOCX). Optional but strongly recommended.
-
+        <p className="text-xs text-muted-foreground mb-4">
+          {"Upload the first chapter or an introductory excerpt (PDF, EPUB, DOCX). Typically 10–20% of the full book. Optional but strongly recommended."}
         </p>
 
         <input
