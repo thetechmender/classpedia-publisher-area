@@ -8,8 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
   ChevronLeft, ChevronRight, DollarSign, Globe, Info,
-  Percent, AlertCircle, X, Search
-} from 'lucide-react';
+  Percent, AlertCircle, X, Search } from
+'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ── Policy constants ──────────────────────────────────────────────────────────
@@ -17,53 +17,53 @@ const SELECT_MIN_PRICE_FREE = 1.99;
 const SELECT_FREE_DAYS = 3;
 const SELECT_ENROLLMENT_DAYS = 60;
 const AUTHOR_ROYALTY = 70;
-const PLATFORM_CUT   = 30;
+const PLATFORM_CUT = 30;
 const PRICE_MIN = 1.99;
 const PRICE_MAX = 199.99;
 // ─────────────────────────────────────────────────────────────────────────────
 
 const COUNTRIES = [
-  'Afghanistan','Albania','Algeria','Argentina','Armenia','Australia','Austria',
-  'Azerbaijan','Bahrain','Bangladesh','Belgium','Bolivia','Bosnia and Herzegovina',
-  'Brazil','Bulgaria','Cambodia','Canada','Chile','China','Colombia','Costa Rica',
-  'Croatia','Cyprus','Czech Republic','Denmark','Dominican Republic','Ecuador',
-  'Egypt','El Salvador','Estonia','Ethiopia','Finland','France','Georgia','Germany',
-  'Ghana','Greece','Guatemala','Honduras','Hungary','India','Indonesia','Iran',
-  'Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya',
-  'Kuwait','Latvia','Lebanon','Lithuania','Luxembourg','Malaysia','Malta','Mexico',
-  'Morocco','Nepal','Netherlands','New Zealand','Nicaragua','Nigeria','Norway',
-  'Pakistan','Panama','Paraguay','Peru','Philippines','Poland','Portugal','Qatar',
-  'Romania','Russia','Saudi Arabia','Senegal','Serbia','Singapore','Slovakia',
-  'Slovenia','South Africa','South Korea','Spain','Sri Lanka','Sweden','Switzerland',
-  'Taiwan','Tanzania','Thailand','Trinidad and Tobago','Tunisia','Turkey','Uganda',
-  'Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay',
-  'Uzbekistan','Venezuela','Vietnam','Zimbabwe',
-];
+'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Armenia', 'Australia', 'Austria',
+'Azerbaijan', 'Bahrain', 'Bangladesh', 'Belgium', 'Bolivia', 'Bosnia and Herzegovina',
+'Brazil', 'Bulgaria', 'Cambodia', 'Canada', 'Chile', 'China', 'Colombia', 'Costa Rica',
+'Croatia', 'Cyprus', 'Czech Republic', 'Denmark', 'Dominican Republic', 'Ecuador',
+'Egypt', 'El Salvador', 'Estonia', 'Ethiopia', 'Finland', 'France', 'Georgia', 'Germany',
+'Ghana', 'Greece', 'Guatemala', 'Honduras', 'Hungary', 'India', 'Indonesia', 'Iran',
+'Iraq', 'Ireland', 'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya',
+'Kuwait', 'Latvia', 'Lebanon', 'Lithuania', 'Luxembourg', 'Malaysia', 'Malta', 'Mexico',
+'Morocco', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Nigeria', 'Norway',
+'Pakistan', 'Panama', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar',
+'Romania', 'Russia', 'Saudi Arabia', 'Senegal', 'Serbia', 'Singapore', 'Slovakia',
+'Slovenia', 'South Africa', 'South Korea', 'Spain', 'Sri Lanka', 'Sweden', 'Switzerland',
+'Taiwan', 'Tanzania', 'Thailand', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Uganda',
+'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay',
+'Uzbekistan', 'Venezuela', 'Vietnam', 'Zimbabwe'];
 
-const Section = ({ title, children }) => (
-  <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+
+const Section = ({ title, children }) =>
+<div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
     <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
     </div>
     <div className="px-5 py-5">{children}</div>
-  </div>
-);
+  </div>;
 
-const InfoBox = ({ children }) => (
-  <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 mt-3">
+
+const InfoBox = ({ children }) =>
+<div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 mt-3">
     <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
     <p className="text-xs text-blue-700 leading-relaxed">{children}</p>
-  </div>
-);
+  </div>;
+
 
 function TerritoryPicker({ selected = [], onChange }) {
   const [search, setSearch] = useState('');
-  const filtered = COUNTRIES.filter(c =>
-    c.toLowerCase().includes(search.toLowerCase())
+  const filtered = COUNTRIES.filter((c) =>
+  c.toLowerCase().includes(search.toLowerCase())
   );
   const toggle = (country) => {
     if (selected.includes(country)) {
-      onChange(selected.filter(c => c !== country));
+      onChange(selected.filter((c) => c !== country));
     } else {
       onChange([...selected, country]);
     }
@@ -80,9 +80,9 @@ function TerritoryPicker({ selected = [], onChange }) {
           type="text"
           placeholder="Search countries…"
           value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-        />
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
+        
         <button onClick={selectAll} className="text-xs text-primary hover:underline shrink-0">All</button>
         <span className="text-muted-foreground text-xs">·</span>
         <button onClick={clearAll} className="text-xs text-muted-foreground hover:underline shrink-0">None</button>
@@ -90,60 +90,60 @@ function TerritoryPicker({ selected = [], onChange }) {
 
       {/* Country grid */}
       <div className="max-h-52 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-px bg-border">
-        {filtered.map(country => (
-          <button
-            key={country}
-            onClick={() => toggle(country)}
-            className={cn(
-              'flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors',
-              selected.includes(country)
-                ? 'bg-primary/8 text-primary font-medium'
-                : 'bg-card text-foreground hover:bg-secondary/60'
-            )}
-          >
+        {filtered.map((country) =>
+        <button
+          key={country}
+          onClick={() => toggle(country)}
+          className={cn(
+            'flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors',
+            selected.includes(country) ?
+            'bg-primary/8 text-primary font-medium' :
+            'bg-card text-foreground hover:bg-secondary/60'
+          )}>
+          
             <div className={cn(
-              'w-3.5 h-3.5 rounded border shrink-0 flex items-center justify-center',
-              selected.includes(country) ? 'bg-primary border-primary' : 'border-border'
-            )}>
-              {selected.includes(country) && (
-                <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
+            'w-3.5 h-3.5 rounded border shrink-0 flex items-center justify-center',
+            selected.includes(country) ? 'bg-primary border-primary' : 'border-border'
+          )}>
+              {selected.includes(country) &&
+            <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
                   <path d="M1.5 5L4 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-              )}
+            }
             </div>
             {country}
           </button>
-        ))}
-        {filtered.length === 0 && (
-          <div className="col-span-3 px-4 py-6 text-center text-xs text-muted-foreground bg-card">
+        )}
+        {filtered.length === 0 &&
+        <div className="col-span-3 px-4 py-6 text-center text-xs text-muted-foreground bg-card">
             No countries found
           </div>
-        )}
+        }
       </div>
 
       {/* Selected chips */}
-      {selected.length > 0 && (
-        <div className="px-3 py-2.5 border-t border-border bg-card flex flex-wrap gap-1.5">
-          {selected.map(c => (
-            <span key={c} className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[11px] font-medium rounded-full px-2 py-0.5">
+      {selected.length > 0 &&
+      <div className="px-3 py-2.5 border-t border-border bg-card flex flex-wrap gap-1.5">
+          {selected.map((c) =>
+        <span key={c} className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[11px] font-medium rounded-full px-2 py-0.5">
               {c}
               <button onClick={() => toggle(c)} className="hover:text-destructive transition-colors">
                 <X className="w-3 h-3" />
               </button>
             </span>
-          ))}
+        )}
         </div>
-      )}
+      }
 
       <div className="px-3 py-2 border-t border-border bg-secondary/20">
         <p className="text-xs text-muted-foreground">
-          {selected.length === 0
-            ? 'No countries selected'
-            : `${selected.length} ${selected.length === 1 ? 'country' : 'countries'} selected`}
+          {selected.length === 0 ?
+          'No countries selected' :
+          `${selected.length} ${selected.length === 1 ? 'country' : 'countries'} selected`}
         </p>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 export default function PricingStep({ data, onChange, errors, onNext, onBack }) {
@@ -181,20 +181,20 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
 
         <button
           onClick={() => setSelectExpanded(!selectExpanded)}
-          className="text-xs text-primary hover:underline mt-1 flex items-center gap-1"
-        >
+          className="text-xs text-primary hover:underline mt-1 flex items-center gap-1">
+          
           Rules and requirements {selectExpanded ? '▲' : '▼'}
         </button>
 
-        {selectExpanded && (
-          <div className="mt-3 bg-secondary/40 rounded-lg px-4 py-3 text-xs text-muted-foreground space-y-1.5 border border-border">
+        {selectExpanded &&
+        <div className="mt-3 bg-secondary/40 rounded-lg px-4 py-3 text-xs text-muted-foreground space-y-1.5 border border-border">
             <p>• Your eBook must be exclusive to Classpedia during the {SELECT_ENROLLMENT_DAYS}-day enrollment period.</p>
             <p>• You may offer your eBook for free for up to <strong>{SELECT_FREE_DAYS} days</strong> per {SELECT_ENROLLMENT_DAYS}-day period.</p>
             <p>• After a free promotion, the minimum list price is <strong>${SELECT_MIN_PRICE_FREE.toFixed(2)}</strong>.</p>
             <p>• Enrollment auto-renews unless you opt out before the period ends.</p>
             <p>• You retain copyright of your work at all times.</p>
           </div>
-        )}
+        }
 
         <div className="mt-4">
           <label className={cn(
@@ -204,8 +204,8 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
             <Checkbox
               checked={!!data.classpedia_select}
               onCheckedChange={(v) => onChange({ classpedia_select: !!v })}
-              className="mt-0.5"
-            />
+              className="mt-0.5" />
+            
             <div>
               <p className="text-sm font-medium text-foreground">
                 Enroll this book in Classpedia Select
@@ -217,12 +217,12 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
           </label>
         </div>
 
-        {data.classpedia_select && (
-          <InfoBox>
+        {data.classpedia_select &&
+        <InfoBox>
             By enrolling, you confirm this eBook will be exclusive to Classpedia for {SELECT_ENROLLMENT_DAYS} days.
             You can run up to {SELECT_FREE_DAYS} free-promotion days per enrollment window.
           </InfoBox>
-        )}
+        }
       </Section>
 
       {/* ── 2. Territories ── */}
@@ -232,9 +232,9 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
         </p>
         <RadioGroup
           value={data.territories || 'worldwide'}
-          onValueChange={(v) => onChange({ territories: v, selected_countries: v === 'worldwide' ? [] : (data.selected_countries || []) })}
-          className="space-y-2"
-        >
+          onValueChange={(v) => onChange({ territories: v, selected_countries: v === 'worldwide' ? [] : data.selected_countries || [] })}
+          className="space-y-2">
+          
           <label className={cn(
             'flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all',
             (data.territories || 'worldwide') === 'worldwide' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
@@ -242,7 +242,7 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
             <RadioGroupItem value="worldwide" />
             <div>
               <p className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Globe className="w-4 h-4 text-primary" />
+                <Globe className="w-4 h-4 text-primary hidden" />
                 All territories (worldwide rights)
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">Distribute your eBook everywhere Classpedia operates</p>
@@ -260,12 +260,12 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
           </label>
         </RadioGroup>
 
-        {data.territories === 'specific' && (
-          <TerritoryPicker
-            selected={data.selected_countries || []}
-            onChange={(countries) => onChange({ selected_countries: countries })}
-          />
-        )}
+        {data.territories === 'specific' &&
+        <TerritoryPicker
+          selected={data.selected_countries || []}
+          onChange={(countries) => onChange({ selected_countries: countries })} />
+
+        }
       </Section>
 
       {/* ── 3. Pricing & Royalty ── */}
@@ -318,18 +318,18 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
                       value={data.list_price || ''}
                       onChange={(e) => onChange({ list_price: e.target.value ? parseFloat(e.target.value) : '' })}
                       placeholder="0.00"
-                      className={cn('w-24', errors.list_price ? 'border-destructive' : '')}
-                    />
+                      className={cn('w-24', errors.list_price ? 'border-destructive' : '')} />
+                    
                     <span className="text-xs text-muted-foreground">USD</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Set a price between {priceRange}
                   </p>
-                  {errors.list_price && (
-                    <p className="flex items-center gap-1 text-xs text-destructive mt-1">
+                  {errors.list_price &&
+                  <p className="flex items-center gap-1 text-xs text-destructive mt-1">
                       <AlertCircle className="w-3 h-3" /> {errors.list_price}
                     </p>
-                  )}
+                  }
                 </td>
                 <td className="py-3 pr-4 hidden sm:table-cell">
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
@@ -345,8 +345,8 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
         </div>
 
         {/* Royalty summary callout */}
-        {price > 0 && (
-          <div className="mt-4 bg-accent/60 rounded-xl p-4 border border-primary/10 flex flex-wrap gap-6">
+        {price > 0 &&
+        <div className="mt-4 bg-accent/60 rounded-xl p-4 border border-primary/10 flex flex-wrap gap-6">
             <div className="text-center">
               <p className="text-xs text-muted-foreground">List Price</p>
               <p className="text-base font-semibold mt-0.5">${price.toFixed(2)}</p>
@@ -360,7 +360,7 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
               <p className="text-base font-semibold mt-0.5">${(price - authorEarning).toFixed(2)}</p>
             </div>
           </div>
-        )}
+        }
       </Section>
 
       {/* ── 4. Terms & Conditions ── */}
@@ -386,6 +386,6 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
           Review & Submit <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
-    </div>
-  );
+    </div>);
+
 }
