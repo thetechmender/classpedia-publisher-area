@@ -104,6 +104,48 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
         </div>
         <div className="px-5 py-5 space-y-4">
           <div className="space-y-1.5">
+            <Label>Address Line 1</Label>
+            <Input
+              value={data.address_line1 || ''}
+              onChange={e => onChange({ address_line1: e.target.value })}
+              placeholder="Street address, P.O. box"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Address Line 2</Label>
+            <Input
+              value={data.address_line2 || ''}
+              onChange={e => onChange({ address_line2: e.target.value })}
+              placeholder="Apt, suite, unit, floor, etc."
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label>City</Label>
+              <Input
+                value={data.city || ''}
+                onChange={e => onChange({ city: e.target.value })}
+                placeholder="City"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>State / Province</Label>
+              <Input
+                value={data.state || ''}
+                onChange={e => onChange({ state: e.target.value })}
+                placeholder="State / Province"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>ZIP / Postal Code</Label>
+              <Input
+                value={data.zip || ''}
+                onChange={e => onChange({ zip: e.target.value })}
+                placeholder="ZIP / Postal code"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
             <Label>Country / Region <span className="text-destructive">*</span></Label>
             <Select value={data.country || ''} onValueChange={v => onChange({ country: v })}>
               <SelectTrigger className={errors.country ? 'border-destructive' : ''}>
@@ -114,48 +156,6 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
               </SelectContent>
             </Select>
             <FieldError msg={errors.country} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Address Line 1</Label>
-            <Input
-              value={data.address_line1 || ''}
-              onChange={e => onChange({ address_line1: e.target.value })}
-              placeholder="123 Main St"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Address Line 2</Label>
-            <Input
-              value={data.address_line2 || ''}
-              onChange={e => onChange({ address_line2: e.target.value })}
-              placeholder="Apt, suite, etc."
-            />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div className="space-y-1.5 sm:col-span-1">
-              <Label>City</Label>
-              <Input
-                value={data.city || ''}
-                onChange={e => onChange({ city: e.target.value })}
-                placeholder="New York"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>State / Province</Label>
-              <Input
-                value={data.state || ''}
-                onChange={e => onChange({ state: e.target.value })}
-                placeholder="NY"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>ZIP / Postal Code</Label>
-              <Input
-                value={data.zip || ''}
-                onChange={e => onChange({ zip: e.target.value })}
-                placeholder="10001"
-              />
-            </div>
           </div>
         </div>
       </div>
