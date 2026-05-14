@@ -6,10 +6,6 @@
       "type": "string",
       "description": "Author's legal full name"
     },
-    "pen_name": {
-      "type": "string",
-      "description": "Pen name / author name shown on books"
-    },
     "email": {
       "type": "string",
       "description": "Contact email"
@@ -94,6 +90,26 @@
     "website": {
       "type": "string",
       "description": "Author website URL"
+    },
+    "twitter_handle": {
+      "type": "string",
+      "description": "X / Twitter username (without @)"
+    },
+    "instagram_handle": {
+      "type": "string",
+      "description": "Instagram username (without @)"
+    },
+    "facebook_url": {
+      "type": "string",
+      "description": "Facebook page URL"
+    },
+    "linkedin_url": {
+      "type": "string",
+      "description": "LinkedIn profile URL"
+    },
+    "youtube_url": {
+      "type": "string",
+      "description": "YouTube channel URL"
     },
     "setup_complete": {
       "type": "boolean",

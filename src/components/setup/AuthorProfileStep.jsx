@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronLeft, Sparkles, AlertCircle, Info } from 'lucide-react';
+import { ChevronLeft, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const FieldError = ({ msg }) => msg ? (
@@ -24,27 +24,6 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
         <div>
           <h2 className="text-xl font-semibold font-serif">Your Author Profile</h2>
           <p className="text-sm text-muted-foreground">This is what readers will see on your book pages</p>
-        </div>
-      </div>
-
-      {/* Pen Name */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
-          <h3 className="text-sm font-semibold">Author Name</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">The name that will appear on your book covers and listings</p>
-        </div>
-        <div className="px-5 py-5 space-y-4">
-          <div className="space-y-1.5">
-            <Label>Pen Name / Author Name <span className="text-destructive">*</span></Label>
-            <Input
-              value={data.pen_name || ''}
-              onChange={e => onChange({ pen_name: e.target.value })}
-              placeholder="e.g., J.K. Rowling or your real name"
-              className={errors.pen_name ? 'border-destructive' : ''}
-            />
-            <p className="text-xs text-muted-foreground mt-1">This can be different from your legal name. You can use a pen name.</p>
-            <FieldError msg={errors.pen_name} />
-          </div>
         </div>
       </div>
 
@@ -82,22 +61,78 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
         </div>
       </div>
 
-      {/* Website */}
+      {/* Online Presence */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
           <h3 className="text-sm font-semibold">Online Presence <span className="text-muted-foreground font-normal text-xs ml-1">(Optional)</span></h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Help readers find you across the web</p>
         </div>
         <div className="px-5 py-5 space-y-4">
+
           <div className="space-y-1.5">
-            <Label>Author Website</Label>
+            <Label className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-muted-foreground" /> Author Website</Label>
             <Input
               type="url"
               value={data.website || ''}
               onChange={e => onChange({ website: e.target.value })}
               placeholder="https://yourwebsite.com"
             />
-            <p className="text-xs text-muted-foreground mt-1">Shown on your author page to help readers find you.</p>
           </div>
+
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5"><Twitter className="w-3.5 h-3.5 text-[#1DA1F2]" /> X / Twitter</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground shrink-0">x.com/</span>
+              <Input
+                value={data.twitter_handle || ''}
+                onChange={e => onChange({ twitter_handle: e.target.value.replace(/^@/, '') })}
+                placeholder="yourusername"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5"><Instagram className="w-3.5 h-3.5 text-[#E1306C]" /> Instagram</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground shrink-0">instagram.com/</span>
+              <Input
+                value={data.instagram_handle || ''}
+                onChange={e => onChange({ instagram_handle: e.target.value.replace(/^@/, '') })}
+                placeholder="yourusername"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5"><Facebook className="w-3.5 h-3.5 text-[#1877F2]" /> Facebook</Label>
+            <Input
+              type="url"
+              value={data.facebook_url || ''}
+              onChange={e => onChange({ facebook_url: e.target.value })}
+              placeholder="https://facebook.com/yourpage"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5"><Linkedin className="w-3.5 h-3.5 text-[#0A66C2]" /> LinkedIn</Label>
+            <Input
+              type="url"
+              value={data.linkedin_url || ''}
+              onChange={e => onChange({ linkedin_url: e.target.value })}
+              placeholder="https://linkedin.com/in/yourprofile"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5"><Youtube className="w-3.5 h-3.5 text-[#FF0000]" /> YouTube</Label>
+            <Input
+              type="url"
+              value={data.youtube_url || ''}
+              onChange={e => onChange({ youtube_url: e.target.value })}
+              placeholder="https://youtube.com/@yourchannel"
+            />
+          </div>
+
         </div>
       </div>
 

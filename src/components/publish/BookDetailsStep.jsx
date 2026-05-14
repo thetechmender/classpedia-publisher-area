@@ -373,13 +373,33 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
 
         {/* Author */}
         <div className="mb-5">
-          <FieldLabel label="Author" required tooltip="The primary author's name as it will appear on the book" />
-          <Input
-            value={data.author_name || ''}
-            onChange={(e) => onChange({ author_name: e.target.value })}
-            placeholder="Author full name"
-            className={cn('bg-background', errors.author_name && 'border-destructive')}
-          />
+          <FieldLabel label="Author Name" required tooltip="The primary author's name as it will appear on the book" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Input
+                value={data.author_first_name || ''}
+                onChange={(e) => {
+                  const first = e.target.value;
+                  const last = data.author_last_name || '';
+                  onChange({ author_first_name: first, author_name: `${first} ${last}`.trim() });
+                }}
+                placeholder="First name"
+                className={cn('bg-background', errors.author_name && 'border-destructive')}
+              />
+            </div>
+            <div>
+              <Input
+                value={data.author_last_name || ''}
+                onChange={(e) => {
+                  const last = e.target.value;
+                  const first = data.author_first_name || '';
+                  onChange({ author_last_name: last, author_name: `${first} ${last}`.trim() });
+                }}
+                placeholder="Last name"
+                className={cn('bg-background', errors.author_name && 'border-destructive')}
+              />
+            </div>
+          </div>
           <ErrorMsg msg={errors.author_name} />
         </div>
 

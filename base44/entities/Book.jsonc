@@ -22,9 +22,17 @@
       "type": "string",
       "description": "Edition number"
     },
+    "author_first_name": {
+      "type": "string",
+      "description": "Author first name"
+    },
+    "author_last_name": {
+      "type": "string",
+      "description": "Author last name"
+    },
     "author_name": {
       "type": "string",
-      "description": "Primary author name"
+      "description": "Full author name (combined)"
     },
     "contributors": {
       "type": "array",
@@ -133,7 +141,7 @@
     },
     "classpedia_select": {
       "type": "boolean",
-      "description": "Enrolled in Classpedia Select program (60-day exclusive, up to 3 free-promo days)"
+      "description": "Enrolled in Classpedia Select program"
     },
     "royalty_plan": {
       "type": "string",
