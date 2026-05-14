@@ -6,21 +6,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ChevronRight, User, AlertCircle } from 'lucide-react';
 
 const COUNTRIES = [
-  'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France',
-  'India', 'Brazil', 'Spain', 'Italy', 'Netherlands', 'Sweden', 'Norway',
-  'Denmark', 'Finland', 'Switzerland', 'Austria', 'Belgium', 'Portugal',
-  'Ireland', 'New Zealand', 'Singapore', 'Japan', 'South Korea', 'Mexico',
-  'Argentina', 'Colombia', 'Chile', 'South Africa', 'Nigeria', 'Kenya',
-  'Egypt', 'Israel', 'Turkey', 'Poland', 'Czech Republic', 'Hungary',
-  'Romania', 'Ukraine', 'Russia', 'China', 'Indonesia', 'Malaysia',
-  'Philippines', 'Thailand', 'Vietnam', 'Pakistan', 'Bangladesh',
-];
+'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France',
+'India', 'Brazil', 'Spain', 'Italy', 'Netherlands', 'Sweden', 'Norway',
+'Denmark', 'Finland', 'Switzerland', 'Austria', 'Belgium', 'Portugal',
+'Ireland', 'New Zealand', 'Singapore', 'Japan', 'South Korea', 'Mexico',
+'Argentina', 'Colombia', 'Chile', 'South Africa', 'Nigeria', 'Kenya',
+'Egypt', 'Israel', 'Turkey', 'Poland', 'Czech Republic', 'Hungary',
+'Romania', 'Ukraine', 'Russia', 'China', 'Indonesia', 'Malaysia',
+'Philippines', 'Thailand', 'Vietnam', 'Pakistan', 'Bangladesh'];
 
-const FieldError = ({ msg }) => msg ? (
-  <p className="flex items-center gap-1 text-xs text-destructive mt-1">
+
+const FieldError = ({ msg }) => msg ?
+<p className="flex items-center gap-1 text-xs text-destructive mt-1">
     <AlertCircle className="w-3 h-3" /> {msg}
-  </p>
-) : null;
+  </p> :
+null;
 
 export default function AccountInfoStep({ data, onChange, errors, onNext }) {
   return (
@@ -47,20 +47,20 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
               <Label>First Name <span className="text-destructive">*</span></Label>
               <Input
                 value={data.first_name || ''}
-                onChange={e => onChange({ first_name: e.target.value })}
+                onChange={(e) => onChange({ first_name: e.target.value })}
                 placeholder="John"
-                className={errors.first_name ? 'border-destructive' : ''}
-              />
+                className={errors.first_name ? 'border-destructive' : ''} />
+              
               <FieldError msg={errors.first_name} />
             </div>
             <div className="space-y-1.5">
               <Label>Last Name <span className="text-destructive">*</span></Label>
               <Input
                 value={data.last_name || ''}
-                onChange={e => onChange({ last_name: e.target.value })}
+                onChange={(e) => onChange({ last_name: e.target.value })}
                 placeholder="Doe"
-                className={errors.last_name ? 'border-destructive' : ''}
-              />
+                className={errors.last_name ? 'border-destructive' : ''} />
+              
               <FieldError msg={errors.last_name} />
             </div>
           </div>
@@ -78,10 +78,10 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
             <Input
               type="email"
               value={data.email || ''}
-              onChange={e => onChange({ email: e.target.value })}
+              onChange={(e) => onChange({ email: e.target.value })}
               placeholder="john@example.com"
-              className={errors.email ? 'border-destructive' : ''}
-            />
+              className={errors.email ? 'border-destructive' : ''} />
+            
             <FieldError msg={errors.email} />
           </div>
           <div className="space-y-1.5">
@@ -89,9 +89,9 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
             <Input
               type="tel"
               value={data.phone || ''}
-              onChange={e => onChange({ phone: e.target.value })}
-              placeholder="+1 (555) 000-0000"
-            />
+              onChange={(e) => onChange({ phone: e.target.value })}
+              placeholder="+1 (555) 000-0000" />
+            
           </div>
         </div>
       </div>
@@ -107,52 +107,52 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
             <Label>Address Line 1</Label>
             <Input
               value={data.address_line1 || ''}
-              onChange={e => onChange({ address_line1: e.target.value })}
-              placeholder="Street address, P.O. box"
-            />
+              onChange={(e) => onChange({ address_line1: e.target.value })}
+              placeholder="Street address, P.O. box" />
+            
           </div>
           <div className="space-y-1.5">
-            <Label>Address Line 2</Label>
+            <Label className="hidden">Address Line 2</Label>
             <Input
               value={data.address_line2 || ''}
-              onChange={e => onChange({ address_line2: e.target.value })}
-              placeholder="Apt, suite, unit, floor, etc."
-            />
+              onChange={(e) => onChange({ address_line2: e.target.value })}
+              placeholder="Apt, suite, unit, floor, etc." className="hidden" />
+            
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label>City</Label>
               <Input
                 value={data.city || ''}
-                onChange={e => onChange({ city: e.target.value })}
-                placeholder="City"
-              />
+                onChange={(e) => onChange({ city: e.target.value })}
+                placeholder="City" />
+              
             </div>
             <div className="space-y-1.5">
               <Label>State / Province</Label>
               <Input
                 value={data.state || ''}
-                onChange={e => onChange({ state: e.target.value })}
-                placeholder="State / Province"
-              />
+                onChange={(e) => onChange({ state: e.target.value })}
+                placeholder="State / Province" />
+              
             </div>
             <div className="space-y-1.5">
               <Label>ZIP / Postal Code</Label>
               <Input
                 value={data.zip || ''}
-                onChange={e => onChange({ zip: e.target.value })}
-                placeholder="ZIP / Postal code"
-              />
+                onChange={(e) => onChange({ zip: e.target.value })}
+                placeholder="ZIP / Postal code" />
+              
             </div>
           </div>
           <div className="space-y-1.5">
             <Label>Country / Region <span className="text-destructive">*</span></Label>
-            <Select value={data.country || ''} onValueChange={v => onChange({ country: v })}>
+            <Select value={data.country || ''} onValueChange={(v) => onChange({ country: v })}>
               <SelectTrigger className={errors.country ? 'border-destructive' : ''}>
                 <SelectValue placeholder="Select your country" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
-                {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {COUNTRIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
             <FieldError msg={errors.country} />
@@ -165,6 +165,6 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
           Save & Continue <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
-    </div>
-  );
+    </div>);
+
 }
