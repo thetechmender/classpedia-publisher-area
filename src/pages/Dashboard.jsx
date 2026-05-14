@@ -28,21 +28,22 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sort, setSort] = useState('newest');
 
-  const { data: authorProfiles = [], isLoading: isLoadingProfile } = useQuery({
+  const { data: authorProfiles, isLoading: isLoadingProfile, isFetched: isProfileFetched } = useQuery({
     queryKey: ['author-profile'],
     queryFn: () => base44.entities.AuthorProfile.filter({ setup_complete: true }),
+    staleTime: 30_000,
   });
 
   useEffect(() => {
-    if (!isLoadingProfile && authorProfiles.length === 0) {
+    if (isProfileFetched && authorProfiles && authorProfiles.length === 0) {
       navigate('/account-setup');
     }
-  }, [isLoadingProfile, authorProfiles, navigate]);
+  }, [isProfileFetched, authorProfiles, navigate]);
 
   const { data: books = [], isLoading } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list('-created_date'),
-    enabled: authorProfiles.length > 0,
+    enabled: (authorProfiles?.length ?? 0) > 0,
   });
 
   const stats = useMemo(() => ({
