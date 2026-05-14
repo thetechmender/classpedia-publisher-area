@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import {
   ChevronLeft, ChevronRight, DollarSign, Globe, Info,
-  Percent, Star, FileText, AlertCircle
+  Percent, AlertCircle
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -17,10 +17,10 @@ const SELECT_MIN_PRICE_FREE = 1.99;   // minimum price after free promotion ends
 const SELECT_FREE_DAYS = 3;           // number of free days per enrollment period
 const SELECT_ENROLLMENT_DAYS = 60;    // enrollment window in days
 
-const ROYALTY_35_MIN = 0.99;
-const ROYALTY_35_MAX = 200.00;
-const ROYALTY_70_MIN = 2.99;
-const ROYALTY_70_MAX = 9.99;
+const AUTHOR_ROYALTY = 70;   // % paid to the author
+const PLATFORM_CUT   = 30;   // % kept by Classpedia
+const PRICE_MIN = 1.99;
+const PRICE_MAX = 199.99;
 // ─────────────────────────────────────────────────────────────────────────
 
 const Section = ({ title, children }) => (
@@ -42,19 +42,9 @@ const InfoBox = ({ children }) => (
 export default function PricingStep({ data, onChange, errors, onNext, onBack }) {
   const [selectExpanded, setSelectExpanded] = useState(false);
 
-  const royaltyPlan = data.royalty_plan || '70';
   const price = parseFloat(data.list_price) || 0;
-
-  // Delivery cost estimate (flat $0.07 for 70% plan, none for 35%)
-  const deliveryCost = royaltyPlan === '70' ? 0.07 : 0.00;
-  const royaltyRate35 = price * 0.35;
-  const royaltyRate70 = price > 0 ? Math.max(0, (price - deliveryCost) * 0.70) : 0;
-  const currentRoyalty = royaltyPlan === '70' ? royaltyRate70 : royaltyRate35;
-
-  // Price range hint
-  const priceRange = royaltyPlan === '70'
-    ? `$${ROYALTY_70_MIN.toFixed(2)}–$${ROYALTY_70_MAX.toFixed(2)}`
-    : `$${ROYALTY_35_MIN.toFixed(2)}–$${ROYALTY_35_MAX.toFixed(2)}`;
+  const authorEarning = price * (AUTHOR_ROYALTY / 100);
+  const priceRange = `$${PRICE_MIN.toFixed(2)}–$${PRICE_MAX.toFixed(2)}`;
 
   return (
     <div className="space-y-5">
@@ -167,36 +157,13 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
 
       {/* ── 3. Pricing, Royalty & Distribution ── */}
       <Section title="Pricing, Royalty & Distribution">
-        {/* Royalty Plan Toggle */}
-        <div className="mb-5">
-          <p className="text-sm text-muted-foreground mb-3">
-            Select a royalty plan and set your Classpedia eBook list price.
+        {/* Fixed royalty info */}
+        <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 mb-5">
+          <Percent className="w-4 h-4 text-primary shrink-0" />
+          <p className="text-sm text-foreground">
+            Authors earn <span className="font-semibold text-primary">{AUTHOR_ROYALTY}%</span> royalty on every sale.
+            Classpedia retains <span className="font-semibold">{PLATFORM_CUT}%</span> to cover platform, distribution, and support costs.
           </p>
-          <div className="flex items-center gap-4">
-            <label className={cn(
-              'flex items-center gap-2 rounded-lg border-2 px-4 py-2.5 cursor-pointer transition-all text-sm font-medium',
-              royaltyPlan === '35' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'
-            )}>
-              <RadioGroup value={royaltyPlan} onValueChange={(v) => onChange({ royalty_plan: v })}>
-                <RadioGroupItem value="35" />
-              </RadioGroup>
-              35%
-            </label>
-            <label className={cn(
-              'flex items-center gap-2 rounded-lg border-2 px-4 py-2.5 cursor-pointer transition-all text-sm font-medium',
-              royaltyPlan === '70' ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'
-            )}>
-              <RadioGroup value={royaltyPlan} onValueChange={(v) => onChange({ royalty_plan: v })}>
-                <RadioGroupItem value="70" />
-              </RadioGroup>
-              70%
-            </label>
-          </div>
-          {errors.royalty_plan && (
-            <p className="flex items-center gap-1 text-xs text-destructive mt-2">
-              <AlertCircle className="w-3 h-3" /> {errors.royalty_plan}
-            </p>
-          )}
         </div>
 
         <Separator className="mb-5" />
@@ -208,9 +175,8 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
               <tr className="text-xs text-muted-foreground border-b">
                 <th className="text-left pb-2 font-medium">Marketplace</th>
                 <th className="text-left pb-2 font-medium">List Price</th>
-                <th className="text-left pb-2 font-medium hidden sm:table-cell">Delivery</th>
                 <th className="text-left pb-2 font-medium hidden sm:table-cell">Rate</th>
-                <th className="text-left pb-2 font-medium">Royalty</th>
+                <th className="text-left pb-2 font-medium">Your Royalty</th>
               </tr>
             </thead>
             <tbody>
@@ -224,8 +190,8 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
                     <Input
                       type="number"
                       step="0.01"
-                      min={royaltyPlan === '70' ? ROYALTY_70_MIN : ROYALTY_35_MIN}
-                      max={royaltyPlan === '70' ? ROYALTY_70_MAX : ROYALTY_35_MAX}
+                      min={PRICE_MIN}
+                      max={PRICE_MAX}
                       value={data.list_price || ''}
                       onChange={(e) => onChange({ list_price: e.target.value ? parseFloat(e.target.value) : '' })}
                       placeholder="0.00"
@@ -242,19 +208,13 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
                     </p>
                   )}
                 </td>
-                <td className="py-3 pr-4 text-muted-foreground hidden sm:table-cell">
-                  {royaltyPlan === '70' ? `$${deliveryCost.toFixed(2)}` : '—'}
-                </td>
                 <td className="py-3 pr-4 hidden sm:table-cell">
-                  <span className={cn(
-                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
-                    royaltyPlan === '70' ? 'bg-primary/10 text-primary' : 'bg-secondary text-secondary-foreground'
-                  )}>
-                    {royaltyPlan}%
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                    {AUTHOR_ROYALTY}%
                   </span>
                 </td>
                 <td className="py-3 font-semibold text-foreground">
-                  {price > 0 ? `$${currentRoyalty.toFixed(2)}` : '—'}
+                  {price > 0 ? `$${authorEarning.toFixed(2)}` : '—'}
                 </td>
               </tr>
             </tbody>
@@ -269,27 +229,14 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
               <p className="text-base font-semibold mt-0.5">${price.toFixed(2)}</p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-muted-foreground">Royalty Rate</p>
-              <p className="text-base font-semibold mt-0.5">{royaltyPlan}%</p>
+              <p className="text-xs text-muted-foreground">Your Royalty ({AUTHOR_ROYALTY}%)</p>
+              <p className="text-base font-semibold mt-0.5 text-primary">${authorEarning.toFixed(2)}</p>
             </div>
-            {royaltyPlan === '70' && (
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground">Delivery Cost</p>
-                <p className="text-base font-semibold mt-0.5">-${deliveryCost.toFixed(2)}</p>
-              </div>
-            )}
             <div className="text-center">
-              <p className="text-xs text-muted-foreground">Your Earning / Sale</p>
-              <p className="text-base font-semibold mt-0.5 text-primary">${currentRoyalty.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">Classpedia Fee ({PLATFORM_CUT}%)</p>
+              <p className="text-base font-semibold mt-0.5">${(price - authorEarning).toFixed(2)}</p>
             </div>
           </div>
-        )}
-
-        {royaltyPlan === '70' && (
-          <InfoBox>
-            The 70% royalty plan requires a list price between ${ROYALTY_70_MIN.toFixed(2)} and ${ROYALTY_70_MAX.toFixed(2)}.
-            A small delivery cost of ${deliveryCost.toFixed(2)} is deducted per sale. All marketplaces are based on this price.
-          </InfoBox>
         )}
       </Section>
 
