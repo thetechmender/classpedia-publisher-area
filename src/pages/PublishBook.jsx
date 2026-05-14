@@ -14,8 +14,8 @@ const validateStep1 = (data) => {
   const errors = {};
   if (!data.title?.trim()) errors.title = 'Book title is required';
   if (!data.author_name?.trim()) errors.author_name = 'Author name is required';
-  if (!data.description?.trim()) errors.description = 'Description is required';else
-  if (data.description.length > 4000) errors.description = 'Description must be under 4,000 characters';
+  if (!data.description?.trim()) errors.description = 'Description is required';
+  else if (data.description.length > 4000) errors.description = 'Description must be under 4,000 characters';
   if (!data.language) errors.language = 'Please select a language';
   if (data.preorder_type === 'preorder' && !data.preorder_date) {
     errors.preorder_date = 'Please set a pre-order release date';
@@ -71,14 +71,14 @@ export default function PublishBook() {
     age_range: 'not_specified',
     keywords: [],
     categories: [],
-    contributors: []
+    contributors: [],
   });
 
   const updateData = useCallback((updates) => {
-    setBookData((prev) => ({ ...prev, ...updates }));
+    setBookData(prev => ({ ...prev, ...updates }));
     // Clear related errors
     const clearedErrors = { ...errors };
-    Object.keys(updates).forEach((key) => delete clearedErrors[key]);
+    Object.keys(updates).forEach(key => delete clearedErrors[key]);
     setErrors(clearedErrors);
   }, [errors]);
 
@@ -95,7 +95,7 @@ export default function PublishBook() {
       return;
     }
     setErrors({});
-    setCompletedSteps((prev) => [...new Set([...prev, currentStep])]);
+    setCompletedSteps(prev => [...new Set([...prev, currentStep])]);
     goToStep(nextStep);
   };
 
@@ -124,14 +124,14 @@ export default function PublishBook() {
               <BookOpen className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold">Publish  Your Book</h1>
+              <h1 className="text-lg font-semibold">Create New eBook</h1>
               <p className="text-xs text-muted-foreground">Classpedia Publishing</p>
             </div>
           </div>
           <Link
             to="/"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
             <ChevronLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
@@ -142,44 +142,44 @@ export default function PublishBook() {
         <StepIndicator currentStep={currentStep} completedSteps={completedSteps} />
 
         <div className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm">
-          {currentStep === 1 &&
-          <BookDetailsStep
-            data={bookData}
-            onChange={updateData}
-            errors={errors}
-            onNext={() => handleNext(validateStep1, 2)} />
-
-          }
-          {currentStep === 2 &&
-          <ContentStep
-            data={bookData}
-            onChange={updateData}
-            errors={errors}
-            onNext={() => handleNext(validateStep2, 3)}
-            onBack={() => goToStep(1)} />
-
-          }
-          {currentStep === 3 &&
-          <PricingStep
-            data={bookData}
-            onChange={updateData}
-            errors={errors}
-            onNext={() => handleNext(validateStep3, 4)}
-            onBack={() => goToStep(2)} />
-
-          }
-          {currentStep === 4 &&
-          <ReviewStep
-            data={bookData}
-            onBack={() => goToStep(3)}
-            onPublish={handlePublish}
-            onEdit={goToStep}
-            publishing={publishing}
-            validationErrors={validateAll(bookData)} />
-
-          }
+          {currentStep === 1 && (
+            <BookDetailsStep
+              data={bookData}
+              onChange={updateData}
+              errors={errors}
+              onNext={() => handleNext(validateStep1, 2)}
+            />
+          )}
+          {currentStep === 2 && (
+            <ContentStep
+              data={bookData}
+              onChange={updateData}
+              errors={errors}
+              onNext={() => handleNext(validateStep2, 3)}
+              onBack={() => goToStep(1)}
+            />
+          )}
+          {currentStep === 3 && (
+            <PricingStep
+              data={bookData}
+              onChange={updateData}
+              errors={errors}
+              onNext={() => handleNext(validateStep3, 4)}
+              onBack={() => goToStep(2)}
+            />
+          )}
+          {currentStep === 4 && (
+            <ReviewStep
+              data={bookData}
+              onBack={() => goToStep(3)}
+              onPublish={handlePublish}
+              onEdit={goToStep}
+              publishing={publishing}
+              validationErrors={validateAll(bookData)}
+            />
+          )}
         </div>
       </div>
-    </div>);
-
+    </div>
+  );
 }
