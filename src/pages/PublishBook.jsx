@@ -15,8 +15,6 @@ const validateStep1 = (data) => {
   if (!data.title?.trim()) errors.title = 'Book title is required';
   if (!data.author_name?.trim()) errors.author_name = 'Author name is required';
   if (!data.description?.trim()) errors.description = 'Description is required';
-  else if (data.description.length < 4000) errors.description = `Description must be at least 4,000 characters (currently ${data.description.length})`;
-  else if (data.description.length > 4000) errors.description = 'Description must be under 4,000 characters';
   if (!data.language) errors.language = 'Please select a language';
   if (data.preorder_type === 'preorder' && !data.preorder_date) {
     errors.preorder_date = 'Please set a pre-order release date';
@@ -109,7 +107,14 @@ export default function PublishBook() {
       }
     }
     setPublishing(true);
-    await base44.entities.Book.create({ ...bookData, status });
+    const payload = { ...bookData, status };
+    // Ensure series_number is a number or removed entirely
+    if (payload.series_number === '' || payload.series_number === null || isNaN(payload.series_number)) {
+      delete payload.series_number;
+    } else {
+      payload.series_number = Number(payload.series_number);
+    }
+    await base44.entities.Book.create(payload);
     setPublishing(false);
     toast.success(status === 'draft' ? 'Draft saved successfully!' : 'eBook submitted for publishing!');
     navigate('/');

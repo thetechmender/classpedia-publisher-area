@@ -434,28 +434,14 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             onChange={(e) => onChange({ description: e.target.value })}
             placeholder="Write a compelling book description that hooks readers… (minimum 4,000 characters required)"
             className={cn('min-h-[200px] bg-background resize-none', errors.description && 'border-destructive')}
-            maxLength={4000}
+            maxLength={4000000}
           />
           <div className="flex justify-between items-start mt-1.5 gap-2">
             <div className="flex-1">
               <ErrorMsg msg={errors.description} />
-              {(data.description || '').length < 4000 && !errors.description && (
-                <p className="text-xs text-muted-foreground">
-                  {4000 - (data.description || '').length} more characters needed to reach the 4,000 character minimum.
-                </p>
-              )}
-              {(data.description || '').length >= 4000 && (
-                <p className="text-xs text-green-600 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Minimum length reached
-                </p>
-              )}
             </div>
-            <span className={cn(
-              'text-xs shrink-0 font-medium',
-              (data.description || '').length >= 4000 ? 'text-green-600' :
-              (data.description || '').length > 3800 ? 'text-amber-500' : 'text-muted-foreground'
-            )}>
-              {(data.description || '').length.toLocaleString()} / 4,000
+            <span className="text-xs shrink-0 font-medium text-muted-foreground">
+              {(data.description || '').length.toLocaleString()} chars
             </span>
           </div>
         </div>
