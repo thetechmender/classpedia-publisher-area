@@ -2,20 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { LayoutDashboard, BookOpen, CreditCard, User, Menu, X } from 'lucide-react';
+import {
+  LayoutDashboard, BookOpen, CreditCard, User,
+  TrendingUp, HelpCircle, Star, BarChart3, FileText
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import Sidebar from '@/components/dashboard/Sidebar';
+import TopBar from '@/components/dashboard/TopBar';
 import OverviewTab from '@/components/dashboard/OverviewTab';
 import BooksTab from '@/components/dashboard/BooksTab';
 import PaymentsTab from '@/components/dashboard/PaymentsTab';
 import AuthorProfileTab from '@/components/dashboard/AuthorProfileTab';
 
+// Map extended nav IDs to the actual tab components
+const TAB_ALIAS = {
+  royalties: 'payments',
+  tax:       'payments',
+  reviews:   'books',
+  analytics: 'payments',
+  support:   'overview',
+};
+
 const MOBILE_NAV = [
-  { id: 'overview', label: 'Overview',  icon: LayoutDashboard },
-  { id: 'books',    label: 'Books',     icon: BookOpen },
-  { id: 'payments', label: 'Payments',  icon: CreditCard },
-  { id: 'profile',  label: 'Profile',   icon: User },
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'books',    label: 'Books',    icon: BookOpen },
+  { id: 'payments', label: 'Payments', icon: CreditCard },
+  { id: 'profile',  label: 'Profile',  icon: User },
 ];
 
 export default function Dashboard() {
@@ -43,7 +56,13 @@ export default function Dashboard() {
     enabled: (authorProfiles?.length ?? 0) > 0,
   });
 
-  // Show loading while we confirm auth / profile
+  const handleTabChange = (tab) => {
+    setActiveTab(TAB_ALIAS[tab] || tab);
+  };
+
+  // Resolved tab for rendering
+  const resolvedTab = TAB_ALIAS[activeTab] || activeTab;
+
   if (!isProfileFetched) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background">
@@ -55,10 +74,14 @@ export default function Dashboard() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar — desktop */}
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} authorProfile={authorProfile} />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
+
+        {/* Desktop top bar */}
+        <TopBar authorProfile={authorProfile} books={books} />
+
         {/* Mobile top bar */}
         <div className="md:hidden border-b bg-card/80 backdrop-blur-sm sticky top-0 z-30 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -71,17 +94,17 @@ export default function Dashboard() {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 p-6 md:p-8 max-w-5xl w-full mx-auto">
-          {activeTab === 'overview' && (
-            <OverviewTab books={books} authorProfile={authorProfile} onTabChange={setActiveTab} />
+        <main className="flex-1 p-6 md:p-8 max-w-6xl w-full mx-auto pb-24 md:pb-8">
+          {resolvedTab === 'overview' && (
+            <OverviewTab books={books} authorProfile={authorProfile} onTabChange={handleTabChange} />
           )}
-          {activeTab === 'books' && (
+          {resolvedTab === 'books' && (
             <BooksTab books={books} isLoading={isBooksLoading} />
           )}
-          {activeTab === 'payments' && (
+          {resolvedTab === 'payments' && (
             <PaymentsTab books={books} authorProfile={authorProfile} />
           )}
-          {activeTab === 'profile' && (
+          {resolvedTab === 'profile' && (
             <AuthorProfileTab
               authorProfile={authorProfile}
               onProfileUpdated={() => queryClient.invalidateQueries({ queryKey: ['author-profile'] })}
@@ -94,10 +117,10 @@ export default function Dashboard() {
           {MOBILE_NAV.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => setActiveTab(id)}
+              onClick={() => handleTabChange(id)}
               className={cn(
                 'flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors',
-                activeTab === id ? 'text-primary' : 'text-muted-foreground'
+                (TAB_ALIAS[activeTab] || activeTab) === id ? 'text-primary' : 'text-muted-foreground'
               )}
             >
               <Icon className="w-5 h-5" />
