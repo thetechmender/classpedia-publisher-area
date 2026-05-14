@@ -82,7 +82,11 @@ function SeriesDetails({ data, onChange }) {
   const seriesBooks = data.series_books || [];
 
   const handleBookNumberChange = (val) => {
-    const n = parseInt(val) || '';
+    const n = parseInt(val);
+    if (!val || isNaN(n)) {
+      onChange({ series_number: null, series_books: [] });
+      return;
+    }
     // Resize seriesBooks array to n-1 entries (all books that come before this one)
     if (n > 1) {
       const needed = n - 1;
@@ -110,7 +114,7 @@ function SeriesDetails({ data, onChange }) {
         <Input
           type="number"
           min="1"
-          value={data.series_number || ''}
+          value={data.series_number ?? ''}
           onChange={(e) => handleBookNumberChange(e.target.value)}
           placeholder="e.g. 3"
           className="bg-background max-w-[120px]"
