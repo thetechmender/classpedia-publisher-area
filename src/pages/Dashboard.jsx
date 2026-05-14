@@ -13,14 +13,13 @@ import OverviewTab from '@/components/dashboard/OverviewTab';
 import BooksTab from '@/components/dashboard/BooksTab';
 import PaymentsTab from '@/components/dashboard/PaymentsTab';
 import AuthorProfileTab from '@/components/dashboard/AuthorProfileTab';
+import ReviewsTab from '@/components/dashboard/ReviewsTab';
+import RoyaltiesTab from '@/components/dashboard/RoyaltiesTab';
+import AnalyticsTab from '@/components/dashboard/AnalyticsTab';
+import TaxTab from '@/components/dashboard/TaxTab';
+import SupportTab from '@/components/dashboard/SupportTab';
 
-const TAB_ALIAS = {
-  royalties: 'payments',
-  tax:       'payments',
-  reviews:   'books',
-  analytics: 'payments',
-  support:   'overview',
-};
+const TAB_ALIAS = {};
 
 const MOBILE_NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -116,21 +115,15 @@ export default function Dashboard() {
 
         {/* Page content */}
         <main className="flex-1 p-5 md:p-8 max-w-6xl w-full mx-auto pb-24 md:pb-8">
-          {resolvedTab === 'overview' && (
-            <OverviewTab books={books} authorProfile={authorProfile} onTabChange={handleTabChange} />
-          )}
-          {resolvedTab === 'books' && (
-            <BooksTab books={books} isLoading={isBooksLoading} />
-          )}
-          {resolvedTab === 'payments' && (
-            <PaymentsTab books={books} authorProfile={authorProfile} />
-          )}
-          {resolvedTab === 'profile' && (
-            <AuthorProfileTab
-              authorProfile={authorProfile}
-              onProfileUpdated={() => queryClient.invalidateQueries({ queryKey: ['author-profile'] })}
-            />
-          )}
+          {resolvedTab === 'overview'  && <OverviewTab books={books} authorProfile={authorProfile} onTabChange={handleTabChange} />}
+          {resolvedTab === 'books'     && <BooksTab books={books} isLoading={isBooksLoading} />}
+          {resolvedTab === 'reviews'   && <ReviewsTab books={books} />}
+          {resolvedTab === 'royalties' && <RoyaltiesTab books={books} />}
+          {resolvedTab === 'payments'  && <PaymentsTab books={books} authorProfile={authorProfile} />}
+          {resolvedTab === 'analytics' && <AnalyticsTab books={books} />}
+          {resolvedTab === 'profile'   && <AuthorProfileTab authorProfile={authorProfile} onProfileUpdated={() => queryClient.invalidateQueries({ queryKey: ['author-profile'] })} />}
+          {resolvedTab === 'tax'       && <TaxTab authorProfile={authorProfile} />}
+          {resolvedTab === 'support'   && <SupportTab />}
         </main>
 
         {/* Mobile bottom nav */}
