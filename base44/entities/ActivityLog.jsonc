@@ -1,0 +1,53 @@
+{
+  "name": "ActivityLog",
+  "type": "object",
+  "properties": {
+    "entity_type": {
+      "type": "string",
+      "description": "Type of entity (e.g., 'Book', 'Review', 'Issue')"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID of the affected entity"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "create",
+        "update",
+        "delete",
+        "status_change",
+        "comment"
+      ],
+      "description": "Type of action performed"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of user who performed action"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Name of user who performed action"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the action"
+    },
+    "changes": {
+      "type": "object",
+      "description": "Object with old and new values for changed fields",
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Additional context about the action"
+    }
+  },
+  "required": [
+    "entity_type",
+    "entity_id",
+    "action",
+    "description"
+  ]
+}

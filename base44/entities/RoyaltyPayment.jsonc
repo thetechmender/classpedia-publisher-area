@@ -1,0 +1,103 @@
+{
+  "name": "RoyaltyPayment",
+  "type": "object",
+  "properties": {
+    "payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date payment was issued"
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date",
+      "description": "Start of royalty period"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date",
+      "description": "End of royalty period"
+    },
+    "total_sales": {
+      "type": "number",
+      "default": 0,
+      "description": "Total copies sold in period"
+    },
+    "gross_revenue": {
+      "type": "number",
+      "description": "Total revenue before platform fee"
+    },
+    "platform_fee": {
+      "type": "number",
+      "description": "Platform commission amount"
+    },
+    "net_royalty": {
+      "type": "number",
+      "description": "Author earnings after fees"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "bank_transfer",
+        "paypal"
+      ],
+      "description": "How payment was sent"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "paid",
+        "failed"
+      ],
+      "default": "pending",
+      "description": "Current payment status"
+    },
+    "transaction_id": {
+      "type": "string",
+      "description": "External payment transaction ID"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date payment was completed"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional payment notes"
+    },
+    "books_breakdown": {
+      "type": "array",
+      "description": "Per-book royalty breakdown",
+      "items": {
+        "type": "object",
+        "properties": {
+          "book_id": {
+            "type": "string"
+          },
+          "book_title": {
+            "type": "string"
+          },
+          "sales": {
+            "type": "number"
+          },
+          "revenue": {
+            "type": "number"
+          },
+          "royalty": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "payment_date",
+    "period_start",
+    "period_end",
+    "gross_revenue",
+    "platform_fee",
+    "net_royalty",
+    "payment_status"
+  ]
+}

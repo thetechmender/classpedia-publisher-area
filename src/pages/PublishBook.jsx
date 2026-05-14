@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import StepIndicator from '@/components/publish/StepIndicator';
 import BookDetailsStep from '@/components/publish/BookDetailsStep';
 import ContentStep from '@/components/publish/ContentStep';
@@ -9,7 +10,7 @@ import PricingStep from '@/components/publish/PricingStep';
 import ReviewStep from '@/components/publish/ReviewStep';
 import {
   BookOpen, ChevronLeft, CheckCircle2, Upload, DollarSign, Eye,
-  FileText, Image, Tag, Clock
+  FileText, Image, Tag, Clock, Save
 } from 'lucide-react';
 
 const validateStep1 = (data) => {
@@ -67,6 +68,7 @@ const STEP_INFO = [
 
 export default function PublishBook() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [errors, setErrors] = useState({});
@@ -81,6 +83,8 @@ export default function PublishBook() {
     categories: [],
     contributors: [],
   });
+  const [lastSaved, setLastSaved] = useState(null);
+  const saveTimeoutRef = useRef(null);
 
   const updateData = useCallback((updates) => {
     setBookData(prev => ({ ...prev, ...updates }));
@@ -88,6 +92,39 @@ export default function PublishBook() {
     Object.keys(updates).forEach(key => delete clearedErrors[key]);
     setErrors(clearedErrors);
   }, [errors]);
+
+  // Auto-save draft every 30 seconds
+  const saveDraftMutation = useMutation({
+    mutationFn: async (data) => {
+      const existing = await base44.entities.Book.filter({ title: data.title, status: 'draft' });
+      if (existing && existing.length > 0) {
+        return await base44.entities.Book.update(existing[0].id, data);
+      }
+      return await base44.entities.Book.create({ ...data, status: 'draft' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      setLastSaved(new Date());
+      toast.success('Draft auto-saved');
+    },
+  });
+
+  useEffect(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      if (bookData.title && bookData.description && !publishing) {
+        saveDraftMutation.mutate(bookData);
+      }
+    }, 30000); // Auto-save after 30 seconds of inactivity
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [bookData, publishing]);
 
   const goToStep = (step) => {
     setCurrentStep(step);
@@ -157,7 +194,14 @@ export default function PublishBook() {
 
           {/* Publish header */}
           <div className="px-6 py-5 border-b">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">New Publication</p>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">New Publication</p>
+              {lastSaved && (
+                <p className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
+            </div>
             <h2 className="text-base font-semibold">Publish Your eBook</h2>
             <p className="text-xs text-muted-foreground mt-1">Complete all 4 steps to submit for review</p>
             {/* Progress bar */}

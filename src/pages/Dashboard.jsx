@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  LayoutDashboard, BookOpen, CreditCard, User, Menu, X
+  LayoutDashboard, BookOpen, CreditCard, User, Menu, X, Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import Sidebar from '@/components/dashboard/Sidebar';
 import TopBar from '@/components/dashboard/TopBar';
+import SearchTrigger from '@/components/SearchTrigger';
 import OverviewTab from '@/components/dashboard/OverviewTab';
 import BooksTab from '@/components/dashboard/BooksTab';
 import PaymentsTab from '@/components/dashboard/PaymentsTab';
@@ -97,7 +98,20 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col min-w-0 relative">
 
         {/* Desktop top bar */}
-        <TopBar authorProfile={authorProfile} books={books} />
+        <div className="border-b bg-card/90 backdrop-blur-sm sticky top-0 z-30 px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+              <BookOpen className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold leading-none">Classpedia</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Publishing Platform</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <SearchTrigger />
+          </div>
+        </div>
 
         {/* Mobile top bar */}
         <div className="md:hidden border-b bg-card/90 backdrop-blur-sm sticky top-0 z-30 px-4 py-3 flex items-center justify-between">

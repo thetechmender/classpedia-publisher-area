@@ -4,13 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { base44 } from '@/api/base44Client';
 import {
   Plus, Search, BookOpen, ArrowUpDown, CheckCircle2, Clock,
-  FileEdit, XCircle, ChevronRight, DollarSign, Calendar, Filter
+  FileEdit, XCircle, ChevronRight, DollarSign, Calendar, Filter, Trash2, Archive, Eye, EyeOff
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDate } from '@/utils/date';
 
 const SORT_OPTIONS = [
   { value: 'newest',     label: 'Newest first' },
@@ -43,6 +46,8 @@ export default function BooksTab({ books, isLoading }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sort, setSort] = useState('newest');
+  const [selectedBooks, setSelectedBooks] = useState(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
 
   const stats = useMemo(() => ({
     total:      books.length,
@@ -68,6 +73,58 @@ export default function BooksTab({ books, isLoading }) {
     }
     return result;
   }, [books, search, statusFilter, sort]);
+
+  const toggleSelect = (bookId) => {
+    const newSelected = new Set(selectedBooks);
+    if (newSelected.has(bookId)) {
+      newSelected.delete(bookId);
+    } else {
+      newSelected.add(bookId);
+    }
+    setSelectedBooks(newSelected);
+    setShowBulkActions(newSelected.size > 0);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedBooks.size === filteredBooks.length) {
+      setSelectedBooks(new Set());
+      setShowBulkActions(false);
+    } else {
+      setSelectedBooks(new Set(filteredBooks.map(b => b.id)));
+      setShowBulkActions(true);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Delete ${selectedBooks.size} selected books? This cannot be undone.`)) return;
+    try {
+      for (const bookId of selectedBooks) {
+        await base44.entities.Book.delete(bookId);
+      }
+      toast.success(`Deleted ${selectedBooks.size} book${selectedBooks.size > 1 ? 's' : ''}`);
+      setSelectedBooks(new Set());
+      setShowBulkActions(false);
+    } catch {
+      toast.error('Failed to delete books');
+    }
+  };
+
+  const handleBulkUnpublish = async () => {
+    if (!confirm(`Unpublish ${selectedBooks.size} selected books?`)) return;
+    try {
+      for (const bookId of selectedBooks) {
+        const book = books.find(b => b.id === bookId);
+        if (book?.status === 'published') {
+          await base44.entities.Book.update(bookId, { status: 'unpublished' });
+        }
+      }
+      toast.success(`Unpublished ${selectedBooks.size} book${selectedBooks.size > 1 ? 's' : ''}`);
+      setSelectedBooks(new Set());
+      setShowBulkActions(false);
+    } catch {
+      toast.error('Failed to unpublish books');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -104,30 +161,32 @@ export default function BooksTab({ books, isLoading }) {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search books…" className="pl-9" />
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {STATUS_FILTERS.map(s => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
-                statusFilter === s
-                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                  : 'bg-card text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
-              )}
-            >
-              {s === 'all' ? `All (${stats.total})` :
-               s === 'published' ? `Published (${stats.published})` :
-               s === 'in_review' ? `In Review (${stats.in_review})` :
-               s === 'draft' ? `Drafts (${stats.draft})` :
-               `Unpublished (${stats.unpublished})`}
-            </button>
-          ))}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center flex-1">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search books…" className="pl-9" />
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {STATUS_FILTERS.map(s => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
+                  statusFilter === s
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                    : 'bg-card text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
+                )}
+              >
+                {s === 'all' ? `All (${stats.total})` :
+                 s === 'published' ? `Published (${stats.published})` :
+                 s === 'in_review' ? `In Review (${stats.in_review})` :
+                 s === 'draft' ? `Drafts (${stats.draft})` :
+                 `Unpublished (${stats.unpublished})`}
+              </button>
+            ))}
+          </div>
         </div>
         <Select value={sort} onValueChange={setSort}>
           <SelectTrigger className="w-40 gap-2 shrink-0">
@@ -139,6 +198,31 @@ export default function BooksTab({ books, isLoading }) {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Bulk Actions Toolbar */}
+      {showBulkActions && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={selectedBooks.size === filteredBooks.length && filteredBooks.length > 0}
+              onCheckedChange={toggleSelectAll}
+              className="shrink-0"
+            />
+            <p className="text-sm font-medium text-primary">{selectedBooks.size} selected</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={handleBulkUnpublish} className="text-xs gap-1.5">
+              <EyeOff className="w-3.5 h-3.5" /> Unpublish
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleBulkDelete} className="text-xs gap-1.5 text-destructive hover:text-destructive">
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => { setSelectedBooks(new Set()); setShowBulkActions(false); }} className="text-xs">
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Book List */}
       {isLoading ? (
@@ -173,7 +257,14 @@ export default function BooksTab({ books, isLoading }) {
         <div className="bg-card border rounded-2xl overflow-hidden">
           {/* Table header */}
           <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 border-b bg-secondary/30">
-            <span className="col-span-5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Book</span>
+            <div className="col-span-1 flex items-center">
+              <Checkbox
+                checked={selectedBooks.size === filteredBooks.length && filteredBooks.length > 0}
+                onCheckedChange={toggleSelectAll}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+            <span className="col-span-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Book</span>
             <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</span>
             <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Price</span>
             <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Royalty/Sale</span>
@@ -186,11 +277,18 @@ export default function BooksTab({ books, isLoading }) {
               return (
                 <div
                   key={book.id}
-                  className="flex md:grid md:grid-cols-12 gap-3 px-5 py-4 items-center hover:bg-secondary/20 transition-colors cursor-pointer"
+                  className="flex md:grid md:grid-cols-12 gap-3 px-5 py-4 items-center hover:bg-secondary/20 transition-colors cursor-pointer group"
                   onClick={() => navigate(`/book/${book.id}`)}
                 >
+                  {/* Checkbox */}
+                  <div className="col-span-1 flex items-center md:flex hidden" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedBooks.has(book.id)}
+                      onCheckedChange={() => toggleSelect(book.id)}
+                    />
+                  </div>
                   {/* Book */}
-                  <div className="col-span-5 flex items-center gap-3 flex-1 min-w-0">
+                  <div className="col-span-4 flex items-center gap-3 flex-1 min-w-0">
                     {book.cover_url
                       ? <img src={book.cover_url} alt={book.title} className="w-10 h-14 object-cover rounded-lg shadow-sm shrink-0" />
                       : <div className="w-10 h-14 bg-secondary rounded-lg flex items-center justify-center shrink-0">
@@ -202,7 +300,7 @@ export default function BooksTab({ books, isLoading }) {
                       <p className="text-xs text-muted-foreground truncate">by {book.author_name}</p>
                       <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        {format(new Date(book.created_date), 'MMM d, yyyy')}
+                        {formatDate(book.created_date)}
                       </p>
                     </div>
                   </div>
@@ -224,7 +322,7 @@ export default function BooksTab({ books, isLoading }) {
                   </div>
                   {/* Action */}
                   <div className="col-span-1 flex justify-end">
-                    <span className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline">
+                    <span className="text-xs text-primary font-medium flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       {book.status === 'draft' ? 'Continue' : 'View'}
                       <ChevronRight className="w-3.5 h-3.5" />
                     </span>

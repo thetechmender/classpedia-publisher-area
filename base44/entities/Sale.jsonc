@@ -1,0 +1,68 @@
+{
+  "name": "Sale",
+  "type": "object",
+  "properties": {
+    "book_id": {
+      "type": "string",
+      "description": "ID of the book sold"
+    },
+    "book_title": {
+      "type": "string",
+      "description": "Title of the book (denormalized)"
+    },
+    "sale_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date and time of the sale"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1,
+      "description": "Number of copies sold"
+    },
+    "unit_price": {
+      "type": "number",
+      "description": "Price per copy at time of sale"
+    },
+    "royalty_rate": {
+      "type": "number",
+      "description": "Royalty percentage (e.g., 70 for 70%)"
+    },
+    "royalty_amount": {
+      "type": "number",
+      "description": "Author earnings from this sale"
+    },
+    "marketplace": {
+      "type": "string",
+      "description": "Where the sale occurred (e.g., classpedia.ai, amazon)"
+    },
+    "customer_country": {
+      "type": "string",
+      "description": "Country of the customer"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD",
+      "description": "Currency of the transaction"
+    },
+    "refunded": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this sale was refunded"
+    },
+    "refund_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of refund if applicable"
+    }
+  },
+  "required": [
+    "book_id",
+    "book_title",
+    "sale_date",
+    "quantity",
+    "unit_price",
+    "royalty_rate",
+    "royalty_amount"
+  ]
+}

@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Star, MessageSquare, AlertCircle, CheckCircle, Clock, Filter, Search, Flag, Eye, EyeOff, Reply, Archive, TrendingUp, TrendingDown } from 'lucide-react';
+import { Star, MessageSquare, AlertCircle, CheckCircle, Clock, Filter, Search, Flag, Eye, EyeOff, Reply, Archive, TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatDate } from '@/utils/date';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -157,6 +158,8 @@ export default function ReviewsTab() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [severityFilter, setSeverityFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const queryClient = useQueryClient();
 
@@ -208,7 +211,7 @@ export default function ReviewsTab() {
   });
 
   const filteredReviews = useMemo(() => {
-    return reviews
+    const filtered = reviews
       .filter((review) => {
         const matchesSearch =
           searchQuery === '' ||
@@ -231,7 +234,22 @@ export default function ReviewsTab() {
         if (sortBy === 'lowest') return a.rating - b.rating;
         return 0;
       });
-  }, [reviews, searchQuery, ratingFilter, statusFilter, sortBy]);
+
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [reviews, searchQuery, ratingFilter, statusFilter, sortBy, currentPage]);
+
+  const totalPages = Math.ceil(
+    reviews.filter((review) => {
+      const matchesSearch = searchQuery === '' ||
+        review.book_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        review.reviewer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        review.comment?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRating = ratingFilter === 'all' || review.rating === parseInt(ratingFilter);
+      const matchesStatus = statusFilter === 'all' || review.status === statusFilter;
+      return matchesSearch && matchesRating && matchesStatus;
+    }).length / ITEMS_PER_PAGE
+  );
 
   const filteredIssues = useMemo(() => {
     return issues
@@ -524,7 +542,7 @@ export default function ReviewsTab() {
                             <div>
                               <p className="text-sm font-medium">{review.reviewer_name || 'Anonymous'}</p>
                               <p className="text-xs text-muted-foreground">
-                                {review.book_title} · {new Date(review.created_date).toLocaleDateString()}
+                                {review.book_title} · {formatDate(review.created_date)}
                               </p>
                             </div>
                             <Badge
@@ -555,6 +573,60 @@ export default function ReviewsTab() {
                 </div>
               )}
             </CardContent>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 pb-4 mt-2">
+                <p className="text-xs text-muted-foreground">
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredReviews.length)} of {totalPages * ITEMS_PER_PAGE} reviews
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="h-7 text-xs"
+                  >
+                    <ChevronLeft className="w-3 h-3 mr-1" /> Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`h-7 w-7 p-0 text-xs ${currentPage === pageNum ? 'bg-primary text-primary-foreground' : ''}`}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-7 text-xs"
+                  >
+                    Next <ChevronRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </Card>
         </TabsContent>
 
@@ -638,7 +710,7 @@ export default function ReviewsTab() {
                             <div>
                               <p className="text-sm font-medium">{issue.title}</p>
                               <p className="text-xs text-muted-foreground">
-                                {issue.book_title} · Reported {new Date(issue.created_date).toLocaleDateString()}
+                                {issue.book_title} · Reported {formatDate(issue.created_date)}
                               </p>
                             </div>
                             <Badge
