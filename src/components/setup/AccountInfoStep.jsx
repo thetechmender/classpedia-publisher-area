@@ -112,11 +112,11 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
             
           </div>
           <div className="space-y-1.5">
-            <Label className="hidden">Address Line 2</Label>
-            <Input
-              value={data.address_line2 || ''}
-              onChange={(e) => onChange({ address_line2: e.target.value })}
-              placeholder="Apt, suite, unit, floor, etc." className="hidden" />
+            
+            
+
+
+            
             
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
