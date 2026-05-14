@@ -7,7 +7,8 @@ import BookDetailsStep from '@/components/publish/BookDetailsStep';
 import ContentStep from '@/components/publish/ContentStep';
 import PricingStep from '@/components/publish/PricingStep';
 import ReviewStep from '@/components/publish/ReviewStep';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, ChevronLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const validateStep1 = (data) => {
   const errors = {};
@@ -117,14 +118,23 @@ export default function PublishBook() {
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
       <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <BookOpen className="w-4 h-4 text-primary-foreground" />
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold">Create New eBook</h1>
+              <p className="text-xs text-muted-foreground">Classpedia Publishing</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-semibold">Create New eBook</h1>
-            <p className="text-xs text-muted-foreground">Classpedia Publishing</p>
-          </div>
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Link>
         </div>
       </div>
 
