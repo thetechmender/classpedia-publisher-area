@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LayoutDashboard, BookOpen, CreditCard, User, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +20,7 @@ const MOBILE_NAV = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
 
   const { data: authorProfiles, isFetched: isProfileFetched } = useQuery({
@@ -81,7 +82,10 @@ export default function Dashboard() {
             <PaymentsTab books={books} authorProfile={authorProfile} />
           )}
           {activeTab === 'profile' && (
-            <AuthorProfileTab authorProfile={authorProfile} />
+            <AuthorProfileTab
+              authorProfile={authorProfile}
+              onProfileUpdated={() => queryClient.invalidateQueries({ queryKey: ['author-profile'] })}
+            />
           )}
         </main>
 
