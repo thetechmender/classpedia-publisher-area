@@ -104,7 +104,7 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
         </div>
         <div className="px-5 py-5 space-y-4">
           <div className="space-y-1.5">
-            <Label>Address Line 1</Label>
+            <Label>Address Line </Label>
             <Input
               value={data.address_line1 || ''}
               onChange={(e) => onChange({ address_line1: e.target.value })}
