@@ -8,6 +8,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Dashboard from './pages/Dashboard';
 import PublishBook from './pages/PublishBook';
 import BookDetail from './pages/BookDetail';
+import AccountSetup from './pages/AccountSetup';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -38,6 +39,7 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Dashboard />} />
       <Route path="/publish" element={<PublishBook />} />
       <Route path="/book/:id" element={<BookDetail />} />
+      <Route path="/account-setup" element={<AccountSetup />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

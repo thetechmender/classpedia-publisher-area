@@ -1,0 +1,170 @@
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronRight, User, AlertCircle } from 'lucide-react';
+
+const COUNTRIES = [
+  'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France',
+  'India', 'Brazil', 'Spain', 'Italy', 'Netherlands', 'Sweden', 'Norway',
+  'Denmark', 'Finland', 'Switzerland', 'Austria', 'Belgium', 'Portugal',
+  'Ireland', 'New Zealand', 'Singapore', 'Japan', 'South Korea', 'Mexico',
+  'Argentina', 'Colombia', 'Chile', 'South Africa', 'Nigeria', 'Kenya',
+  'Egypt', 'Israel', 'Turkey', 'Poland', 'Czech Republic', 'Hungary',
+  'Romania', 'Ukraine', 'Russia', 'China', 'Indonesia', 'Malaysia',
+  'Philippines', 'Thailand', 'Vietnam', 'Pakistan', 'Bangladesh',
+];
+
+const FieldError = ({ msg }) => msg ? (
+  <p className="flex items-center gap-1 text-xs text-destructive mt-1">
+    <AlertCircle className="w-3 h-3" /> {msg}
+  </p>
+) : null;
+
+export default function AccountInfoStep({ data, onChange, errors, onNext }) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 pb-4 border-b">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <User className="w-5 h-5 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold font-serif">Your Account Information</h2>
+          <p className="text-sm text-muted-foreground">Tell us about yourself so we can set up your account</p>
+        </div>
+      </div>
+
+      {/* Legal Name */}
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
+          <h3 className="text-sm font-semibold">Legal Name</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Enter your name exactly as it appears on your government-issued ID</p>
+        </div>
+        <div className="px-5 py-5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>First Name <span className="text-destructive">*</span></Label>
+              <Input
+                value={data.first_name || ''}
+                onChange={e => onChange({ first_name: e.target.value })}
+                placeholder="John"
+                className={errors.first_name ? 'border-destructive' : ''}
+              />
+              <FieldError msg={errors.first_name} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Last Name <span className="text-destructive">*</span></Label>
+              <Input
+                value={data.last_name || ''}
+                onChange={e => onChange({ last_name: e.target.value })}
+                placeholder="Doe"
+                className={errors.last_name ? 'border-destructive' : ''}
+              />
+              <FieldError msg={errors.last_name} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact Info */}
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
+          <h3 className="text-sm font-semibold">Contact Information</h3>
+        </div>
+        <div className="px-5 py-5 space-y-4">
+          <div className="space-y-1.5">
+            <Label>Email Address <span className="text-destructive">*</span></Label>
+            <Input
+              type="email"
+              value={data.email || ''}
+              onChange={e => onChange({ email: e.target.value })}
+              placeholder="john@example.com"
+              className={errors.email ? 'border-destructive' : ''}
+            />
+            <FieldError msg={errors.email} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Phone Number</Label>
+            <Input
+              type="tel"
+              value={data.phone || ''}
+              onChange={e => onChange({ phone: e.target.value })}
+              placeholder="+1 (555) 000-0000"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Address */}
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
+          <h3 className="text-sm font-semibold">Address</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Used for royalty payments and tax purposes</p>
+        </div>
+        <div className="px-5 py-5 space-y-4">
+          <div className="space-y-1.5">
+            <Label>Country / Region <span className="text-destructive">*</span></Label>
+            <Select value={data.country || ''} onValueChange={v => onChange({ country: v })}>
+              <SelectTrigger className={errors.country ? 'border-destructive' : ''}>
+                <SelectValue placeholder="Select your country" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <FieldError msg={errors.country} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Address Line 1</Label>
+            <Input
+              value={data.address_line1 || ''}
+              onChange={e => onChange({ address_line1: e.target.value })}
+              placeholder="123 Main St"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Address Line 2</Label>
+            <Input
+              value={data.address_line2 || ''}
+              onChange={e => onChange({ address_line2: e.target.value })}
+              placeholder="Apt, suite, etc."
+            />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5 sm:col-span-1">
+              <Label>City</Label>
+              <Input
+                value={data.city || ''}
+                onChange={e => onChange({ city: e.target.value })}
+                placeholder="New York"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>State / Province</Label>
+              <Input
+                value={data.state || ''}
+                onChange={e => onChange({ state: e.target.value })}
+                placeholder="NY"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>ZIP / Postal Code</Label>
+              <Input
+                value={data.zip || ''}
+                onChange={e => onChange({ zip: e.target.value })}
+                placeholder="10001"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end pt-2">
+        <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20">
+          Save & Continue <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,108 @@
+{
+  "name": "AuthorProfile",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Author's legal full name"
+    },
+    "pen_name": {
+      "type": "string",
+      "description": "Pen name / author name shown on books"
+    },
+    "email": {
+      "type": "string",
+      "description": "Contact email"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "country": {
+      "type": "string",
+      "description": "Country of residence"
+    },
+    "address_line1": {
+      "type": "string",
+      "description": "Address line 1"
+    },
+    "address_line2": {
+      "type": "string",
+      "description": "Address line 2"
+    },
+    "city": {
+      "type": "string",
+      "description": "City"
+    },
+    "state": {
+      "type": "string",
+      "description": "State / Province"
+    },
+    "zip": {
+      "type": "string",
+      "description": "ZIP / Postal code"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "bank_transfer",
+        "paypal"
+      ],
+      "description": "Preferred payment method"
+    },
+    "bank_account_name": {
+      "type": "string",
+      "description": "Bank account holder name"
+    },
+    "bank_account_number": {
+      "type": "string",
+      "description": "Bank account number"
+    },
+    "bank_routing_number": {
+      "type": "string",
+      "description": "Bank routing number (US) or IBAN"
+    },
+    "paypal_email": {
+      "type": "string",
+      "description": "PayPal email address"
+    },
+    "tax_country": {
+      "type": "string",
+      "description": "Country for tax purposes"
+    },
+    "tax_id_type": {
+      "type": "string",
+      "enum": [
+        "ssn",
+        "ein",
+        "foreign"
+      ],
+      "description": "Tax ID type"
+    },
+    "tax_id": {
+      "type": "string",
+      "description": "Tax ID / SSN / EIN"
+    },
+    "us_person": {
+      "type": "boolean",
+      "description": "Is a US person for tax purposes"
+    },
+    "author_bio": {
+      "type": "string",
+      "description": "Author biography shown on book pages"
+    },
+    "website": {
+      "type": "string",
+      "description": "Author website URL"
+    },
+    "setup_complete": {
+      "type": "boolean",
+      "description": "Whether account setup has been completed",
+      "default": false
+    }
+  },
+  "required": [
+    "full_name",
+    "country"
+  ]
+}

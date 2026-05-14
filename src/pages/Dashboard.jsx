@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -28,9 +28,21 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sort, setSort] = useState('newest');
 
+  const { data: authorProfiles = [], isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['author-profile'],
+    queryFn: () => base44.entities.AuthorProfile.filter({ setup_complete: true }),
+  });
+
+  useEffect(() => {
+    if (!isLoadingProfile && authorProfiles.length === 0) {
+      navigate('/account-setup');
+    }
+  }, [isLoadingProfile, authorProfiles, navigate]);
+
   const { data: books = [], isLoading } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list('-created_date'),
+    enabled: authorProfiles.length > 0,
   });
 
   const stats = useMemo(() => ({
