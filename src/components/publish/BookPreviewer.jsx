@@ -415,14 +415,16 @@ export default function BookPreviewer({ book, onClose }) {
     return () => window.removeEventListener('keydown', handler);
   }, [navigate, onClose]);
 
-  // Device configs: [bookW, bookH] = full two-page width x height
+  // Device configs
+  // desktop/tablet: two-page spread (w = total width of both pages)
+  // mobile: single page only
   const deviceConfig = {
-    desktop: { w: 900, h: 580 },
-    tablet:  { w: 720, h: 480 },
-    mobile:  { w: 360, h: 520 },  // single page on mobile
+    desktop: { w: 900, h: 580, twoPage: true },
+    tablet:  { w: 680, h: 480, twoPage: true },
+    mobile:  { w: 320, h: 480, twoPage: false },
   }[device];
 
-  const isMobile = device === 'mobile';
+  const isMobile = !deviceConfig.twoPage;
   const pageW = isMobile ? deviceConfig.w : deviceConfig.w / 2;
   const pageH = deviceConfig.h;
 
@@ -495,14 +497,14 @@ export default function BookPreviewer({ book, onClose }) {
         <div className="flex flex-1 overflow-hidden">
 
           {/* ── Center canvas ── */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-7 relative overflow-hidden">
+          <div className="flex-1 flex flex-col items-center justify-center gap-5 relative overflow-auto py-4">
 
             {/* Ambient glow */}
             <div className="absolute inset-0 pointer-events-none"
               style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 55%, rgba(99,102,241,0.07) 0%, transparent 70%)' }} />
 
             {/* Nav + Book spread */}
-            <div className="flex items-center gap-6 z-10">
+            <div className="flex items-center gap-3 sm:gap-6 z-10 px-2 sm:px-0 max-w-full overflow-hidden">
 
               {/* Prev button */}
               <button
@@ -527,9 +529,11 @@ export default function BookPreviewer({ book, onClose }) {
                   style={{ boxShadow: '0 2px 0 rgba(255,255,255,0.04) inset' }}>
 
                   {isMobile ? (
-                    /* Single page on mobile */
+                    /* Single page on mobile — show the more interesting side */
                     <div className="w-full h-full">
-                      {displaySpread.left(book)}
+                      {spreadIndex === 0
+                        ? displaySpread.left(book)
+                        : (displaySpread.right ? displaySpread.right(book) : displaySpread.left(book))}
                     </div>
                   ) : (
                     /* Two-page spread */
@@ -641,18 +645,17 @@ export default function BookPreviewer({ book, onClose }) {
         </div>
 
         {/* ── Bottom quality-check bar ── */}
-        <div className="shrink-0 flex items-center justify-between px-6 py-2.5 gap-4"
+        <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between px-5 py-3 gap-2 sm:gap-4"
           style={{ background: 'rgba(10,11,18,0.95)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="flex items-center gap-2 text-amber-400/70">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-            <p className="text-[11px] leading-snug">
-              Check for margin issues, cut-off text, or formatting problems before publishing.
-              {' '}<span className="text-amber-400/50">If something looks wrong and you can't fix it,</span>
+          <div className="flex items-start gap-2 text-amber-400/80">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <p className="text-[11px] leading-relaxed">
+              {"Check for margin issues, cut-off text, or formatting problems before publishing. If something looks wrong and you can't fix it, contact our support team."}
             </p>
           </div>
           <a
             href="mailto:support@classpedia.ai"
-            className="flex items-center gap-1.5 shrink-0 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+            className="flex items-center gap-1.5 shrink-0 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors ml-5 sm:ml-0"
           >
             <MessageCircle className="w-3.5 h-3.5" />
             Contact Support
