@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { BookOpen } from 'lucide-react';
@@ -55,6 +56,7 @@ const validateStep4 = (data) => {
 
 export default function AccountSetup() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [errors, setErrors] = useState({});
@@ -97,15 +99,17 @@ export default function AccountSetup() {
 
     setSaving(true);
     const fullName = [formData.first_name, formData.last_name].filter(Boolean).join(' ');
-    await base44.entities.AuthorProfile.create({
+    const profile = await base44.entities.AuthorProfile.create({
       ...formData,
       full_name: fullName,
       setup_complete: true,
     });
+    // Pre-populate the cache so Dashboard doesn't redirect back to setup
+    queryClient.setQueryData(['author-profile'], [profile]);
     await base44.auth.updateMe({ author_setup_complete: true });
     setSaving(false);
     toast.success('Account created! Welcome to Classpedia.');
-    navigate('/publish');
+    navigate('/');
   };
 
   return (
