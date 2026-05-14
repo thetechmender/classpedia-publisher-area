@@ -105,7 +105,7 @@ export default function AccountSetup() {
     await base44.auth.updateMe({ author_setup_complete: true });
     setSaving(false);
     toast.success('Account created! Welcome to Classpedia.');
-    navigate('/');
+    navigate('/publish');
   };
 
   return (
