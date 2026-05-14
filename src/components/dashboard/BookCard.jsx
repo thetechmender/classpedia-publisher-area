@@ -1,82 +1,78 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { BookOpen, Clock, CheckCircle2, XCircle, FileEdit, ChevronRight } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle2, XCircle, FileEdit, ChevronRight, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const STATUS_CONFIG = {
-  draft:       { label: 'Draft',       icon: FileEdit,     className: 'bg-secondary text-secondary-foreground' },
-  in_review:   { label: 'In Review',   icon: Clock,        className: 'bg-amber-100 text-amber-700' },
-  published:   { label: 'Published',   icon: CheckCircle2, className: 'bg-primary/10 text-primary' },
-  unpublished: { label: 'Unpublished', icon: XCircle,      className: 'bg-destructive/10 text-destructive' },
+  draft:       { label: 'Draft',       icon: FileEdit,     bg: 'bg-slate-100',   text: 'text-slate-600',   dot: 'bg-slate-400',   border: 'border-slate-200' },
+  in_review:   { label: 'In Review',   icon: Clock,        bg: 'bg-amber-100',   text: 'text-amber-700',   dot: 'bg-amber-500',   border: 'border-amber-200' },
+  published:   { label: 'Published',   icon: CheckCircle2, bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-200' },
+  unpublished: { label: 'Unpublished', icon: XCircle,      bg: 'bg-red-100',     text: 'text-red-700',     dot: 'bg-red-500',     border: 'border-red-200' },
 };
 
 export default function BookCard({ book, onClick }) {
   const status = STATUS_CONFIG[book.status] || STATUS_CONFIG.draft;
   const StatusIcon = status.icon;
-  const royalty = book.list_price ? (book.list_price * 0.7).toFixed(2) : null;
+  const royalty = book.list_price ? (book.list_price * (parseFloat(book.royalty_plan || 70) / 100)).toFixed(2) : null;
 
   return (
     <button
       onClick={() => onClick(book)}
-      className="w-full text-left bg-card border rounded-xl p-4 hover:shadow-md hover:border-primary/20 transition-all group"
+      className="w-full text-left bg-card border rounded-2xl p-4 hover:shadow-md hover:border-primary/20 transition-all group"
     >
       <div className="flex gap-4">
+        {/* Cover */}
         {book.cover_url ? (
           <img
             src={book.cover_url}
             alt={book.title}
-            className="w-20 h-28 object-cover rounded-lg shadow-sm group-hover:shadow-md transition-shadow shrink-0"
+            className="w-[52px] h-[72px] object-cover rounded-xl shadow-sm group-hover:shadow-md transition-shadow shrink-0"
           />
         ) : (
-          <div className="w-20 h-28 bg-secondary rounded-lg flex items-center justify-center shrink-0">
-            <BookOpen className="w-6 h-6 text-muted-foreground" />
+          <div className="w-[52px] h-[72px] bg-gradient-to-br from-secondary to-muted rounded-xl flex items-center justify-center shrink-0 border border-border">
+            <BookOpen className="w-5 h-5 text-muted-foreground" />
           </div>
         )}
 
-        <div className="flex-1 min-w-0 flex flex-col justify-between">
+        <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
           <div>
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+            {/* Title + status */}
+            <div className="flex items-start gap-2 justify-between">
+              <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors flex-1">
                 {book.title}
               </h3>
-              <Badge className={cn('text-[10px] shrink-0 gap-1', status.className)}>
-                <StatusIcon className="w-3 h-3" />
+              <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${status.bg} ${status.text}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
                 {status.label}
-              </Badge>
+              </span>
             </div>
             {book.subtitle && (
               <p className="text-xs text-muted-foreground mt-0.5 truncate">{book.subtitle}</p>
             )}
-            <p className="text-xs text-muted-foreground mt-1">by {book.author_name}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">by {book.author_name}</p>
           </div>
 
-          <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-border/50">
+            <div className="flex items-center gap-2.5">
               {book.list_price ? (
-                <div>
-                  <span className="text-sm font-bold text-foreground">${book.list_price.toFixed(2)}</span>
-                  {book.status === 'published' && royalty && (
-                    <span className="text-xs text-green-600 font-medium ml-1.5">
-                      +${royalty} royalty
-                    </span>
-                  )}
-                </div>
+                <span className="text-sm font-bold">${book.list_price.toFixed(2)}</span>
               ) : (
-                <span className="text-xs text-muted-foreground italic">No price set</span>
+                <span className="text-xs text-muted-foreground italic">No price</span>
               )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">
-                {format(new Date(book.created_date), 'MMM d, yyyy')}
-              </span>
-              {book.status === 'draft' && (
-                <span className="text-xs text-primary font-medium flex items-center gap-0.5 group-hover:underline">
-                  Continue <ChevronRight className="w-3 h-3" />
+              {book.status === 'published' && royalty && (
+                <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-0.5">
+                  <DollarSign className="w-3 h-3" />{royalty}/sale
                 </span>
               )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-muted-foreground">{format(new Date(book.created_date), 'MMM d, yy')}</span>
+              <span className={`text-xs font-semibold flex items-center gap-0.5 group-hover:underline ${
+                book.status === 'draft' ? 'text-primary' : 'text-muted-foreground'
+              }`}>
+                {book.status === 'draft' ? 'Continue' : 'View'}
+                <ChevronRight className="w-3 h-3" />
+              </span>
             </div>
           </div>
         </div>

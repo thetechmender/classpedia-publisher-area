@@ -4,30 +4,20 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  ArrowLeft, BookOpen, Shield, Globe, DollarSign,
-  FileText, CheckCircle2, Clock, XCircle, FileEdit,
-  TrendingUp, ShoppingCart, Users, Star, BarChart3,
-  Tag, Calendar, Hash, Layers, Cpu, Eye
+  ArrowLeft, BookOpen, DollarSign, FileText, CheckCircle2, Clock,
+  XCircle, FileEdit, TrendingUp, ShoppingCart, Users, Star, BarChart3,
+  Tag, Calendar, Eye, Globe, Shield, Cpu, ChevronRight
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const STATUS_CONFIG = {
-  draft:       { label: 'Draft',       icon: FileEdit,     className: 'bg-secondary text-secondary-foreground' },
-  in_review:   { label: 'In Review',   icon: Clock,        className: 'bg-amber-100 text-amber-700' },
-  published:   { label: 'Published',   icon: CheckCircle2, className: 'bg-green-100 text-green-700' },
-  unpublished: { label: 'Unpublished', icon: XCircle,      className: 'bg-destructive/10 text-destructive' },
-};
-
-const AGE_LABELS = {
-  not_specified: 'Not Specified',
-  '4_6':   '4–6 years',
-  '7_9':   '7–9 years',
-  '10_12': '10–12 years',
-  '13_17': '13–17 years',
-  '18_plus': '18+ years',
+  draft:       { label: 'Draft',       icon: FileEdit,     bg: 'bg-slate-100',   text: 'text-slate-600',   dot: 'bg-slate-400' },
+  in_review:   { label: 'In Review',   icon: Clock,        bg: 'bg-amber-100',   text: 'text-amber-700',   dot: 'bg-amber-500' },
+  published:   { label: 'Published',   icon: CheckCircle2, bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  unpublished: { label: 'Unpublished', icon: XCircle,      bg: 'bg-red-100',     text: 'text-red-700',     dot: 'bg-red-500' },
 };
 
 function DetailRow({ label, value }) {
@@ -40,17 +30,17 @@ function DetailRow({ label, value }) {
   );
 }
 
-function StatBox({ icon: Icon, label, value, sub, color = 'text-foreground' }) {
+function StatBox({ icon: Icon, label, value, sub, color = 'text-foreground', bg = 'bg-secondary' }) {
   return (
-    <div className="bg-card border rounded-xl p-4 flex items-center gap-3">
-      <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-        <Icon className={`w-5 h-5 ${color}`} />
+    <div className="bg-card border rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center shrink-0`}>
+          <Icon className={`w-4 h-4 ${color}`} />
+        </div>
+        <span className="text-xs text-muted-foreground">{label}</span>
       </div>
-      <div>
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className={`text-xl font-bold ${color}`}>{value}</p>
-        {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
-      </div>
+      <p className={`text-2xl font-bold ${color}`}>{value}</p>
+      {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -69,12 +59,12 @@ export default function BookDetail() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto space-y-6">
           <Skeleton className="h-8 w-48" />
           <div className="flex gap-6">
             <Skeleton className="w-40 h-56 rounded-xl" />
             <div className="flex-1 space-y-3">
-              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-7 w-3/4" />
               <Skeleton className="h-4 w-1/2" />
               <Skeleton className="h-4 w-1/3" />
             </div>
@@ -103,71 +93,106 @@ export default function BookDetail() {
   const isPublished = book.status === 'published';
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Bg texture */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.025]"
+        style={{ backgroundImage: 'radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)', backgroundSize: '28px 28px' }}
+      />
+      <div className="fixed top-0 right-0 w-[500px] h-[300px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
       {/* Top Bar */}
       <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="shrink-0">
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <div>
-              <h1 className="text-lg font-semibold line-clamp-1">{book.title}</h1>
-              <p className="text-xs text-muted-foreground">Book Details</p>
+            <div className="min-w-0">
+              <h1 className="text-base font-semibold line-clamp-1">{book.title}</h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <Link to="/" className="text-[11px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5">
+                  Dashboard <ChevronRight className="w-3 h-3" />
+                </Link>
+                <span className="text-[11px] text-muted-foreground">Book Details</span>
+              </div>
             </div>
           </div>
-          <Badge className={`gap-1 ${status.className}`}>
-            <StatusIcon className="w-3 h-3" />
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${status.bg} ${status.text}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
             {status.label}
-          </Badge>
+          </span>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-5xl mx-auto px-5 md:px-6 py-8 space-y-6 relative">
 
         {/* Hero Card */}
-        <div className="bg-card border rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6">
-          {book.cover_url ? (
-            <img src={book.cover_url} alt={book.title} className="w-36 h-52 object-cover rounded-xl shadow-lg mx-auto md:mx-0 shrink-0" />
-          ) : (
-            <div className="w-36 h-52 bg-secondary rounded-xl flex items-center justify-center mx-auto md:mx-0 shrink-0">
-              <BookOpen className="w-10 h-10 text-muted-foreground" />
+        <div className="bg-card border rounded-2xl overflow-hidden">
+          <div className="bg-gradient-to-br from-primary/8 to-accent/20 px-6 md:px-8 py-8 flex flex-col md:flex-row gap-6">
+            {book.cover_url ? (
+              <img src={book.cover_url} alt={book.title} className="w-32 h-48 object-cover rounded-xl shadow-lg mx-auto md:mx-0 shrink-0" />
+            ) : (
+              <div className="w-32 h-48 bg-secondary/60 rounded-xl flex items-center justify-center mx-auto md:mx-0 shrink-0 border border-border">
+                <BookOpen className="w-10 h-10 text-muted-foreground" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(book.categories || []).map(c => (
+                  <Badge key={c} variant="outline" className="text-xs">{c}</Badge>
+                ))}
+              </div>
+              <h2 className="text-2xl md:text-3xl font-serif font-semibold leading-tight">{book.title}</h2>
+              {book.subtitle && <p className="text-base text-muted-foreground mt-1">{book.subtitle}</p>}
+              <p className="text-sm mt-2">by <span className="font-semibold">{book.author_name}</span></p>
+              {book.series_name && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <Tag className="w-3 h-3" />
+                  {book.series_name}{book.series_number ? ` · Vol. ${book.series_number}` : ''}
+                </p>
+              )}
+              <div className="mt-5 flex flex-wrap items-end gap-5">
+                {book.list_price ? (
+                  <div>
+                    <p className="text-3xl font-bold text-primary">${book.list_price.toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{book.currency || 'USD'} · {book.royalty_plan || 70}% royalty plan</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">No price set</p>
+                )}
+                {isPublished && book.list_price && (
+                  <div className="pb-0.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                    <p className="text-sm font-bold text-emerald-700">+${royaltyPerSale.toFixed(2)} per sale</p>
+                    <p className="text-[10px] text-emerald-600">Your royalty earnings</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-4 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" />
+                Created {format(new Date(book.created_date), 'MMMM d, yyyy')}
+                {book.publication_date && ` · Published ${format(new Date(book.publication_date), 'MMMM d, yyyy')}`}
+              </p>
+            </div>
+          </div>
+
+          {/* Status bar */}
+          {book.status === 'in_review' && (
+            <div className="px-6 py-3 bg-amber-50 border-t border-amber-100 flex items-center gap-3">
+              <Clock className="w-4 h-4 text-amber-600 shrink-0 animate-pulse" />
+              <p className="text-sm text-amber-800 font-medium">Under review — Typically takes 24–72 hours. You cannot edit while under review.</p>
             </div>
           )}
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl md:text-3xl font-serif font-semibold">{book.title}</h2>
-            {book.subtitle && <p className="text-base text-muted-foreground mt-1">{book.subtitle}</p>}
-            <p className="text-sm mt-2">by <span className="font-medium">{book.author_name}</span></p>
-            {book.series_name && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {book.series_name}{book.series_number ? ` · Vol. ${book.series_number}` : ''}
-              </p>
-            )}
-            <div className="flex flex-wrap gap-2 mt-3">
-              {(book.categories || []).map(c => (
-                <Badge key={c} variant="outline" className="text-xs">{c}</Badge>
-              ))}
+          {book.status === 'draft' && (
+            <div className="px-6 py-3 bg-secondary/50 border-t flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <FileEdit className="w-4 h-4 text-muted-foreground shrink-0" />
+                <p className="text-sm text-muted-foreground">This book is a draft. Complete all required fields to submit for review.</p>
+              </div>
+              <Link to="/publish">
+                <Button size="sm" className="gap-1.5 shrink-0 text-xs">Continue Editing <ChevronRight className="w-3.5 h-3.5" /></Button>
+              </Link>
             </div>
-            <div className="mt-4 flex items-end gap-4">
-              {book.list_price ? (
-                <div>
-                  <p className="text-3xl font-bold text-primary">${book.list_price.toFixed(2)}</p>
-                  <p className="text-xs text-muted-foreground">{book.currency || 'USD'} · {book.royalty_plan || 70}% royalty plan</p>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">No price set</p>
-              )}
-              {isPublished && book.list_price && (
-                <div className="pb-1">
-                  <p className="text-sm font-semibold text-green-600">+${royaltyPerSale.toFixed(2)} per sale</p>
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              Created {format(new Date(book.created_date), 'MMMM d, yyyy')}
-              {book.publication_date && ` · Published ${format(new Date(book.publication_date), 'MMMM d, yyyy')}`}
-            </p>
-          </div>
+          )}
         </div>
 
         {/* Sales & Performance */}
@@ -177,59 +202,59 @@ export default function BookDetail() {
             <h3 className="font-semibold">Sales & Performance</h3>
           </div>
           {!isPublished ? (
-            <div className="bg-card border rounded-xl p-6 text-center">
-              <Eye className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm font-medium text-muted-foreground">
-                {book.status === 'draft' ? 'Publish this book to start tracking sales.' : 'Sales data will appear once this book is published.'}
+            <div className="bg-card border rounded-xl p-8 text-center">
+              <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Eye className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium">
+                {book.status === 'draft' ? 'Complete and publish this book to start tracking sales.' : 'Sales data will appear once this book is live.'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {book.status === 'in_review' ? 'Expected to go live within 24–72 hours.' : ''}
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatBox icon={ShoppingCart} label="Total Sales"      value="0"    sub="All time"              color="text-primary" />
-                <StatBox icon={DollarSign}   label="Total Revenue"    value="$0.00" sub="Gross sales"           color="text-green-600" />
-                <StatBox icon={TrendingUp}   label="Royalties Earned" value="$0.00" sub="Author earnings"       color="text-green-600" />
-                <StatBox icon={Star}         label="Avg. Rating"      value="—"    sub="No reviews yet" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <StatBox icon={ShoppingCart} label="Total Sales"      value="0"     sub="All time"         color="text-primary"      bg="bg-primary/10" />
+                <StatBox icon={DollarSign}   label="Gross Revenue"    value="$0.00" sub="All time"         color="text-emerald-600"  bg="bg-emerald-50" />
+                <StatBox icon={TrendingUp}   label="Your Royalties"   value="$0.00" sub="After platform fee" color="text-emerald-600" bg="bg-emerald-50" />
+                <StatBox icon={Star}         label="Avg. Rating"      value="—"     sub="No reviews yet"  color="text-amber-500"    bg="bg-amber-50" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-card border rounded-xl p-5">
-                  <h4 className="text-sm font-semibold mb-3">Sales by Period</h4>
-                  <div className="divide-y">
-                    {[
-                      { period: 'This Month', value: '0 sales' },
-                      { period: 'Last Month',  value: '0 sales' },
-                      { period: 'Last 3 Months', value: '0 sales' },
-                      { period: 'All Time',    value: '0 sales' },
-                    ].map(row => (
-                      <div key={row.period} className="flex justify-between py-2.5">
-                        <span className="text-sm text-muted-foreground">{row.period}</span>
-                        <span className="text-sm font-medium">{row.value}</span>
+                <div className="bg-card border rounded-xl overflow-hidden">
+                  <div className="px-5 py-3.5 border-b bg-secondary/20">
+                    <h4 className="text-sm font-semibold">Sales by Period</h4>
+                  </div>
+                  <div className="divide-y px-5">
+                    {[['This Month', '0'], ['Last Month', '0'], ['Last 3 Months', '0'], ['All Time', '0']].map(([period, val]) => (
+                      <div key={period} className="flex justify-between py-3">
+                        <span className="text-sm text-muted-foreground">{period}</span>
+                        <span className="text-sm font-semibold">{val} sales</span>
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="bg-card border rounded-xl p-5">
-                  <h4 className="text-sm font-semibold mb-3">Revenue Split</h4>
-                  <div className="divide-y">
-                    <div className="flex justify-between py-2.5">
+                <div className="bg-card border rounded-xl overflow-hidden">
+                  <div className="px-5 py-3.5 border-b bg-secondary/20">
+                    <h4 className="text-sm font-semibold">Revenue Split</h4>
+                  </div>
+                  <div className="divide-y px-5">
+                    <div className="flex justify-between py-3">
                       <span className="text-sm text-muted-foreground">Gross Revenue</span>
-                      <span className="text-sm font-medium">$0.00</span>
+                      <span className="text-sm font-semibold">$0.00</span>
                     </div>
-                    <div className="flex justify-between py-2.5">
+                    <div className="flex justify-between py-3">
                       <span className="text-sm text-muted-foreground">Platform Fee ({100 - parseInt(book.royalty_plan || 70)}%)</span>
-                      <span className="text-sm font-medium text-destructive">−$0.00</span>
+                      <span className="text-sm font-semibold text-destructive">−$0.00</span>
                     </div>
-                    <div className="flex justify-between py-2.5">
+                    <div className="flex justify-between py-3">
                       <span className="text-sm font-semibold">Your Royalties ({book.royalty_plan || 70}%)</span>
-                      <span className="text-sm font-bold text-green-600">$0.00</span>
+                      <span className="text-sm font-bold text-emerald-600">$0.00</span>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-accent/30 border border-accent rounded-xl px-5 py-4 text-sm text-accent-foreground">
-                Sales data updates daily. Royalties are calculated at month-end and paid 30 days later.
               </div>
             </div>
           )}
@@ -238,32 +263,30 @@ export default function BookDetail() {
         {/* Description */}
         {book.description && (
           <div className="bg-card border rounded-2xl p-6">
-            <h3 className="font-semibold mb-3">Description</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{book.description}</p>
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-muted-foreground" /> Description
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap line-clamp-6">{book.description}</p>
           </div>
         )}
 
         {/* Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-          {/* Book Info */}
           <div className="bg-card border rounded-xl overflow-hidden">
             <div className="px-5 py-4 border-b bg-secondary/20 flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-muted-foreground" />
               <h3 className="font-semibold text-sm">Book Information</h3>
             </div>
             <div className="px-5">
-              <DetailRow label="Language"     value={book.language} />
-              <DetailRow label="Series"       value={book.series_name ? `${book.series_name}${book.series_number ? ` #${book.series_number}` : ''}` : null} />
-              <DetailRow label="Edition"      value={book.edition_number} />
-              <DetailRow label="Pub. Date"    value={book.publication_date} />
-              <DetailRow label="Age Range"    value={AGE_LABELS[book.age_range]} />
-              <DetailRow label="ISBN"         value={book.isbn || 'To be assigned'} />
-              <DetailRow label="AI Generated" value={book.ai_generated ? 'Yes — AI tools used' : 'No'} />
+              <DetailRow label="Language"      value={book.language} />
+              <DetailRow label="Edition"       value={book.edition_number} />
+              <DetailRow label="Series"        value={book.series_name ? `${book.series_name}${book.series_number ? ` #${book.series_number}` : ''}` : null} />
+              <DetailRow label="Reading Age"   value={book.reading_age_min ? `${book.reading_age_min}${book.reading_age_max ? ` – ${book.reading_age_max}` : ''}` : null} />
+              <DetailRow label="ISBN"          value={book.isbn || 'To be assigned'} />
+              <DetailRow label="AI Generated"  value={book.ai_generated ? 'Yes — AI tools used' : 'No'} />
             </div>
           </div>
 
-          {/* Pricing & Rights */}
           <div className="bg-card border rounded-xl overflow-hidden">
             <div className="px-5 py-4 border-b bg-secondary/20 flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-muted-foreground" />
@@ -272,16 +295,10 @@ export default function BookDetail() {
             <div className="px-5">
               <DetailRow label="List Price"    value={book.list_price ? `$${book.list_price.toFixed(2)} ${book.currency || 'USD'}` : '—'} />
               <DetailRow label="Royalty Plan"  value={book.royalty_plan ? `${book.royalty_plan}%` : '—'} />
-              <DetailRow
-                label="Est. Royalty"
-                value={book.list_price && book.royalty_plan
-                  ? `$${(book.list_price * (parseFloat(book.royalty_plan) / 100)).toFixed(2)} per sale`
-                  : '—'
-                }
-              />
-              <DetailRow label="Territories"  value={book.territories === 'specific' ? 'Specific Countries' : 'Worldwide'} />
-              <DetailRow label="DRM"          value={book.drm ? 'Enabled' : 'Disabled'} />
-              <DetailRow label="Classpedia Select" value={book.classpedia_select ? 'Enrolled' : 'Not enrolled'} />
+              <DetailRow label="Per Sale"      value={book.list_price && book.royalty_plan ? `$${(book.list_price * (parseFloat(book.royalty_plan) / 100)).toFixed(2)}` : '—'} />
+              <DetailRow label="Territories"   value={book.territories === 'specific' ? 'Specific Countries' : 'Worldwide'} />
+              <DetailRow label="DRM"           value={book.drm ? 'Enabled' : 'Disabled'} />
+              <DetailRow label="Select Program" value={book.classpedia_select ? 'Enrolled' : 'Not enrolled'} />
               {book.preorder_type === 'preorder' && (
                 <DetailRow label="Pre-order Date" value={book.preorder_date} />
               )}
@@ -296,32 +313,36 @@ export default function BookDetail() {
             <h3 className="font-semibold text-sm">Content Files</h3>
           </div>
           <div className="divide-y px-5">
-            <div className="flex justify-between items-center py-3">
-              <span className="text-sm text-muted-foreground">Manuscript</span>
-              <span className="text-sm font-medium">
-                {book.manuscript_filename
-                  ? <span className="text-primary">{book.manuscript_filename}</span>
-                  : <span className="text-muted-foreground italic">Not uploaded</span>}
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-3">
-              <span className="text-sm text-muted-foreground">Sample Chapter</span>
-              <span className="text-sm font-medium">
-                {book.sample_filename
-                  ? <span className="text-primary">{book.sample_filename}</span>
-                  : <span className="text-muted-foreground italic">Not uploaded</span>}
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-3">
-              <span className="text-sm text-muted-foreground">Cover Image</span>
-              <span className="text-sm font-medium">
-                {book.cover_url
-                  ? <span className="text-green-600">Uploaded ✓</span>
-                  : <span className="text-muted-foreground italic">Not uploaded</span>}
-              </span>
-            </div>
+            {[
+              { label: 'Manuscript',     value: book.manuscript_filename, uploaded: !!book.manuscript_url },
+              { label: 'Sample Chapter', value: book.sample_filename,     uploaded: !!book.sample_url },
+              { label: 'Cover Image',    value: book.cover_url ? 'Uploaded' : null, uploaded: !!book.cover_url },
+            ].map(({ label, value, uploaded }) => (
+              <div key={label} className="flex justify-between items-center py-3.5">
+                <span className="text-sm text-muted-foreground">{label}</span>
+                {uploaded
+                  ? <span className="text-sm font-medium text-emerald-600 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" />{value}</span>
+                  : <span className="text-sm text-muted-foreground italic">Not uploaded</span>
+                }
+              </div>
+            ))}
           </div>
         </div>
+
+        {/* Keywords */}
+        {(book.keywords || []).length > 0 && (
+          <div className="bg-card border rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Tag className="w-4 h-4 text-muted-foreground" />
+              <h3 className="font-semibold text-sm">Search Keywords</h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {book.keywords.map(kw => (
+                <Badge key={kw} variant="secondary" className="text-xs">{kw}</Badge>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Contributors */}
         {(book.contributors || []).length > 0 && (
@@ -334,23 +355,8 @@ export default function BookDetail() {
               {book.contributors.map((c, i) => (
                 <div key={i} className="flex justify-between py-3">
                   <span className="text-sm font-medium">{c.name}</span>
-                  <span className="text-sm text-muted-foreground">{c.role}</span>
+                  <Badge variant="outline" className="text-xs">{c.role}</Badge>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Keywords */}
-        {(book.keywords || []).length > 0 && (
-          <div className="bg-card border rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Tag className="w-4 h-4 text-muted-foreground" />
-              <h3 className="font-semibold text-sm">Search Keywords</h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {book.keywords.map(kw => (
-                <Badge key={kw} variant="secondary" className="text-xs">{kw}</Badge>
               ))}
             </div>
           </div>
