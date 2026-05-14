@@ -362,9 +362,13 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
 
       {/* ── 4. Terms & Conditions ── */}
       <Section title="Terms & Conditions">
-        <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-          After submission, your book will be reviewed before going live. This typically takes up to 72 hours.
-        </p>
+        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4">
+          <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+          <div className="text-xs text-blue-700 space-y-1 leading-relaxed">
+            <p className="font-semibold text-blue-800">Review process: up to 72 hours</p>
+            <p>After submission, your book will be reviewed before going live. This typically takes <strong>up to 72 hours</strong>. If your book has not gone live after 72 hours, please <span className="font-medium underline cursor-pointer">contact Classpedia support</span> and our team will investigate promptly.</p>
+          </div>
+        </div>
         <p className="text-sm text-muted-foreground leading-relaxed">
           By clicking <span className="font-medium text-foreground">Review & Submit</span> below, I confirm that I agree to
           and am in compliance with the{' '}

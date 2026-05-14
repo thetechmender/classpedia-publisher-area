@@ -6,15 +6,15 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import {
   ChevronLeft, ChevronRight, Upload, FileText, ImageIcon,
-  X, Info, Cpu, Eye, BookOpen, CheckCircle2, AlertCircle, Layers } from
-'lucide-react';
+  X, Info, Cpu, Eye, BookOpen, CheckCircle2, AlertCircle, Layers, BookOpenCheck
+} from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
 import BookPreviewer from './BookPreviewer';
 
-const Section = ({ icon: Icon, title, subtitle, children }) =>
-<div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+const Section = ({ icon: Icon, title, subtitle, children }) => (
+  <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
     <div className="flex items-start gap-3 px-5 py-4 bg-secondary/40 border-b border-border">
       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
         <Icon className="w-4 h-4 text-primary" />
@@ -25,17 +25,17 @@ const Section = ({ icon: Icon, title, subtitle, children }) =>
       </div>
     </div>
     <div className="px-5 py-5">{children}</div>
-  </div>;
+  </div>
+);
 
-
-const FieldLabel = ({ label, required, tooltip }) =>
-<div className="flex items-center gap-1.5 mb-1.5">
+const FieldLabel = ({ label, required, tooltip }) => (
+  <div className="flex items-center gap-1.5 mb-1.5">
     <Label className="text-sm font-medium text-foreground">
       {label}
       {required && <span className="text-destructive ml-0.5">*</span>}
     </Label>
-    {tooltip &&
-  <TooltipProvider>
+    {tooltip && (
+      <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
@@ -43,17 +43,182 @@ const FieldLabel = ({ label, required, tooltip }) =>
           <TooltipContent className="max-w-xs text-xs">{tooltip}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
-  }
-  </div>;
-
+    )}
+  </div>
+);
 
 const SUPPORTED_FORMATS = ['EPUB', 'MOBI', 'KPF', 'DOC', 'DOCX', 'PDF'];
+
+// Sample chapter page-range selector
+function SampleChapterSection({ data, onChange }) {
+  const totalPages = data.total_pages || '';
+  const sampleStart = data.sample_page_start || 1;
+  const sampleEnd = data.sample_page_end || '';
+  const hasSample = !!data.sample_page_end;
+
+  const maxAllowed = totalPages ? Math.floor(totalPages * 0.2) : null;
+  const selectedPages = sampleEnd && sampleStart ? sampleEnd - sampleStart + 1 : 0;
+  const exceedsLimit = maxAllowed && selectedPages > maxAllowed;
+
+  const handleTotalPagesChange = (val) => {
+    const n = parseInt(val);
+    if (!isNaN(n) && n > 0) {
+      const max20 = Math.floor(n * 0.2);
+      onChange({
+        total_pages: n,
+        sample_page_start: 1,
+        sample_page_end: Math.min(data.sample_page_end || max20, max20),
+      });
+    } else {
+      onChange({ total_pages: '', sample_page_start: 1, sample_page_end: '' });
+    }
+  };
+
+  const clearSample = () => onChange({ sample_page_start: 1, sample_page_end: '', total_pages: '' });
+
+  return (
+    <Section icon={Layers} title="Sample Chapter" subtitle="Let readers preview pages before buying — no file upload needed">
+      <p className="text-sm text-muted-foreground mb-1">
+        Classpedia generates your sample directly from the uploaded manuscript. Just specify which pages you'd like to share as a free preview.
+      </p>
+
+      {/* 20% rule callout */}
+      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 mb-5">
+        <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+        <p className="text-xs text-amber-700 leading-relaxed">
+          <span className="font-semibold">20% rule:</span> You may only show up to 20% of your book's total pages as a sample. Classpedia enforces this limit automatically to protect your full content.
+        </p>
+      </div>
+
+      {/* Step 1: Total pages */}
+      <div className="mb-5">
+        <FieldLabel
+          label="Total Pages in Your Book"
+          tooltip="Enter the approximate total page count so Classpedia can calculate the 20% sample limit"
+        />
+        <div className="flex items-center gap-3">
+          <Input
+            type="number"
+            min="1"
+            value={totalPages}
+            onChange={(e) => handleTotalPagesChange(e.target.value)}
+            placeholder="e.g. 250"
+            className="bg-background max-w-[140px]"
+          />
+          {totalPages && (
+            <span className="text-xs text-muted-foreground">
+              Max sample: <span className="font-semibold text-foreground">{maxAllowed} pages</span> (20% of {totalPages})
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Step 2: Page range */}
+      {totalPages ? (
+        <div className="space-y-4">
+          <div>
+            <FieldLabel label="Sample Page Range" tooltip="Select the start and end page of the excerpt shown to readers" />
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-10">From</span>
+                <Input
+                  type="number"
+                  min="1"
+                  max={totalPages}
+                  value={sampleStart}
+                  onChange={(e) => onChange({ sample_page_start: parseInt(e.target.value) || 1 })}
+                  className="bg-background w-20"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-10">To</span>
+                <Input
+                  type="number"
+                  min={sampleStart}
+                  max={totalPages}
+                  value={sampleEnd}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value) || '';
+                    onChange({ sample_page_end: v });
+                  }}
+                  className={cn('bg-background w-20', exceedsLimit && 'border-destructive')}
+                  placeholder="—"
+                />
+              </div>
+              {hasSample && (
+                <Button variant="ghost" size="sm" onClick={clearSample} className="text-muted-foreground gap-1 h-8">
+                  <X className="w-3.5 h-3.5" /> Clear
+                </Button>
+              )}
+            </div>
+
+            {exceedsLimit && (
+              <p className="flex items-center gap-1 text-xs text-destructive mt-1.5">
+                <AlertCircle className="w-3 h-3" />
+                Selected range ({selectedPages} pages) exceeds the 20% limit of {maxAllowed} pages.
+              </p>
+            )}
+          </div>
+
+          {/* Quick select presets */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Quick select:</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: 'First 10%', pages: Math.floor(totalPages * 0.1) },
+                { label: 'First 15%', pages: Math.floor(totalPages * 0.15) },
+                { label: 'First 20% (max)', pages: maxAllowed },
+              ].map(({ label, pages }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => onChange({ sample_page_start: 1, sample_page_end: pages })}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors',
+                    sampleStart === 1 && sampleEnd === pages
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-background hover:border-primary/40 text-foreground'
+                  )}
+                >
+                  {label} ({pages} pages)
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Confirmation */}
+          {hasSample && !exceedsLimit && (
+            <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <BookOpenCheck className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">
+                  Sample set: Pages {sampleStart}–{sampleEnd}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-green-500" />
+                  {selectedPages} pages · {((selectedPages / totalPages) * 100).toFixed(1)}% of your book
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-border bg-secondary/20 px-5 py-6 text-center">
+          <Layers className="w-7 h-7 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Enter your total page count above to configure the sample range.</p>
+          <p className="text-xs text-muted-foreground mt-1">Optional — you can skip this section if you prefer no sample preview.</p>
+        </div>
+      )}
+    </Section>
+  );
+}
 
 export default function ContentStep({ data, onChange, errors, onNext, onBack }) {
   const manuscriptRef = useRef(null);
   const coverRef = useRef(null);
-  const sampleRef = useRef(null);
-  const [uploading, setUploading] = useState({ manuscript: false, cover: false, sample: false });
+  const [uploading, setUploading] = useState({ manuscript: false, cover: false });
   const [showPreviewer, setShowPreviewer] = useState(false);
 
   const handleFileUpload = async (type, file) => {
@@ -62,8 +227,6 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     if (type === 'manuscript') {
       onChange({ manuscript_url: file_url, manuscript_filename: file.name });
-    } else if (type === 'sample') {
-      onChange({ sample_url: file_url, sample_filename: file.name });
     } else {
       onChange({ cover_url: file_url });
     }
@@ -88,21 +251,17 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
         <p className="text-sm text-muted-foreground mb-1">
           Upload your manuscript (your book's interior content). We recommend using an EPUB file for best results.
         </p>
-        <p className="text-xs text-muted-foreground mb-4 hidden">
-          For help formatting your manuscript with professional themes, chapter titles, or images, refer to our{' '}
-          <span className="text-primary cursor-pointer hover:underline">eBook Formatting Guide</span>.
-        </p>
 
         <input
           ref={manuscriptRef}
           type="file"
           accept=".epub,.mobi,.doc,.docx,.pdf,.kpf"
           className="hidden"
-          onChange={(e) => handleFileUpload('manuscript', e.target.files[0])} />
-        
+          onChange={(e) => handleFileUpload('manuscript', e.target.files[0])}
+        />
 
-        {data.manuscript_url ?
-        <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
+        {data.manuscript_url ? (
+          <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <FileText className="w-5 h-5 text-primary" />
             </div>
@@ -118,24 +277,24 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
             <Button variant="ghost" size="icon" onClick={() => onChange({ manuscript_url: '', manuscript_filename: '' })}>
               <X className="w-4 h-4" />
             </Button>
-          </div> :
-
-        <button
-          onClick={() => manuscriptRef.current?.click()}
-          disabled={uploading.manuscript}
-          className={cn(
-            'w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 transition-colors mb-4',
-            'hover:border-primary hover:bg-primary/5',
-            errors.manuscript_url ? 'border-destructive' : 'border-border'
-          )}>
-          
-            {uploading.manuscript ?
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /> :
-
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+          </div>
+        ) : (
+          <button
+            onClick={() => manuscriptRef.current?.click()}
+            disabled={uploading.manuscript}
+            className={cn(
+              'w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 transition-colors mb-4',
+              'hover:border-primary hover:bg-primary/5',
+              errors.manuscript_url ? 'border-destructive' : 'border-border'
+            )}
+          >
+            {uploading.manuscript ? (
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Upload className="w-6 h-6 text-primary" />
               </div>
-          }
+            )}
             <div className="text-center">
               <p className="text-sm font-semibold text-foreground">
                 {uploading.manuscript ? 'Uploading manuscript…' : 'Upload Manuscript'}
@@ -145,12 +304,12 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
               </p>
             </div>
           </button>
-        }
-        {errors.manuscript_url &&
-        <p className="flex items-center gap-1 text-xs text-destructive mb-4">
+        )}
+        {errors.manuscript_url && (
+          <p className="flex items-center gap-1 text-xs text-destructive mb-4">
             <AlertCircle className="w-3 h-3" /> {errors.manuscript_url}
           </p>
-        }
+        )}
 
         <Separator className="my-5" />
 
@@ -166,8 +325,8 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           <RadioGroup
             value={data.drm ? 'yes' : 'no'}
             onValueChange={(v) => onChange({ drm: v === 'yes' })}
-            className="space-y-2">
-            
+            className="space-y-2"
+          >
             <label className={cn(
               'flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all',
               data.drm ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
@@ -193,65 +352,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
       </Section>
 
       {/* ── 2. SAMPLE CHAPTER ── */}
-      <Section icon={Layers} title="Sample Chapter" subtitle="Give readers a free preview to boost conversions">
-        <p className="text-sm text-muted-foreground mb-1">
-          A sample chapter lets potential readers try before they buy. Classpedia displays it as a free excerpt on your book's product page.
-        </p>
-        <p className="text-xs text-muted-foreground mb-4">Upload the first chapter or an introductory excerpt (PDF, EPUB, DOCX). 
-
-        </p>
-
-        <input
-          ref={sampleRef}
-          type="file"
-          accept=".epub,.doc,.docx,.pdf"
-          className="hidden"
-          onChange={(e) => handleFileUpload('sample', e.target.files[0])} />
-        
-
-        {data.sample_url ?
-        <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Layers className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{data.sample_filename || 'Sample chapter uploaded'}</p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                <CheckCircle2 className="w-3 h-3 text-green-500" /> Uploaded successfully
-              </p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => sampleRef.current?.click()} className="shrink-0">
-              Replace
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => onChange({ sample_url: '', sample_filename: '' })}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div> :
-
-        <button
-          onClick={() => sampleRef.current?.click()}
-          disabled={uploading.sample}
-          className={cn(
-            'w-full border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-3 transition-colors',
-            'hover:border-primary hover:bg-primary/5 border-border'
-          )}>
-          
-            {uploading.sample ?
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /> :
-
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Layers className="w-6 h-6 text-primary" />
-              </div>
-          }
-            <div className="text-center">
-              <p className="text-sm font-semibold text-foreground">
-                {uploading.sample ? 'Uploading sample…' : 'Upload Sample Chapter'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">PDF, EPUB or DOCX · Optional</p>
-            </div>
-          </button>
-        }
-      </Section>
+      <SampleChapterSection data={data} onChange={onChange} />
 
       {/* ── 3. BOOK COVER ── */}
       <Section icon={ImageIcon} title="Book Cover" subtitle="Upload a high-quality cover image for your eBook">
@@ -265,11 +366,11 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={(e) => handleFileUpload('cover', e.target.files[0])} />
-        
+          onChange={(e) => handleFileUpload('cover', e.target.files[0])}
+        />
 
-        {data.cover_url ?
-        <div className="flex items-start gap-5 bg-primary/5 border border-primary/20 rounded-xl p-4">
+        {data.cover_url ? (
+          <div className="flex items-start gap-5 bg-primary/5 border border-primary/20 rounded-xl p-4">
             <img src={data.cover_url} alt="Book cover" className="w-24 h-36 object-cover rounded-lg shadow-md shrink-0" />
             <div className="flex-1 pt-1">
               <p className="text-sm font-semibold text-foreground">Cover uploaded</p>
@@ -285,24 +386,24 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
                 </Button>
               </div>
             </div>
-          </div> :
-
-        <button
-          onClick={() => coverRef.current?.click()}
-          disabled={uploading.cover}
-          className={cn(
-            'w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 transition-colors',
-            'hover:border-primary hover:bg-primary/5',
-            errors.cover_url ? 'border-destructive' : 'border-border'
-          )}>
-          
-            {uploading.cover ?
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /> :
-
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+          </div>
+        ) : (
+          <button
+            onClick={() => coverRef.current?.click()}
+            disabled={uploading.cover}
+            className={cn(
+              'w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 transition-colors',
+              'hover:border-primary hover:bg-primary/5',
+              errors.cover_url ? 'border-destructive' : 'border-border'
+            )}
+          >
+            {uploading.cover ? (
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <ImageIcon className="w-6 h-6 text-primary" />
               </div>
-          }
+            )}
             <div className="text-center">
               <p className="text-sm font-semibold text-foreground">
                 {uploading.cover ? 'Uploading cover…' : 'Upload Cover Image'}
@@ -310,15 +411,15 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
               <p className="text-xs text-muted-foreground mt-1">JPEG or PNG · Recommended 2560 × 1600 px</p>
             </div>
           </button>
-        }
-        {errors.cover_url &&
-        <p className="flex items-center gap-1 text-xs text-destructive mt-2">
+        )}
+        {errors.cover_url && (
+          <p className="flex items-center gap-1 text-xs text-destructive mt-2">
             <AlertCircle className="w-3 h-3" /> {errors.cover_url}
           </p>
-        }
+        )}
       </Section>
 
-      {/* ── 3. AI-GENERATED CONTENT ── */}
+      {/* ── 4. AI-GENERATED CONTENT ── */}
       <Section icon={Cpu} title="AI-Generated Content" subtitle="Transparency about the use of AI tools in your book">
         <p className="text-sm text-muted-foreground mb-1">
           Classpedia is collecting information about the use of Artificial Intelligence (AI) tools in creating content.
@@ -329,8 +430,8 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
         <RadioGroup
           value={data.ai_generated != null ? data.ai_generated ? 'yes' : 'no' : ''}
           onValueChange={(v) => onChange({ ai_generated: v === 'yes' })}
-          className="space-y-2">
-          
+          className="space-y-2"
+        >
           <label className={cn(
             'flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all',
             data.ai_generated === true ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
@@ -346,17 +447,17 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
             <span className="text-sm font-medium">No</span>
           </label>
         </RadioGroup>
-        {data.ai_generated &&
-        <div className="mt-4 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+        {data.ai_generated && (
+          <div className="mt-4 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
             <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
             <p className="text-xs text-blue-700">
               AI-generated content is permitted on Classpedia. Disclosing its use helps maintain reader trust and platform transparency.
             </p>
           </div>
-        }
+        )}
       </Section>
 
-      {/* ── 4. CLASSPEDIA PREVIEW ── */}
+      {/* ── 5. CLASSPEDIA PREVIEW ── */}
       <Section icon={Eye} title="Classpedia eBook Preview" subtitle="Preview your book before publishing">
         <p className="text-sm text-muted-foreground mb-1 font-medium">Online Preview & Quality Check</p>
         <p className="text-sm text-muted-foreground mb-5">
@@ -370,17 +471,17 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           className={cn(
             'gap-2 border-primary/30 hover:bg-primary/10 hover:text-primary',
             !data.manuscript_url && !data.cover_url && 'opacity-50 cursor-not-allowed'
-          )}>
-          
+          )}
+        >
           <Eye className="w-4 h-4" />
           Launch Preview
         </Button>
-        {!data.manuscript_url && !data.cover_url &&
-        <p className="text-xs text-muted-foreground mt-2">Upload a manuscript or cover to enable the preview.</p>
-        }
+        {!data.manuscript_url && !data.cover_url && (
+          <p className="text-xs text-muted-foreground mt-2">Upload a manuscript or cover to enable the preview.</p>
+        )}
       </Section>
 
-      {/* ── 5. ISBN ── */}
+      {/* ── 6. ISBN ── */}
       <Section icon={BookOpen} title="eBook ISBN" subtitle="Optional identifier for your book">
         <p className="text-sm text-muted-foreground mb-4">
           eBooks published on Classpedia are not required to have an ISBN. You may enter one if you have it.
@@ -391,8 +492,8 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
             value={data.isbn || ''}
             onChange={(e) => onChange({ isbn: e.target.value })}
             placeholder="e.g. 978-3-16-148410-0"
-            className="bg-background max-w-sm" />
-          
+            className="bg-background max-w-sm"
+          />
         </div>
       </Section>
 
@@ -407,12 +508,9 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
       </div>
 
       {/* Book Previewer Modal */}
-      {showPreviewer &&
-      <BookPreviewer
-        book={data}
-        onClose={() => setShowPreviewer(false)} />
-
-      }
-    </div>);
-
+      {showPreviewer && (
+        <BookPreviewer book={data} onClose={() => setShowPreviewer(false)} />
+      )}
+    </div>
+  );
 }
