@@ -67,72 +67,79 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
           <h3 className="text-sm font-semibold">Online Presence <span className="text-muted-foreground font-normal text-xs ml-1">(Optional)</span></h3>
           <p className="text-xs text-muted-foreground mt-0.5">Help readers find you across the web</p>
         </div>
-        <div className="px-5 py-5 space-y-4">
+        <div className="px-5 py-5 space-y-3">
 
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-muted-foreground" /> Author Website</Label>
+          {/* Website — full width */}
+          <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5">
+            <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               type="url"
               value={data.website || ''}
               onChange={e => onChange({ website: e.target.value })}
-              placeholder="https://yourwebsite.com"
+              placeholder="Your website (https://...)"
+              className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 shadow-none"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5"><Twitter className="w-3.5 h-3.5 text-[#1DA1F2]" /> X / Twitter</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground shrink-0">x.com/</span>
+          {/* Social grid — 2 columns */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5">
+              <Twitter className="w-4 h-4 text-[#1DA1F2] shrink-0" />
+              <span className="text-xs text-muted-foreground shrink-0">x.com/</span>
               <Input
                 value={data.twitter_handle || ''}
                 onChange={e => onChange({ twitter_handle: e.target.value.replace(/^@/, '') })}
-                placeholder="yourusername"
+                placeholder="username"
+                className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 shadow-none"
               />
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5"><Instagram className="w-3.5 h-3.5 text-[#E1306C]" /> Instagram</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground shrink-0">instagram.com/</span>
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5">
+              <Instagram className="w-4 h-4 text-[#E1306C] shrink-0" />
+              <span className="text-xs text-muted-foreground shrink-0">instagram.com/</span>
               <Input
                 value={data.instagram_handle || ''}
                 onChange={e => onChange({ instagram_handle: e.target.value.replace(/^@/, '') })}
-                placeholder="yourusername"
+                placeholder="username"
+                className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 shadow-none"
               />
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5"><Facebook className="w-3.5 h-3.5 text-[#1877F2]" /> Facebook</Label>
-            <Input
-              type="url"
-              value={data.facebook_url || ''}
-              onChange={e => onChange({ facebook_url: e.target.value })}
-              placeholder="https://facebook.com/yourpage"
-            />
-          </div>
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5">
+              <Facebook className="w-4 h-4 text-[#1877F2] shrink-0" />
+              <Input
+                type="url"
+                value={data.facebook_url || ''}
+                onChange={e => onChange({ facebook_url: e.target.value })}
+                placeholder="facebook.com/yourpage"
+                className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 shadow-none"
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5"><Linkedin className="w-3.5 h-3.5 text-[#0A66C2]" /> LinkedIn</Label>
-            <Input
-              type="url"
-              value={data.linkedin_url || ''}
-              onChange={e => onChange({ linkedin_url: e.target.value })}
-              placeholder="https://linkedin.com/in/yourprofile"
-            />
-          </div>
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5">
+              <Linkedin className="w-4 h-4 text-[#0A66C2] shrink-0" />
+              <Input
+                type="url"
+                value={data.linkedin_url || ''}
+                onChange={e => onChange({ linkedin_url: e.target.value })}
+                placeholder="linkedin.com/in/yourprofile"
+                className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 shadow-none"
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5"><Youtube className="w-3.5 h-3.5 text-[#FF0000]" /> YouTube</Label>
-            <Input
-              type="url"
-              value={data.youtube_url || ''}
-              onChange={e => onChange({ youtube_url: e.target.value })}
-              placeholder="https://youtube.com/@yourchannel"
-            />
-          </div>
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 sm:col-span-2">
+              <Youtube className="w-4 h-4 text-[#FF0000] shrink-0" />
+              <Input
+                type="url"
+                value={data.youtube_url || ''}
+                onChange={e => onChange({ youtube_url: e.target.value })}
+                placeholder="youtube.com/@yourchannel"
+                className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 shadow-none"
+              />
+            </div>
 
+          </div>
         </div>
       </div>
 

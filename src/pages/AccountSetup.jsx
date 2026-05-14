@@ -48,10 +48,8 @@ const validateStep3 = (data) => {
   return errors;
 };
 
-const validateStep4 = (data) => {
-  const errors = {};
-  if (!data.pen_name?.trim()) errors.pen_name = 'Author name is required';
-  return errors;
+const validateStep4 = (_data) => {
+  return {};
 };
 
 export default function AccountSetup() {
