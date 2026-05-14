@@ -131,6 +131,10 @@
       "type": "string",
       "description": "Book cover image URL"
     },
+    "classpedia_select": {
+      "type": "boolean",
+      "description": "Enrolled in Classpedia Select program (60-day exclusive, up to 3 free-promo days)"
+    },
     "royalty_plan": {
       "type": "string",
       "enum": [
