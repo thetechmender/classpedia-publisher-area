@@ -9,7 +9,7 @@ import ContentStep from '@/components/publish/ContentStep';
 import PricingStep from '@/components/publish/PricingStep';
 import ReviewStep from '@/components/publish/ReviewStep';
 import {
-  BookOpen, ChevronLeft, CheckCircle2, Upload, DollarSign, Eye,
+  BookOpen, ArrowLeft, ChevronLeft, CheckCircle2, Upload, DollarSign, Eye,
   FileText, Image, Tag, Clock, Save
 } from 'lucide-react';
 
@@ -289,10 +289,10 @@ export default function PublishBook() {
               </div>
               <Link
                 to="/"
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors text-sm font-medium"
               >
-                <ChevronLeft className="w-4 h-4" />
-                Dashboard
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
               </Link>
             </div>
             {/* Mobile step progress */}

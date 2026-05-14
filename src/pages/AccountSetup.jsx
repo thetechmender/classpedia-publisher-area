@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, ArrowLeft } from 'lucide-react';
 import SetupStepIndicator from '@/components/setup/SetupStepIndicator';
 import AccountInfoStep from '@/components/setup/AccountInfoStep';
 import PaymentStep from '@/components/setup/PaymentStep';
@@ -114,14 +114,23 @@ export default function AccountSetup() {
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
       <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <BookOpen className="w-4 h-4 text-primary-foreground" />
+        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold">Classpedia Publishing</h1>
+              <p className="text-xs text-muted-foreground">Author Account Setup</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-semibold">Classpedia Publishing</h1>
-            <p className="text-xs text-muted-foreground">Author Account Setup</p>
-          </div>
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors text-sm font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </button>
         </div>
       </div>
 
