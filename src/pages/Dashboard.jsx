@@ -32,7 +32,8 @@ const MOBILE_NAV = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('overview');       // raw sidebar id
+  const [resolvedTab, setResolvedTab] = useState('overview');   // actual component to render
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const { data: authorProfiles, isFetched: isProfileFetched } = useQuery({
@@ -56,11 +57,10 @@ export default function Dashboard() {
   });
 
   const handleTabChange = (tab) => {
-    setActiveTab(TAB_ALIAS[tab] || tab);
+    setActiveTab(tab);
+    setResolvedTab(TAB_ALIAS[tab] || tab);
     setMobileSidebarOpen(false);
   };
-
-  const resolvedTab = TAB_ALIAS[activeTab] || activeTab;
 
   if (!isProfileFetched) {
     return (
@@ -141,7 +141,7 @@ export default function Dashboard() {
               onClick={() => handleTabChange(id)}
               className={cn(
                 'flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors',
-                resolvedTab === id ? 'text-primary' : 'text-muted-foreground'
+                (TAB_ALIAS[activeTab] || activeTab) === id ? 'text-primary' : 'text-muted-foreground'
               )}
             >
               <Icon className="w-5 h-5" />
