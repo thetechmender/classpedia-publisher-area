@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { X, Plus, ChevronRight, BookOpen, Info, Users, Tag, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Plus, ChevronRight, BookOpen, Info, Users, Tag, Clock, AlertCircle, CheckCircle2, Search, Link } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -75,6 +75,183 @@ const ErrorMsg = ({ msg }) =>
       <AlertCircle className="w-3 h-3 shrink-0" /> {msg}
     </p>
   ) : null;
+
+// ── Series Details Component ──────────────────────────────────────────────────
+function SeriesDetails({ data, onChange }) {
+  const bookNumber = parseInt(data.series_number) || 0;
+  const seriesBooks = data.series_books || [];
+
+  const handleBookNumberChange = (val) => {
+    const n = parseInt(val) || '';
+    // Resize seriesBooks array to n-1 entries (all books that come before this one)
+    if (n > 1) {
+      const needed = n - 1;
+      const existing = seriesBooks.slice(0, needed);
+      while (existing.length < needed) existing.push({ title: '', link: '' });
+      onChange({ series_number: n, series_books: existing });
+    } else {
+      onChange({ series_number: n, series_books: [] });
+    }
+  };
+
+  const updateBook = (index, field, value) => {
+    const updated = [...seriesBooks];
+    updated[index] = { ...updated[index], [field]: value };
+    onChange({ series_books: updated });
+  };
+
+  return (
+    <div className="mt-3 p-4 bg-secondary/40 border border-border rounded-xl space-y-4">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Series Details</p>
+
+      {/* Volume number */}
+      <div>
+        <FieldLabel label="Book Number in Series" tooltip="Which number is this book in the series? (e.g. 3 = Book 3)" />
+        <Input
+          type="number"
+          min="1"
+          value={data.series_number || ''}
+          onChange={(e) => handleBookNumberChange(e.target.value)}
+          placeholder="e.g. 3"
+          className="bg-background max-w-[120px]"
+        />
+      </div>
+
+      {/* Prior books in series */}
+      {bookNumber > 1 && (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            You're publishing <span className="font-semibold text-foreground">Book {bookNumber}</span>. 
+            Add links to the earlier books so readers can start from the beginning.
+          </p>
+          {seriesBooks.map((book, i) => (
+            <div key={i} className="rounded-lg border border-border bg-background px-3 py-3 space-y-2">
+              <p className="text-xs font-semibold text-foreground">Book {i + 1}</p>
+              <Input
+                value={book.title || ''}
+                onChange={(e) => updateBook(i, 'title', e.target.value)}
+                placeholder={`Title of Book ${i + 1}`}
+                className="bg-background text-sm h-8"
+              />
+              <div className="flex items-center gap-2">
+                <Link className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <Input
+                  value={book.link || ''}
+                  onChange={(e) => updateBook(i, 'link', e.target.value)}
+                  placeholder="https://classpedia.ai/book/... (optional)"
+                  className="bg-background text-sm h-8"
+                />
+              </div>
+            </div>
+          ))}
+          <p className="text-xs text-muted-foreground">
+            Helps readers discover the full series before purchasing.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Category Picker Component ─────────────────────────────────────────────────
+function CategoryPicker({ selected, onChange, error }) {
+  const [search, setSearch] = useState('');
+
+  const filtered = search.trim()
+    ? CATEGORIES.filter(c => c.toLowerCase().includes(search.toLowerCase()))
+    : CATEGORIES;
+
+  const toggle = (cat) => {
+    if (selected.includes(cat)) {
+      onChange(selected.filter(c => c !== cat));
+    } else if (selected.length < 3) {
+      onChange([...selected, cat]);
+    }
+  };
+
+  return (
+    <div>
+      {/* Selected tags */}
+      <div className="flex flex-wrap gap-2 mb-3 min-h-[32px]">
+        {selected.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic">No categories selected yet</p>
+        ) : (
+          selected.map(cat => (
+            <Badge key={cat} className="gap-1.5 py-1 px-2.5 bg-primary/10 text-primary border border-primary/20 font-medium">
+              {cat}
+              <button onClick={() => toggle(cat)} className="hover:text-destructive transition-colors ml-0.5">
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          ))
+        )}
+      </div>
+
+      {error && <ErrorMsg msg={error} />}
+
+      {/* Counter + search row */}
+      <div className="flex items-center gap-2 mb-2">
+        <div className="relative flex-1">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search categories…"
+            className="pl-8 h-8 text-sm bg-background"
+          />
+        </div>
+        <span className={cn(
+          'text-xs font-medium shrink-0',
+          selected.length === 3 ? 'text-primary' : 'text-muted-foreground'
+        )}>
+          {selected.length}/3
+          {selected.length === 3 && <span className="ml-1">✓</span>}
+        </span>
+      </div>
+
+      {/* Dropdown list */}
+      <div className="border border-border rounded-lg overflow-hidden bg-background max-h-48 overflow-y-auto">
+        {filtered.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-4">No results for "{search}"</p>
+        ) : (
+          filtered.map((cat) => {
+            const isSelected = selected.includes(cat);
+            const isDisabled = !isSelected && selected.length >= 3;
+            return (
+              <button
+                key={cat}
+                type="button"
+                disabled={isDisabled}
+                onClick={() => toggle(cat)}
+                className={cn(
+                  'w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors border-b border-border/50 last:border-0',
+                  isSelected ? 'bg-primary/8 text-primary' : isDisabled
+                    ? 'text-muted-foreground opacity-40 cursor-not-allowed'
+                    : 'hover:bg-secondary/60 text-foreground'
+                )}
+              >
+                <div className={cn(
+                  'w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0',
+                  isSelected ? 'bg-primary border-primary' : 'border-border'
+                )}>
+                  {isSelected && (
+                    <svg className="w-2 h-2 text-white" viewBox="0 0 10 10" fill="none">
+                      <path d="M1.5 5L4 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                {cat}
+              </button>
+            );
+          })
+        )}
+      </div>
+      {selected.length < 3 && (
+        <p className="text-xs text-muted-foreground mt-1.5">Select up to {3 - selected.length} more categor{3 - selected.length === 1 ? 'y' : 'ies'}</p>
+      )}
+    </div>
+  );
+}
 
 export default function BookDetailsStep({ data, onChange, errors, onNext }) {
   const [keywordInput, setKeywordInput] = useState('');
@@ -168,48 +345,15 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             <FieldLabel label="Series Name" tooltip="If this book is part of a series, enter the series name" />
             <Input
               value={data.series_name || ''}
-              onChange={(e) => onChange({ series_name: e.target.value, ...(e.target.value === '' ? { series_number: '', previous_book_title: '', previous_book_link: '' } : {}) })}
+              onChange={(e) => {
+                const val = e.target.value;
+                onChange({ series_name: val, ...(val === '' ? { series_number: '', series_books: [] } : {}) });
+              }}
               placeholder="Series name (optional)"
               className="bg-background"
             />
             {data.series_name && (
-              <div className="mt-3 p-4 bg-secondary/40 border border-border rounded-xl space-y-3">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Series Details</p>
-                <div>
-                  <FieldLabel label="Volume / Book Number" tooltip="Which number is this book in the series?" />
-                  <Input
-                    type="number"
-                    min="1"
-                    value={data.series_number || ''}
-                    onChange={(e) => onChange({ series_number: e.target.value })}
-                    placeholder="e.g. 2"
-                    className="bg-background max-w-[120px]"
-                  />
-                </div>
-                <div>
-                  <FieldLabel label="Previous Book in Series" tooltip="Title of the book that comes before this one, if any" />
-                  <Input
-                    value={data.previous_book_title || ''}
-                    onChange={(e) => onChange({ previous_book_title: e.target.value })}
-                    placeholder="Title of Book 1 (optional)"
-                    className="bg-background"
-                  />
-                </div>
-                {data.previous_book_title && (
-                  <div>
-                    <FieldLabel label="Link to Previous Book" tooltip="A URL where readers can find the previous book (e.g. Classpedia or Amazon link)" />
-                    <Input
-                      value={data.previous_book_link || ''}
-                      onChange={(e) => onChange({ previous_book_link: e.target.value })}
-                      placeholder="https://classpedia.ai/book/..."
-                      className="bg-background"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1.5">
-                      Helps readers start from Book 1 before purchasing this title.
-                    </p>
-                  </div>
-                )}
-              </div>
+              <SeriesDetails data={data} onChange={onChange} />
             )}
           </div>
           <div>
@@ -350,54 +494,11 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
 
       {/* ── 3. CATEGORIES ── */}
       <Section icon={Tag} title="Categories" subtitle="Choose up to 3 categories that best describe your book">
-        <p className="text-xs text-muted-foreground mb-4">
-          Categories help readers browse and discover your title on Classpedia. Select up to 3.
-        </p>
-        {errors.categories && <ErrorMsg msg={errors.categories} />}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {CATEGORIES.map((cat) => {
-            const selected = (data.categories || []).includes(cat);
-            const maxReached = (data.categories || []).length >= 3 && !selected;
-            return (
-              <button
-                key={cat}
-                type="button"
-                disabled={maxReached}
-                onClick={() => selected ? removeCategory(cat) : addCategory(cat)}
-                className={cn(
-                  'flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-left text-sm transition-all',
-                  selected
-                    ? 'border-primary bg-primary/8 text-primary font-medium'
-                    : maxReached
-                      ? 'border-border bg-secondary/30 text-muted-foreground opacity-50 cursor-not-allowed'
-                      : 'border-border bg-background hover:border-primary/40 hover:bg-primary/5 text-foreground'
-                )}
-              >
-                <div className={cn(
-                  'w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors',
-                  selected ? 'bg-primary border-primary' : 'border-border'
-                )}>
-                  {selected && (
-                    <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
-                      <path d="M1.5 5L4 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </div>
-                {cat}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
-          <p className="text-xs text-muted-foreground">{(data.categories || []).length}/3 categories selected</p>
-          {(data.categories || []).length === 3 && (
-            <p className="text-xs text-primary font-medium flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Maximum reached
-            </p>
-          )}
-        </div>
+        <CategoryPicker
+          selected={data.categories || []}
+          onChange={(cats) => onChange({ categories: cats })}
+          error={errors.categories}
+        />
       </Section>
 
       {/* ── 4. PRIMARY AUDIENCE ── */}
