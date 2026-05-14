@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  X, ChevronLeft, ChevronRight, BookOpen, Monitor, Smartphone, Tablet,
+  X, ChevronLeft, ChevronRight, BookOpen, Monitor,
   FileText, AlertCircle, MessageCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -386,6 +386,7 @@ export default function BookPreviewer({ book, onClose }) {
   const [spreadIndex, setSpreadIndex] = useState(0);
   const [flipping, setFlipping] = useState(null); // { direction, fromSpread, toSpread }
   const [device, setDevice] = useState('desktop');
+  // Only desktop view is available
 
   const SPREADS = buildSpreads(book);
   const total = SPREADS.length;
@@ -415,14 +416,8 @@ export default function BookPreviewer({ book, onClose }) {
     return () => window.removeEventListener('keydown', handler);
   }, [navigate, onClose]);
 
-  // Device configs
-  // desktop/tablet: two-page spread (w = total width of both pages)
-  // mobile: single page only
-  const deviceConfig = {
-    desktop: { w: 900, h: 580, twoPage: true },
-    tablet:  { w: 680, h: 480, twoPage: true },
-    mobile:  { w: 320, h: 480, twoPage: false },
-  }[device];
+  // Desktop-only: two-page spread
+  const deviceConfig = { w: 900, h: 580, twoPage: true };
 
   const isMobile = !deviceConfig.twoPage;
   const pageW = isMobile ? deviceConfig.w : deviceConfig.w / 2;
@@ -457,26 +452,10 @@ export default function BookPreviewer({ book, onClose }) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Device switcher */}
-            <div className="flex items-center gap-0.5 bg-white/[0.06] rounded-lg p-1">
-              {[
-                { key: 'desktop', Icon: Monitor, label: 'Desktop' },
-                { key: 'tablet', Icon: Tablet, label: 'Tablet' },
-                { key: 'mobile', Icon: Smartphone, label: 'Mobile' },
-              ].map(({ key, Icon, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setDevice(key)}
-                  title={label}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2.5 h-7 rounded-md text-[11px] font-medium transition-all',
-                    device === key ? 'bg-white text-slate-900 shadow-sm' : 'text-white/40 hover:text-white/70'
-                  )}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{label}</span>
-                </button>
-              ))}
+            {/* Device indicator */}
+            <div className="flex items-center gap-1.5 bg-white/[0.06] rounded-lg px-2.5 h-8">
+              <Monitor className="w-3.5 h-3.5 text-white/60" />
+              <span className="text-white/60 text-[11px] font-medium hidden sm:inline">Desktop</span>
             </div>
 
             {/* Page counter */}
