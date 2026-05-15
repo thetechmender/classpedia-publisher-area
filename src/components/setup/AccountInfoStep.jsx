@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,34 @@ const FieldError = ({ msg }) => msg ?
 null;
 
 export default function AccountInfoStep({ data, onChange, errors, onNext }) {
+  const autocompleteRef = useRef(null);
+
+  useEffect(() => {
+    if (!window.google?.maps?.places) return;
+    const input = autocompleteRef.current;
+    if (!input) return;
+    const autocomplete = new window.google.maps.places.Autocomplete(input, { types: ['address'] });
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace();
+      if (!place.address_components) return;
+      const get = (type) => {
+        const comp = place.address_components.find(c => c.types.includes(type));
+        return comp ? comp.long_name : '';
+      };
+      const getShort = (type) => {
+        const comp = place.address_components.find(c => c.types.includes(type));
+        return comp ? comp.short_name : '';
+      };
+      onChange({
+        address_line1: `${get('street_number')} ${get('route')}`.trim(),
+        city: get('locality') || get('postal_town'),
+        state: get('administrative_area_level_1'),
+        zip: getShort('postal_code'),
+        country: get('country'),
+      });
+    });
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 pb-4 border-b">
@@ -50,7 +78,6 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
                 onChange={(e) => onChange({ first_name: e.target.value })}
                 placeholder="John"
                 className={errors.first_name ? 'border-destructive' : ''} />
-              
               <FieldError msg={errors.first_name} />
             </div>
             <div className="space-y-1.5">
@@ -60,7 +87,6 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
                 onChange={(e) => onChange({ last_name: e.target.value })}
                 placeholder="Doe"
                 className={errors.last_name ? 'border-destructive' : ''} />
-              
               <FieldError msg={errors.last_name} />
             </div>
           </div>
@@ -81,7 +107,6 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
               onChange={(e) => onChange({ email: e.target.value })}
               placeholder="john@example.com"
               className={errors.email ? 'border-destructive' : ''} />
-            
             <FieldError msg={errors.email} />
           </div>
           <div className="space-y-1.5">
@@ -91,7 +116,6 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
               value={data.phone || ''}
               onChange={(e) => onChange({ phone: e.target.value })}
               placeholder="+1 (555) 000-0000" />
-            
           </div>
         </div>
       </div>
@@ -104,20 +128,13 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
         </div>
         <div className="px-5 py-5 space-y-4">
           <div className="space-y-1.5">
-            <Label>Address Line </Label>
+            <Label>Address Line</Label>
             <Input
+              ref={autocompleteRef}
               value={data.address_line1 || ''}
               onChange={(e) => onChange({ address_line1: e.target.value })}
-              placeholder="Street address, P.O. box" />
-            
-          </div>
-          <div className="space-y-1.5">
-            
-            
-
-
-            
-            
+              placeholder="Start typing your street address…" />
+            <p className="text-[10px] text-muted-foreground">City, state, ZIP and country will auto-fill when you select an address.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
@@ -126,7 +143,6 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
                 value={data.city || ''}
                 onChange={(e) => onChange({ city: e.target.value })}
                 placeholder="City" />
-              
             </div>
             <div className="space-y-1.5">
               <Label>State / Province</Label>
@@ -134,7 +150,6 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
                 value={data.state || ''}
                 onChange={(e) => onChange({ state: e.target.value })}
                 placeholder="State / Province" />
-              
             </div>
             <div className="space-y-1.5">
               <Label>ZIP / Postal Code</Label>
@@ -142,7 +157,6 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
                 value={data.zip || ''}
                 onChange={(e) => onChange({ zip: e.target.value })}
                 placeholder="ZIP / Postal code" />
-              
             </div>
           </div>
           <div className="space-y-1.5">
@@ -166,5 +180,4 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
         </Button>
       </div>
     </div>);
-
 }

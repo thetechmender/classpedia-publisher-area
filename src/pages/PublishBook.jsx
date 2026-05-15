@@ -18,6 +18,8 @@ const validateStep1 = (data) => {
   if (!data.title?.trim()) errors.title = 'Book title is required';
   if (!data.author_name?.trim()) errors.author_name = 'Author name is required';
   if (!data.description?.trim()) errors.description = 'Description is required';
+  else if (data.description.trim().length < 50) errors.description = 'Description must be at least 50 characters';
+  else if (data.description.trim().length > 4000) errors.description = 'Description cannot exceed 4,000 characters';
   if (!data.language) errors.language = 'Please select a language';
   if (data.preorder_type === 'preorder' && !data.preorder_date) {
     errors.preorder_date = 'Please set a pre-order release date';
@@ -52,6 +54,8 @@ const validateAll = (data) => {
   if (!data.title?.trim()) errors.push('Book title is required');
   if (!data.author_name?.trim()) errors.push('Author name is required');
   if (!data.description?.trim()) errors.push('Description is required');
+  else if (data.description.trim().length < 50) errors.push('Description must be at least 50 characters');
+  else if (data.description.trim().length > 4000) errors.push('Description cannot exceed 4,000 characters');
   if (!data.language) errors.push('Language is required');
   if (!data.manuscript_url) errors.push('Manuscript upload is required');
   if (!data.cover_url) errors.push('Cover image is required');

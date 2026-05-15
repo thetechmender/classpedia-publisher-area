@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { X, Plus, ChevronRight, BookOpen, Info, Users, Tag, Clock, AlertCircle, CheckCircle2, Search, Link } from 'lucide-react';
+import { X, Plus, ChevronRight, BookOpen, Info, Users, Tag, Clock, AlertCircle, CheckCircle2, Search } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -78,81 +78,25 @@ const ErrorMsg = ({ msg }) =>
 
 // ── Series Details Component ──────────────────────────────────────────────────
 function SeriesDetails({ data, onChange }) {
-  const bookNumber = parseInt(data.series_number) || 0;
-  const seriesBooks = data.series_books || [];
-
-  const handleBookNumberChange = (val) => {
-    const n = parseInt(val);
-    if (!val || isNaN(n)) {
-      onChange({ series_number: null, series_books: [] });
-      return;
-    }
-    // Resize seriesBooks array to n-1 entries (all books that come before this one)
-    if (n > 1) {
-      const needed = n - 1;
-      const existing = seriesBooks.slice(0, needed);
-      while (existing.length < needed) existing.push({ title: '', link: '' });
-      onChange({ series_number: n, series_books: existing });
-    } else {
-      onChange({ series_number: n, series_books: [] });
-    }
-  };
-
-  const updateBook = (index, field, value) => {
-    const updated = [...seriesBooks];
-    updated[index] = { ...updated[index], [field]: value };
-    onChange({ series_books: updated });
-  };
-
   return (
-    <div className="mt-3 p-4 bg-secondary/40 border border-border rounded-xl space-y-4">
+    <div className="mt-3 p-3 bg-secondary/40 border border-border rounded-lg space-y-3">
       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Series Details</p>
-
-      {/* Volume number */}
       <div>
         <FieldLabel label="Book Number in Series" tooltip="Which number is this book in the series? (e.g. 3 = Book 3)" />
         <Input
           type="number"
           min="1"
           value={data.series_number ?? ''}
-          onChange={(e) => handleBookNumberChange(e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value;
+            const n = parseInt(val);
+            onChange({ series_number: !val || isNaN(n) ? null : n });
+          }}
           placeholder="e.g. 3"
           className="bg-background max-w-[120px]"
         />
+        <p className="text-xs text-muted-foreground mt-1">Leave blank if this is the only book or Book 1.</p>
       </div>
-
-      {/* Prior books in series */}
-      {bookNumber > 1 && (
-        <div className="space-y-3">
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            You're publishing <span className="font-semibold text-foreground">Book {bookNumber}</span>. 
-            Add links to the earlier books so readers can start from the beginning.
-          </p>
-          {seriesBooks.map((book, i) => (
-            <div key={i} className="rounded-lg border border-border bg-background px-3 py-3 space-y-2">
-              <p className="text-xs font-semibold text-foreground">Book {i + 1}</p>
-              <Input
-                value={book.title || ''}
-                onChange={(e) => updateBook(i, 'title', e.target.value)}
-                placeholder={`Title of Book ${i + 1}`}
-                className="bg-background text-sm h-8"
-              />
-              <div className="flex items-center gap-2">
-                <Link className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                <Input
-                  value={book.link || ''}
-                  onChange={(e) => updateBook(i, 'link', e.target.value)}
-                  placeholder="https://classpedia.ai/book/... (optional)"
-                  className="bg-background text-sm h-8"
-                />
-              </div>
-            </div>
-          ))}
-          <p className="text-xs text-muted-foreground">
-            Helps readers discover the full series before purchasing.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
@@ -373,7 +317,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
 
         {/* Author */}
         <div className="mb-5">
-          <FieldLabel label="Author Name" required tooltip="The primary author's name as it will appear on the book" />
+          <FieldLabel label="Author Name" required tooltip="Enter the primary author or contributor. Pen names are allowed. To include a middle name or prefix, add it to the first name field. Suffixes should be added to the last name." />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Input
@@ -448,20 +392,25 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
       {/* ── 2. DESCRIPTION & KEYWORDS ── */}
       <Section icon={Tag} title="Description & Keywords" subtitle="Help readers find and understand your book">
         <div className="mb-5">
-          <FieldLabel label="Book Description" required tooltip="A compelling description that appears on the product page. Minimum 4,000 characters required." />
+          <FieldLabel label="Book Description" required tooltip="A compelling description that appears on your book's product page. Minimum 50 characters, maximum 4,000 characters." />
           <Textarea
             value={data.description || ''}
             onChange={(e) => onChange({ description: e.target.value })}
-            placeholder="Write a compelling book description that hooks readers… (minimum 4,000 characters required)"
-            className={cn('min-h-[200px] bg-background resize-none', errors.description && 'border-destructive')}
-            maxLength={4000000}
+            placeholder="Write a compelling book description that hooks readers… (50–4,000 characters)"
+            className={cn('min-h-[180px] bg-background resize-none', errors.description && 'border-destructive')}
+            maxLength={4000}
           />
           <div className="flex justify-between items-start mt-1.5 gap-2">
             <div className="flex-1">
               <ErrorMsg msg={errors.description} />
+              {(data.description || '').length > 0 && (data.description || '').length < 50 && (
+                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" /> {50 - (data.description || '').length} more characters needed
+                </p>
+              )}
             </div>
-            <span className="text-xs shrink-0 font-medium text-muted-foreground">
-              {(data.description || '').length.toLocaleString()} chars
+            <span className={cn('text-xs shrink-0 font-medium', (data.description || '').length > 3800 ? 'text-destructive' : 'text-muted-foreground')}>
+              {(data.description || '').length} / 4,000
             </span>
           </div>
         </div>

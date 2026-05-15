@@ -215,10 +215,109 @@ function SampleChapterSection({ data, onChange }) {
   );
 }
 
+// ── Cover Section with Front, Spine, Back ─────────────────────────────────────
+function CoverSection({ data, onChange, errors, uploading, setUploading, coverRef }) {
+  const backCoverRef = useRef(null);
+  const spineRef = useRef(null);
+
+  const handleUpload = async (type, file) => {
+    if (!file) return;
+    setUploading(prev => ({ ...prev, [type]: true }));
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    if (type === 'cover') onChange({ cover_url: file_url });
+    else if (type === 'back_cover') onChange({ back_cover_url: file_url });
+    else if (type === 'spine') onChange({ spine_url: file_url });
+    setUploading(prev => ({ ...prev, [type]: false }));
+  };
+
+  const CoverUploadSlot = ({ label, required, hint, uploadKey, url, inputRef, onRemove }) => (
+    <div className="flex-1 min-w-0">
+      <p className="text-xs font-semibold text-foreground mb-1">
+        {label} {required && <span className="text-destructive">*</span>}
+      </p>
+      {hint && <p className="text-[10px] text-muted-foreground mb-2 leading-snug">{hint}</p>}
+      <input ref={inputRef} type="file" accept="image/*" className="hidden"
+        onChange={(e) => handleUpload(uploadKey, e.target.files[0])} />
+      {url ? (
+        <div className="relative group border border-primary/20 rounded-lg overflow-hidden bg-primary/5">
+          <img src={url} alt={label}
+            className={cn('w-full object-cover rounded-lg', uploadKey === 'spine' ? 'h-28' : 'h-40')} />
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
+            <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => inputRef.current?.click()}>Replace</Button>
+            <Button variant="ghost" size="sm" className="h-7 text-xs text-white hover:text-white" onClick={onRemove}><X className="w-3.5 h-3.5" /></Button>
+          </div>
+          <div className="absolute bottom-1 left-1 right-1 flex items-center justify-center">
+            <span className="text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1">
+              <CheckCircle2 className="w-2.5 h-2.5 text-green-400" /> Uploaded
+            </span>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => inputRef.current?.click()} disabled={uploading[uploadKey]}
+          className={cn(
+            'w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 transition-colors',
+            uploadKey === 'spine' ? 'py-6' : 'py-8',
+            'hover:border-primary hover:bg-primary/5',
+            errors[`${uploadKey}_url`] ? 'border-destructive' : 'border-border'
+          )}>
+          {uploading[uploadKey]
+            ? <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            : <ImageIcon className="w-5 h-5 text-muted-foreground" />}
+          <p className="text-xs text-muted-foreground font-medium">
+            {uploading[uploadKey] ? 'Uploading…' : 'Upload'}
+          </p>
+        </button>
+      )}
+    </div>
+  );
+
+  return (
+    <Section icon={ImageIcon} title="Book Cover" subtitle="Upload front cover (required), plus optional back cover and spine">
+      <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+        Your cover is the first thing readers see. Use a high-resolution image for the best impression.
+        Front cover: <strong>2560 × 1600 px</strong> recommended, JPEG or PNG.
+      </p>
+
+      <div className="flex gap-3">
+        <CoverUploadSlot
+          label="Front Cover" required
+          hint="Main cover shown on the product page"
+          uploadKey="cover"
+          url={data.cover_url}
+          inputRef={coverRef}
+          onRemove={() => onChange({ cover_url: '' })}
+        />
+        <CoverUploadSlot
+          label="Back Cover"
+          hint="Shown in full-spread view"
+          uploadKey="back_cover"
+          url={data.back_cover_url}
+          inputRef={backCoverRef}
+          onRemove={() => onChange({ back_cover_url: '' })}
+        />
+        <CoverUploadSlot
+          label="Spine"
+          hint="Narrow strip between covers"
+          uploadKey="spine"
+          url={data.spine_url}
+          inputRef={spineRef}
+          onRemove={() => onChange({ spine_url: '' })}
+        />
+      </div>
+
+      {errors.cover_url && (
+        <p className="flex items-center gap-1 text-xs text-destructive mt-2">
+          <AlertCircle className="w-3 h-3" /> {errors.cover_url}
+        </p>
+      )}
+    </Section>
+  );
+}
+
 export default function ContentStep({ data, onChange, errors, onNext, onBack }) {
   const manuscriptRef = useRef(null);
   const coverRef = useRef(null);
-  const [uploading, setUploading] = useState({ manuscript: false, cover: false });
+  const [uploading, setUploading] = useState({ manuscript: false, cover: false, back_cover: false, spine: false });
   const [showPreviewer, setShowPreviewer] = useState(false);
 
   const handleFileUpload = async (type, file) => {
@@ -227,8 +326,6 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     if (type === 'manuscript') {
       onChange({ manuscript_url: file_url, manuscript_filename: file.name });
-    } else {
-      onChange({ cover_url: file_url });
     }
     setUploading((prev) => ({ ...prev, [type]: false }));
   };
@@ -355,69 +452,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
       <SampleChapterSection data={data} onChange={onChange} />
 
       {/* ── 3. BOOK COVER ── */}
-      <Section icon={ImageIcon} title="Book Cover" subtitle="Upload a high-quality cover image for your eBook">
-        <p className="text-xs text-muted-foreground mb-4">
-          Your cover is the first thing readers see. Use a high-resolution image for the best impression.
-          Recommended size: <strong>2560 × 1600 px</strong>, JPEG or PNG.
-        </p>
-
-        <input
-          ref={coverRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => handleFileUpload('cover', e.target.files[0])}
-        />
-
-        {data.cover_url ? (
-          <div className="flex items-start gap-5 bg-primary/5 border border-primary/20 rounded-xl p-4">
-            <img src={data.cover_url} alt="Book cover" className="w-24 h-36 object-cover rounded-lg shadow-md shrink-0" />
-            <div className="flex-1 pt-1">
-              <p className="text-sm font-semibold text-foreground">Cover uploaded</p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                <CheckCircle2 className="w-3 h-3 text-green-500" /> Image ready for publishing
-              </p>
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" onClick={() => coverRef.current?.click()}>
-                  Replace Cover
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => onChange({ cover_url: '' })}>
-                  <X className="w-3.5 h-3.5 mr-1" /> Remove
-                </Button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => coverRef.current?.click()}
-            disabled={uploading.cover}
-            className={cn(
-              'w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 transition-colors',
-              'hover:border-primary hover:bg-primary/5',
-              errors.cover_url ? 'border-destructive' : 'border-border'
-            )}
-          >
-            {uploading.cover ? (
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <ImageIcon className="w-6 h-6 text-primary" />
-              </div>
-            )}
-            <div className="text-center">
-              <p className="text-sm font-semibold text-foreground">
-                {uploading.cover ? 'Uploading cover…' : 'Upload Cover Image'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">JPEG or PNG · Recommended 2560 × 1600 px</p>
-            </div>
-          </button>
-        )}
-        {errors.cover_url && (
-          <p className="flex items-center gap-1 text-xs text-destructive mt-2">
-            <AlertCircle className="w-3 h-3" /> {errors.cover_url}
-          </p>
-        )}
-      </Section>
+      <CoverSection data={data} onChange={onChange} errors={errors} uploading={uploading} setUploading={setUploading} coverRef={coverRef} />
 
       {/* ── 4. AI-GENERATED CONTENT ── */}
       <Section icon={Cpu} title="AI-Generated Content" subtitle="Transparency about the use of AI tools in your book">

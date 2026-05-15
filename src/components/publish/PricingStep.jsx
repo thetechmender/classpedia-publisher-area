@@ -175,6 +175,9 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
         <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
           Classpedia Select is a free, 60-day program for eBooks. It allows you to run promotions — including making your book free for up to 3 days every 60 days.
         </p>
+        <p className="text-xs text-muted-foreground mt-1.5 italic">
+          Not sure yet? You can opt into Classpedia Select later from your book's dashboard at any time.
+        </p>
 
         <button
           onClick={() => setSelectExpanded(!selectExpanded)}
