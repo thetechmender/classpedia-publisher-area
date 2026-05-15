@@ -272,10 +272,10 @@ function CoverSection({ data, onChange, errors, uploading, setUploading, coverRe
   );
 
   return (
-    <Section icon={ImageIcon} title="Book Cover" subtitle="Upload front cover (required), plus optional back cover and spine">
+    <Section icon={ImageIcon} title="Book Cover" subtitle="Upload front cover (required), plus optional spine and back cover">
       <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
         Your cover is the first thing readers see. Use a high-resolution image for the best impression.
-        Front cover: <strong>2560 × 1600 px</strong> recommended, JPEG or PNG.
+        Front cover: <strong>1600 × 2560 px</strong> recommended (portrait), JPEG or PNG.
       </p>
 
       <div className="flex gap-3">
@@ -288,20 +288,20 @@ function CoverSection({ data, onChange, errors, uploading, setUploading, coverRe
           onRemove={() => onChange({ cover_url: '' })}
         />
         <CoverUploadSlot
+          label="Spine"
+          hint="Narrow strip between front and back cover"
+          uploadKey="spine"
+          url={data.spine_url}
+          inputRef={spineRef}
+          onRemove={() => onChange({ spine_url: '' })}
+        />
+        <CoverUploadSlot
           label="Back Cover"
           hint="Shown in full-spread view"
           uploadKey="back_cover"
           url={data.back_cover_url}
           inputRef={backCoverRef}
           onRemove={() => onChange({ back_cover_url: '' })}
-        />
-        <CoverUploadSlot
-          label="Spine"
-          hint="Narrow strip between covers"
-          uploadKey="spine"
-          url={data.spine_url}
-          inputRef={spineRef}
-          onRemove={() => onChange({ spine_url: '' })}
         />
       </div>
 
