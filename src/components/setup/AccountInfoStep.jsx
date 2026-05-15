@@ -6,14 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ChevronRight, User, AlertCircle } from 'lucide-react';
 
 const COUNTRIES = [
-'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France',
-'India', 'Brazil', 'Spain', 'Italy', 'Netherlands', 'Sweden', 'Norway',
-'Denmark', 'Finland', 'Switzerland', 'Austria', 'Belgium', 'Portugal',
-'Ireland', 'New Zealand', 'Singapore', 'Japan', 'South Korea', 'Mexico',
-'Argentina', 'Colombia', 'Chile', 'South Africa', 'Nigeria', 'Kenya',
-'Egypt', 'Israel', 'Turkey', 'Poland', 'Czech Republic', 'Hungary',
-'Romania', 'Ukraine', 'Russia', 'China', 'Indonesia', 'Malaysia',
-'Philippines', 'Thailand', 'Vietnam', 'Pakistan', 'Bangladesh'];
+'Argentina', 'Australia', 'Austria', 'Bangladesh', 'Belgium', 'Brazil',
+'Canada', 'Chile', 'China', 'Colombia', 'Czech Republic', 'Denmark',
+'Egypt', 'Finland', 'France', 'Germany', 'Hungary', 'India', 'Indonesia',
+'Ireland', 'Israel', 'Italy', 'Japan', 'Kenya', 'Malaysia', 'Mexico',
+'Netherlands', 'New Zealand', 'Nigeria', 'Norway', 'Pakistan', 'Philippines',
+'Poland', 'Portugal', 'Romania', 'Russia', 'Singapore', 'South Africa',
+'South Korea', 'Spain', 'Sweden', 'Switzerland', 'Thailand', 'Turkey',
+'Ukraine', 'United Kingdom', 'United States', 'Vietnam',
+];
 
 
 const FieldError = ({ msg }) => msg ?
