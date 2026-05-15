@@ -33,20 +33,38 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
     autocomplete.addListener('place_changed', () => {
       const place = autocomplete.getPlace();
       if (!place.address_components) return;
-      const get = (type) => {
-        const comp = place.address_components.find(c => c.types.includes(type));
-        return comp ? comp.long_name : '';
+      const get = (...types) => {
+        for (const type of types) {
+          const comp = place.address_components.find(c => c.types.includes(type));
+          if (comp) return comp.long_name;
+        }
+        return '';
       };
       const getShort = (type) => {
         const comp = place.address_components.find(c => c.types.includes(type));
         return comp ? comp.short_name : '';
       };
+
+      const streetNumber = get('street_number');
+      const route = get('route');
+      const streetLine = [streetNumber, route].filter(Boolean).join(' ');
+
+      const city = get('locality', 'postal_town', 'sublocality_level_1', 'administrative_area_level_2');
+      const state = get('administrative_area_level_1', 'administrative_area_level_2');
+      const zip = getShort('postal_code') || get('postal_code');
+      const countryFull = get('country');
+
+      // Match country to our list (case-insensitive)
+      const matchedCountry = COUNTRIES.find(
+        c => c.toLowerCase() === countryFull.toLowerCase()
+      ) || countryFull;
+
       onChange({
-        address_line1: `${get('street_number')} ${get('route')}`.trim(),
-        city: get('locality') || get('postal_town'),
-        state: get('administrative_area_level_1'),
-        zip: getShort('postal_code'),
-        country: get('country'),
+        address_line1: streetLine || data.address_line1,
+        city,
+        state,
+        zip,
+        country: matchedCountry,
       });
     });
   }, []);
