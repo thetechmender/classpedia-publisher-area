@@ -228,9 +228,11 @@ export default function AccountDetailsStep({ data, onChange, errors, onNext, onB
               <RadioGroupItem value="corporation" /><span className="text-sm font-medium">Corporation</span>
             </label>
           </RadioGroup>
-          <p className="text-xs text-muted-foreground">
-            Select corporation if you are representing a corporate entity and you are providing information for the corporate entity in this form.
-          </p>
+          {!isCorporation && (
+            <p className="text-xs text-muted-foreground">
+              Select corporation if you are representing a corporate entity and you are providing information for the corporate entity in this form.
+            </p>
+          )}
           <FieldError msg={errors.business_type} />
         </div>
 
@@ -277,7 +279,7 @@ export default function AccountDetailsStep({ data, onChange, errors, onNext, onB
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Phone <span className="text-destructive">*</span></Label>
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Phone Number <span className="text-destructive">*</span></Label>
               <Input
                 type="tel"
                 value={data.phone || ''}
