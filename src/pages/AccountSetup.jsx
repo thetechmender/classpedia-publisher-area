@@ -7,7 +7,6 @@ import { BookOpen, ArrowLeft } from 'lucide-react';
 import SetupStepIndicator from '@/components/setup/SetupStepIndicator';
 import IdentityStep from '@/components/setup/IdentityStep';
 import AccountDetailsStep from '@/components/setup/AccountDetailsStep';
-import GettingPaidStep from '@/components/setup/GettingPaidStep';
 import TaxProfileStep from '@/components/setup/TaxProfileStep';
 import AuthorProfileStep from '@/components/setup/AuthorProfileStep';
 
@@ -29,12 +28,6 @@ const validateStep2 = (data) => {
   if (data.business_type === 'corporation' && !data.company_name?.trim()) {
     errors.company_name = 'Company name is required';
   }
-  return errors;
-};
-
-const validateStep3 = (data) => {
-  const errors = {};
-  if (!data.bank_country) errors.bank_country = 'Bank country is required';
   if (!data.bank_account_number?.trim()) errors.bank_account_number = 'Account number is required';
   if (!data.bank_account_number_confirm?.trim()) {
     errors.bank_account_number_confirm = 'Please re-enter account number';
@@ -51,7 +44,7 @@ const validateStep3 = (data) => {
   return errors;
 };
 
-const validateStep4 = (data) => {
+const validateStep3 = (data) => {
   const errors = {};
   if (data.us_person === undefined || data.us_person === null) {
     errors.us_person = 'Please indicate your U.S. tax status';
@@ -63,7 +56,7 @@ const validateStep4 = (data) => {
   return errors;
 };
 
-const validateStep5 = () => ({});
+const validateStep4 = () => ({});
 
 export default function AccountSetup() {
   const navigate = useNavigate();
@@ -105,7 +98,7 @@ export default function AccountSetup() {
   };
 
   const handleSubmit = async () => {
-    const stepErrors = validateStep5(formData);
+    const stepErrors = validateStep4(formData);
     if (Object.keys(stepErrors).length > 0) {
       setErrors(stepErrors);
       toast.error('Please fix the errors before continuing');
@@ -186,7 +179,7 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 3 && (
-            <GettingPaidStep
+            <TaxProfileStep
               data={formData}
               onChange={updateData}
               errors={errors}
@@ -195,21 +188,12 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 4 && (
-            <TaxProfileStep
-              data={formData}
-              onChange={updateData}
-              errors={errors}
-              onNext={() => handleNext(validateStep4, 5)}
-              onBack={() => goToStep(3)}
-            />
-          )}
-          {currentStep === 5 && (
             <AuthorProfileStep
               data={formData}
               onChange={updateData}
               errors={errors}
               onSubmit={handleSubmit}
-              onBack={() => goToStep(4)}
+              onBack={() => goToStep(3)}
               saving={saving}
             />
           )}

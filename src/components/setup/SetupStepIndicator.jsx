@@ -4,10 +4,9 @@ import { cn } from '@/lib/utils';
 
 const STEPS = [
   { id: 1, label: 'Your Identity' },
-  { id: 2, label: 'Account Details' },
-  { id: 3, label: 'Getting Paid' },
-  { id: 4, label: 'Tax Information' },
-  { id: 5, label: 'Author Profile' },
+  { id: 2, label: 'Account & Payment' },
+  { id: 3, label: 'Tax Information' },
+  { id: 4, label: 'Author Profile' },
 ];
 
 export default function SetupStepIndicator({ currentStep, completedSteps = [] }) {
