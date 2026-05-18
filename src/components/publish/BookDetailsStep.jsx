@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { X, Plus, ChevronRight, BookOpen, Info, Users, Tag, Clock, AlertCircle, CheckCircle2, Search } from 'lucide-react';
+import { X, Plus, ChevronRight, BookOpen, Info, Users, Tag, Clock, AlertCircle, CheckCircle2, Search, Save } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import PublishValidationSummary from './PublishValidationSummary';
 
 const LANGUAGES = [
   'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese',
@@ -201,7 +202,7 @@ function CategoryPicker({ selected, onChange, error }) {
   );
 }
 
-export default function BookDetailsStep({ data, onChange, errors, onNext }) {
+export default function BookDetailsStep({ data, onChange, errors, onNext, onSaveDraft }) {
   const [keywordInput, setKeywordInput] = useState('');
   const [newContributor, setNewContributor] = useState({ name: '', role: '' });
 
@@ -597,8 +598,13 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
         </RadioGroup>
       </Section>
 
+      <PublishValidationSummary errors={errors} />
+
       {/* Next Button */}
-      <div className="flex justify-end pt-2">
+      <div className="flex justify-between pt-2">
+        <Button variant="outline" onClick={onSaveDraft} className="gap-2">
+          <Save className="w-4 h-4" /> Save Draft
+        </Button>
         <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
           Save & Continue <ChevronRight className="w-4 h-4" />
         </Button>

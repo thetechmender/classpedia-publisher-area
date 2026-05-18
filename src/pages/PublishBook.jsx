@@ -315,13 +315,13 @@ export default function PublishBook() {
             <div className="max-w-3xl mx-auto w-full">
               <div className="bg-card border rounded-2xl p-5 sm:p-6 lg:p-8 shadow-sm">
               {currentStep === 1 && (
-                <BookDetailsStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep1, 2)} />
+                <BookDetailsStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep1, 2)} onSaveDraft={() => handlePublish('draft')} />
               )}
               {currentStep === 2 && (
-                <ContentStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep2, 3)} onBack={() => goToStep(1)} />
+                <ContentStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep2, 3)} onBack={() => goToStep(1)} onSaveDraft={() => handlePublish('draft')} />
               )}
               {currentStep === 3 && (
-                <PricingStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep3, 4)} onBack={() => goToStep(2)} />
+                <PricingStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep3, 4)} onBack={() => goToStep(2)} onSaveDraft={() => handlePublish('draft')} />
               )}
               {currentStep === 4 && (
                 <ReviewStep data={bookData} onBack={() => goToStep(3)} onPublish={handlePublish} onEdit={goToStep} publishing={publishing} validationErrors={validateAll(bookData)} />
