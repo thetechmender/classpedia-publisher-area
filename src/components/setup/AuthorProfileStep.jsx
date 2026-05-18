@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronLeft, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube } from 'lucide-react';
+import { ChevronLeft, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const FieldError = ({ msg }) => msg ? (
@@ -12,8 +12,23 @@ const FieldError = ({ msg }) => msg ? (
   </p>
 ) : null;
 
+const WRITING_GENRES = [
+  'Fiction', 'Non-Fiction', 'Mystery & Thriller', 'Romance', 'Science Fiction',
+  'Fantasy', 'Biography & Memoir', 'Self-Help', 'Business & Finance', 'History',
+  'Children\'s Books', 'Young Adult', 'Health & Wellness', 'Education & Textbooks',
+  'Poetry', 'Travel', 'Cooking & Food', 'Religion & Spirituality', 'Comics & Graphic Novels', 'Horror',
+];
+
 export default function AuthorProfileStep({ data, onChange, errors, onSubmit, onBack, saving }) {
   const bioLen = (data.author_bio || '').length;
+  const selectedGenres = data.writing_genres || [];
+
+  const toggleGenre = (genre) => {
+    const updated = selectedGenres.includes(genre)
+      ? selectedGenres.filter(g => g !== genre)
+      : [...selectedGenres, genre];
+    onChange({ writing_genres: updated });
+  };
 
   return (
     <div className="space-y-6">
@@ -58,6 +73,39 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
               <li>• You can add personal details to make it relatable</li>
             </ul>
           </div>
+        </div>
+      </div>
+
+      {/* Writing Genres */}
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold">Writing Genres</h3>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">Select the genres you write in — displayed on your author page</p>
+        </div>
+        <div className="px-5 py-5">
+          <div className="flex flex-wrap gap-2">
+            {WRITING_GENRES.map(genre => (
+              <button
+                key={genre}
+                type="button"
+                onClick={() => toggleGenre(genre)}
+                className={cn(
+                  'px-3 py-1.5 text-xs rounded-full border transition-all',
+                  selectedGenres.includes(genre)
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background text-foreground border-border hover:bg-secondary'
+                )}
+              >
+                {genre}
+              </button>
+            ))}
+          </div>
+          {selectedGenres.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-3">{selectedGenres.length} genre{selectedGenres.length !== 1 ? 's' : ''} selected</p>
+          )}
         </div>
       </div>
 
