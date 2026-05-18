@@ -4,9 +4,9 @@ import { cn } from '@/lib/utils';
 
 const STEPS = [
   { id: 1, label: 'Create Account' },
-  { id: 2, label: 'Your Identity' },
-  { id: 3, label: 'Account & Payment' },
-  { id: 4, label: 'Tax Information' },
+  { id: 2, label: 'Account Info' },
+  { id: 3, label: 'Getting Paid' },
+  { id: 4, label: 'Tax Info' },
   { id: 5, label: 'Author Profile' },
 ];
 

@@ -6,9 +6,9 @@ import { toast } from 'sonner';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import SetupStepIndicator from '@/components/setup/SetupStepIndicator';
 import SignUpStep from '@/components/setup/SignUpStep';
-import IdentityStep from '@/components/setup/IdentityStep';
-import AccountDetailsStep from '@/components/setup/AccountDetailsStep';
-import TaxProfileStep from '@/components/setup/TaxProfileStep';
+import AccountInfoStep from '@/components/setup/AccountInfoStep';
+import GettingPaidStep from '@/components/setup/GettingPaidStep';
+import TaxStep from '@/components/setup/TaxStep';
 import AuthorProfileStep from '@/components/setup/AuthorProfileStep';
 
 // Step validators
@@ -23,21 +23,15 @@ const validateStep0 = (data) => {
 
 const validateStep1 = (data) => {
   const errors = {};
-  if (!data.full_name?.trim()) errors.full_name = 'Full name is required';
+  if (!data.first_name?.trim()) errors.first_name = 'First name is required';
+  if (!data.last_name?.trim()) errors.last_name = 'Last name is required';
+  if (!data.email?.trim()) errors.email = 'Email is required';
   if (!data.country) errors.country = 'Country is required';
-  if (!data.address_line1?.trim()) errors.address_line1 = 'Address is required';
-  if (!data.city?.trim()) errors.city = 'City is required';
-  if (!data.zip?.trim()) errors.zip = 'Postal code is required';
-  if (!data.date_of_birth) errors.date_of_birth = 'Date of birth is required';
-  if (!data.phone?.trim()) errors.phone = 'Phone number is required';
   return errors;
 };
 
 const validateStep2 = (data) => {
   const errors = {};
-  if (data.business_type === 'corporation' && !data.company_name?.trim()) {
-    errors.company_name = 'Company name is required';
-  }
   if (!data.bank_country) errors.bank_country = 'Please select your bank country';
   if (!data.bank_account_number?.trim()) errors.bank_account_number = 'Account number is required';
   if (!data.bank_account_number_confirm?.trim()) {
@@ -56,20 +50,14 @@ const validateStep3 = (data) => {
   if (data.us_person === undefined || data.us_person === null) {
     errors.us_person = 'Please indicate your U.S. tax status';
   }
-  if ((data.us_person === true || data.us_person === 'not_sure') && !data.tax_id?.trim()) {
+  if (data.us_person === true && !data.tax_id?.trim()) {
     errors.tax_id = 'Tax ID (TIN) is required';
-  }
-  if (data.tax_classification === 'business' && !data.federal_tax_classification) {
-    errors.federal_tax_classification = 'Federal tax classification is required';
-  }
-  if (data.federal_tax_classification === 'Limited liability company' && !data.llc_type) {
-    errors.llc_type = 'LLC type is required';
   }
   if (!data.tax_certified) errors.tax_certified = 'You must certify this information is correct';
   return errors;
 };
 
-const validateStep5 = () => ({});
+const validateStep4 = () => ({});
 
 export default function AccountSetup() {
   const navigate = useNavigate();
@@ -82,9 +70,6 @@ export default function AccountSetup() {
     business_type: 'individual',
     bank_account_type: 'checking',
     bank_business_type: 'individual',
-    tax_classification: 'individual',
-    bank_country: '',           // must be actively chosen — no pre-fill
-    tax_use_same_address: true, // default: reuse identity address for tax
   });
 
   const updateData = useCallback((updates) => {
@@ -112,13 +97,6 @@ export default function AccountSetup() {
   };
 
   const handleSubmit = async () => {
-    const stepErrors = validateStep5(formData);
-    if (Object.keys(stepErrors).length > 0) {
-      setErrors(stepErrors);
-      toast.error('Please fix the errors before continuing');
-      return;
-    }
-
     setSaving(true);
     const profile = await base44.entities.AuthorProfile.create({
       ...formData,
@@ -184,7 +162,7 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 2 && (
-            <IdentityStep
+            <AccountInfoStep
               data={formData}
               onChange={updateData}
               errors={errors}
@@ -193,7 +171,7 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 3 && (
-            <AccountDetailsStep
+            <GettingPaidStep
               data={formData}
               onChange={updateData}
               errors={errors}
@@ -202,7 +180,7 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 4 && (
-            <TaxProfileStep
+            <TaxStep
               data={formData}
               onChange={updateData}
               errors={errors}
