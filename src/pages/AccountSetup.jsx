@@ -3,12 +3,33 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { BookOpen, ArrowLeft } from 'lucide-react';
+import { BookOpen, ArrowLeft, AlertCircle } from 'lucide-react';
 import SetupStepIndicator from '@/components/setup/SetupStepIndicator';
 import IdentityStep from '@/components/setup/IdentityStep';
 import AccountDetailsStep from '@/components/setup/AccountDetailsStep';
 import TaxProfileStep from '@/components/setup/TaxProfileStep';
 import AuthorProfileStep from '@/components/setup/AuthorProfileStep';
+
+const ERROR_LABELS = {
+  // Step 1
+  full_name: 'Full name',
+  country: 'Country',
+  address_line1: 'Street address',
+  city: 'City',
+  zip: 'Postal code',
+  date_of_birth: 'Date of birth',
+  phone: 'Phone number',
+  // Step 2
+  company_name: 'Company name',
+  bank_country: 'Bank country',
+  bank_account_number: 'Bank account number',
+  bank_account_number_confirm: 'Confirm account number',
+  bank_routing_number: 'Routing number',
+  // Step 3
+  us_person: 'U.S. tax status',
+  tax_id: 'Tax ID (TIN)',
+  tax_certified: 'Tax certification',
+};
 
 // Step validators
 const validateStep1 = (data) => {
@@ -196,6 +217,23 @@ export default function AccountSetup() {
             />
           )}
         </div>
+
+        {/* Validation summary */}
+        {Object.keys(errors).length > 0 && (
+          <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/5 px-5 py-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+              <p className="text-sm font-semibold text-destructive">Please complete the following before continuing:</p>
+            </div>
+            <ul className="space-y-1 ml-6 list-disc">
+              {Object.entries(errors).map(([field, msg]) => (
+                <li key={field} className="text-xs text-destructive">
+                  <span className="font-medium">{ERROR_LABELS[field] || field}</span> — {msg}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <p className="text-center text-xs text-muted-foreground mt-6">
           By creating an account you agree to the{' '}
