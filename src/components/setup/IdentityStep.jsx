@@ -89,7 +89,7 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
       <div className="pb-2">
         <h2 className="text-xl font-semibold text-foreground">Your Identity</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Enter your details exactly as they appear on your government-issued ID. For corporations, enter the authorized representative's details.
+          Enter your details exactly as they appear on your government-issued ID. For corporations and non-individual entities (e.g., LLC or agency), enter the details of an authorized representative.
         </p>
       </div>
 
@@ -97,36 +97,17 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
         <div className="flex-1 space-y-4">
 
           {/* ID Name */}
-          <SectionCard icon={User} title="ID Name" description="Must match your government-issued photo ID">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">First Name <span className="text-destructive">*</span></Label>
-                <Input
-                  value={data.first_name || ''}
-                  onChange={(e) => {
-                    const first = e.target.value;
-                    const last = data.last_name || '';
-                    onChange({ first_name: first, full_name: [first, last].filter(Boolean).join(' ') });
-                  }}
-                  placeholder="First name"
-                  className={errors.full_name ? 'border-destructive' : ''}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Last Name <span className="text-destructive">*</span></Label>
-                <Input
-                  value={data.last_name || ''}
-                  onChange={(e) => {
-                    const last = e.target.value;
-                    const first = data.first_name || '';
-                    onChange({ last_name: last, full_name: [first, last].filter(Boolean).join(' ') });
-                  }}
-                  placeholder="Last name"
-                  className={errors.full_name ? 'border-destructive' : ''}
-                />
-              </div>
+          <SectionCard icon={User} title="Full Name" description="Must match your government-issued photo ID exactly">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Full Name <span className="text-destructive">*</span></Label>
+              <Input
+                value={data.full_name || ''}
+                onChange={(e) => onChange({ full_name: e.target.value })}
+                placeholder="Full name as shown on your ID"
+                className={errors.full_name ? 'border-destructive' : ''}
+              />
+              <FieldError msg={errors.full_name} />
             </div>
-            <FieldError msg={errors.full_name} />
           </SectionCard>
 
           {/* ID Address */}
@@ -134,7 +115,7 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
             <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
               <AlertCircle className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
               <p className="text-xs text-blue-700 leading-relaxed">
-                Your payment and tax addresses are collected separately in the next steps — enter your ID address here.
+                Enter your address as shown on your ID, even if it differs from your payment, tax, or mailing address — those are collected separately in the next steps.
               </p>
             </div>
 
@@ -217,7 +198,6 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
                   onChange={(e) => onChange({ date_of_birth: e.target.value })}
                   className={errors.date_of_birth ? 'border-destructive' : ''}
                 />
-                <p className="text-xs text-muted-foreground">Must be 18 years or older to publish.</p>
                 <FieldError msg={errors.date_of_birth} />
               </div>
               <div className="space-y-1.5">
@@ -229,7 +209,6 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
                   placeholder="+1 (555) 000-0000"
                   className={errors.phone ? 'border-destructive' : ''}
                 />
-                <p className="text-xs text-muted-foreground">For account verification only.</p>
                 <FieldError msg={errors.phone} />
               </div>
             </div>

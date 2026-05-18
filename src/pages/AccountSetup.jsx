@@ -13,7 +13,7 @@ import AuthorProfileStep from '@/components/setup/AuthorProfileStep';
 // Step validators
 const validateStep1 = (data) => {
   const errors = {};
-  if (!data.full_name?.trim()) errors.full_name = 'First and last name are required';
+  if (!data.full_name?.trim()) errors.full_name = 'Full name is required';
   if (!data.country) errors.country = 'Country is required';
   if (!data.address_line1?.trim()) errors.address_line1 = 'Address is required';
   if (!data.city?.trim()) errors.city = 'City is required';
