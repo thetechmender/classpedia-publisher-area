@@ -347,9 +347,7 @@ export default function AccountDetailsStep({ data, onChange, errors, onNext, onB
                 className={errors.bank_account_number ? 'border-destructive' : ''} />
               
                 <p className="text-[10px] text-muted-foreground">
-                  {data.bank_country === 'United States' ?
-                'Second set of numbers at the bottom of your check.' :
-                'Your bank account number or IBAN.'}
+                  Second set of numbers at the bottom of your check.
                 </p>
                 <FieldError msg={errors.bank_account_number} />
               </div>
@@ -368,19 +366,16 @@ export default function AccountDetailsStep({ data, onChange, errors, onNext, onB
             {/* Routing / IBAN */}
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                {data.bank_country === 'United States' ? 'Routing Number' : 'IBAN / Sort Code / Routing Number'}
-                {data.bank_country === 'United States' && <span className="text-destructive"> *</span>}
+                Routing Number <span className="text-destructive">*</span>
               </Label>
               <Input
               value={data.bank_routing_number || ''}
               onChange={(e) => onChange({ bank_routing_number: e.target.value })}
-              placeholder={data.bank_country === 'United States' ? '9-digit routing number' : 'IBAN or local bank code'}
+              placeholder="9-digit routing number"
               className={cn('max-w-sm', errors.bank_routing_number ? 'border-destructive' : '')} />
             
               <p className="text-[10px] text-muted-foreground">
-                {data.bank_country === 'United States' ?
-              'First set of numbers at the bottom of your check (9 digits).' :
-              'IBAN (Europe), sort code (UK), BSB (Australia), or SWIFT/BIC.'}
+                First set of numbers at the bottom of your check (9 digits).
               </p>
               <FieldError msg={errors.bank_routing_number} />
             </div>
