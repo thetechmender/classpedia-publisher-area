@@ -119,7 +119,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
               {[
                 { value: true, label: 'Yes' },
                 { value: false, label: 'No' },
-                ...(!isBusiness ? [{ value: 'not_sure', label: "I'm not sure if I'm a U.S. resident alien" }] : []),
+
               ].map(({ value, label }) => (
                 <button
                   key={String(value)}
@@ -195,7 +195,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
               </div>
 
               {/* US TIN */}
-              {(usStatus === true || usStatus === 'not_sure') && (
+              {usStatus === true && (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-foreground">
                     U.S. Taxpayer Identification Number (TIN) Type
