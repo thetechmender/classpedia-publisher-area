@@ -216,81 +216,79 @@ export default function AccountDetailsStep({ data, onChange, errors, onNext, onB
         {/* Business Type */}
         <div className="space-y-2">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Business Type <span className="text-destructive">*</span></Label>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { value: 'individual', label: 'Individual / Sole Proprietor', desc: 'For individual authors publishing under their own name' },
-              { value: 'corporation', label: 'Corporation / Business', desc: 'For companies or publishing entities' },
-            ].map(opt => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onChange({ business_type: opt.value, bank_business_type: opt.value })}
-                className={cn(
-                  'text-left rounded-xl border-2 px-4 py-3 transition-all',
-                  data.business_type === opt.value
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/40'
-                )}
-              >
-                <p className="text-sm font-semibold text-foreground">{opt.label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
-              </button>
-            ))}
-          </div>
+          <RadioGroup
+            value={data.business_type || 'individual'}
+            onValueChange={(v) => onChange({ business_type: v, bank_business_type: v })}
+            className="flex gap-6"
+          >
+            <label className="flex items-center gap-2 cursor-pointer">
+              <RadioGroupItem value="individual" /><span className="text-sm font-medium">Individual</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <RadioGroupItem value="corporation" /><span className="text-sm font-medium">Corporation</span>
+            </label>
+          </RadioGroup>
+          <p className="text-xs text-muted-foreground">
+            Select corporation if you are representing a corporate entity and you are providing information for the corporate entity in this form.
+          </p>
+          <FieldError msg={errors.business_type} />
         </div>
 
-        {/* Account Holder Info */}
-        <div className="rounded-lg border border-border bg-secondary/20 px-4 py-3 space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Account Holder</p>
-          {!isCorporation ? (
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-xs text-muted-foreground">Full Name</p>
-                <p className="font-medium text-foreground mt-0.5">{data.full_name || '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Date of Birth</p>
-                <p className="font-medium text-foreground mt-0.5">{data.date_of_birth || '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Phone</p>
-                <p className="font-medium text-foreground mt-0.5">{data.phone || '—'}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Address</p>
-                <p className="font-medium text-foreground mt-0.5 text-xs">
-                  {data.address_line1 ? `${data.address_line1}, ${data.city}, ${data.country}` : '—'}
-                </p>
-              </div>
+        {/* Individual: Account Holder summary only */}
+        {!isCorporation && (
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Account Holder</p>
+            <p className="text-sm font-medium text-primary">{data.full_name || '—'}</p>
+            <button type="button" onClick={onBack} className="mt-1 text-xs border border-border rounded px-3 py-1.5 text-foreground hover:bg-secondary transition-colors">
+              Edit identity
+            </button>
+          </div>
+        )}
+
+        {/* Corporation: Company Name, Address, Phone */}
+        {isCorporation && (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Company Name <span className="text-destructive">*</span></Label>
+              <Input
+                value={data.company_name || ''}
+                onChange={(e) => onChange({ company_name: e.target.value })}
+                placeholder="Legal company name"
+                className={errors.company_name ? 'border-destructive' : ''}
+              />
+              <p className="text-xs text-muted-foreground">
+                The name of your publishing company. If you have not established a separate company entity (corporation, etc), this can be your first and last name.
+              </p>
+              <FieldError msg={errors.company_name} />
             </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Company / Publishing Entity Name <span className="text-destructive">*</span></Label>
-                <Input
-                  value={data.company_name || ''}
-                  onChange={(e) => onChange({ company_name: e.target.value })}
-                  placeholder="Legal company name"
-                  className={errors.company_name ? 'border-destructive' : ''}
-                />
-                <p className="text-xs text-muted-foreground">Legal name of your publishing company or entity.</p>
-                <FieldError msg={errors.company_name} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Business Phone <span className="text-destructive">*</span></Label>
-                <Input
-                  type="tel"
-                  value={data.phone || ''}
-                  onChange={(e) => onChange({ phone: e.target.value })}
-                  placeholder="+1 555 000 0000"
-                  className={errors.phone ? 'border-destructive' : ''}
-                />
-                <FieldError msg={errors.phone} />
-              </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                Address <span className="text-destructive">*</span>
+              </Label>
+              <AddressSelector
+                identityData={data}
+                addrPrefix="corp_addr"
+                data={data}
+                onChange={onChange}
+                errors={errors}
+              />
+              <FieldError msg={errors.corp_address} />
             </div>
-          )}
-          <button onClick={onBack} className="text-xs text-primary hover:underline mt-1">← Edit identity information</button>
-        </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Phone <span className="text-destructive">*</span></Label>
+              <Input
+                type="tel"
+                value={data.phone || ''}
+                onChange={(e) => onChange({ phone: e.target.value })}
+                placeholder="+1 555 000 0000"
+                className={errors.phone ? 'border-destructive' : ''}
+              />
+              <FieldError msg={errors.phone} />
+            </div>
+          </div>
+        )}
       </SectionCard>
 
       {/* ─────────────────────────────────────────
