@@ -13,12 +13,12 @@ import AuthorProfileStep from '@/components/setup/AuthorProfileStep';
 // Step validators
 const validateStep1 = (data) => {
   const errors = {};
-  if (!data.full_name?.trim()) errors.full_name = 'Full name is required';
+  // full_name auto-built from first+last
+  if (!data.full_name?.trim()) errors.full_name = 'First and last name are required';
   if (!data.country) errors.country = 'Country is required';
   if (!data.address_line1?.trim()) errors.address_line1 = 'Address is required';
   if (!data.city?.trim()) errors.city = 'City is required';
   if (!data.zip?.trim()) errors.zip = 'Postal code is required';
-  if (!data.date_of_birth) errors.date_of_birth = 'Date of birth is required';
   if (!data.phone?.trim()) errors.phone = 'Phone number is required';
   return errors;
 };
@@ -28,6 +28,7 @@ const validateStep2 = (data) => {
   if (data.business_type === 'corporation' && !data.company_name?.trim()) {
     errors.company_name = 'Company name is required';
   }
+  if (!data.bank_country) errors.bank_country = 'Please select your bank country';
   if (!data.bank_account_number?.trim()) errors.bank_account_number = 'Account number is required';
   if (!data.bank_account_number_confirm?.trim()) {
     errors.bank_account_number_confirm = 'Please re-enter account number';
@@ -70,7 +71,8 @@ export default function AccountSetup() {
     bank_account_type: 'checking',
     bank_business_type: 'individual',
     tax_classification: 'individual',
-    bank_country: 'United States',
+    bank_country: '',           // must be actively chosen — no pre-fill
+    tax_use_same_address: true, // default: reuse identity address for tax
   });
 
   const updateData = useCallback((updates) => {

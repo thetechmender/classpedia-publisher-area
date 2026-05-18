@@ -221,85 +221,115 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
 
           {/* Address */}
           <div className="space-y-3 border-t border-border pt-4">
-            <h4 className="text-sm font-semibold text-foreground">Address</h4>
-            <p className="text-xs text-primary cursor-pointer hover:underline">Learn about which address to use ▾</p>
-
-            <div className="space-y-1.5">
-              <Label>Country</Label>
-              <Select value={taxCountry} onValueChange={(v) => onChange({ tax_address_country: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-foreground">Tax Address</h4>
+              <span className="text-xs text-primary cursor-pointer hover:underline">Learn about which address to use ▾</span>
             </div>
+            <p className="text-xs text-muted-foreground">
+              This should be your permanent residence or principal place of business for tax purposes.
+            </p>
 
-            <div className="space-y-1.5">
-              <Label>Address line 1 <span className="text-destructive">*</span></Label>
-              <Input
-                value={data.tax_address_line1 || data.address_line1 || ''}
-                onChange={(e) => onChange({ tax_address_line1: e.target.value })}
-                placeholder="Street address"
-                className={errors.tax_address_line1 ? 'border-destructive' : ''}
-              />
-              <FieldError msg={errors.tax_address_line1} />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Address line 2 <span className="text-muted-foreground text-xs">(Optional)</span></Label>
-              <Input
-                value={data.tax_address_line2 || data.address_line2 || ''}
-                onChange={(e) => onChange({ tax_address_line2: e.target.value })}
-                placeholder="Apartment, suite, unit, building, floor etc."
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>City <span className="text-destructive">*</span></Label>
-              <Input
-                value={data.tax_city || data.city || ''}
-                onChange={(e) => onChange({ tax_city: e.target.value })}
-                placeholder="City"
-                className={errors.tax_city ? 'border-destructive' : ''}
-              />
-              <FieldError msg={errors.tax_city} />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>State / Province / Region</Label>
-              {taxCountry === 'United States' ? (
-                <Select
-                  value={data.tax_state || data.state || ''}
-                  onValueChange={(v) => onChange({ tax_state: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  value={data.tax_state || data.state || ''}
-                  onChange={(e) => onChange({ tax_state: e.target.value })}
-                  placeholder="State / Province / Region"
+            {/* Use same address toggle */}
+            {data.address_line1 && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="tax-same-addr"
+                  checked={data.tax_use_same_address !== false}
+                  onCheckedChange={(v) => onChange({ tax_use_same_address: !!v })}
                 />
-              )}
-            </div>
+                <label htmlFor="tax-same-addr" className="text-sm cursor-pointer text-foreground">
+                  Same as my identity address
+                </label>
+              </div>
+            )}
 
-            <div className="space-y-1.5">
-              <Label>Zip / Postal code <span className="text-destructive">*</span></Label>
-              <Input
-                value={data.tax_zip || data.zip || ''}
-                onChange={(e) => onChange({ tax_zip: e.target.value })}
-                placeholder="Zip / Postal code"
-                className={errors.tax_zip ? 'border-destructive' : ''}
-              />
-              <FieldError msg={errors.tax_zip} />
-            </div>
+            {/* Show address summary if using same */}
+            {(data.tax_use_same_address !== false && data.address_line1) ? (
+              <div className="text-sm text-foreground border border-border rounded-md px-3 py-2.5 bg-secondary/20 leading-relaxed">
+                <p>{data.address_line1}{data.address_line2 ? `, ${data.address_line2}` : ''}</p>
+                <p>{[data.city, data.state, data.zip].filter(Boolean).join(', ')}</p>
+                <p>{data.country}</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Country</Label>
+                  <Select value={taxCountry} onValueChange={(v) => onChange({ tax_address_country: v })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Address line 1 <span className="text-destructive">*</span></Label>
+                  <Input
+                    value={data.tax_address_line1 || ''}
+                    onChange={(e) => onChange({ tax_address_line1: e.target.value })}
+                    placeholder="Street address"
+                    className={errors.tax_address_line1 ? 'border-destructive' : ''}
+                  />
+                  <FieldError msg={errors.tax_address_line1} />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Address line 2 <span className="text-muted-foreground text-xs">(Optional)</span></Label>
+                  <Input
+                    value={data.tax_address_line2 || ''}
+                    onChange={(e) => onChange({ tax_address_line2: e.target.value })}
+                    placeholder="Apartment, suite, unit, building, floor etc."
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>City <span className="text-destructive">*</span></Label>
+                  <Input
+                    value={data.tax_city || ''}
+                    onChange={(e) => onChange({ tax_city: e.target.value })}
+                    placeholder="City"
+                    className={errors.tax_city ? 'border-destructive' : ''}
+                  />
+                  <FieldError msg={errors.tax_city} />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>State / Province / Region</Label>
+                  {taxCountry === 'United States' ? (
+                    <Select
+                      value={data.tax_state || ''}
+                      onValueChange={(v) => onChange({ tax_state: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      value={data.tax_state || ''}
+                      onChange={(e) => onChange({ tax_state: e.target.value })}
+                      placeholder="State / Province / Region"
+                    />
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Zip / Postal code <span className="text-destructive">*</span></Label>
+                  <Input
+                    value={data.tax_zip || ''}
+                    onChange={(e) => onChange({ tax_zip: e.target.value })}
+                    placeholder="Zip / Postal code"
+                    className={errors.tax_zip ? 'border-destructive' : ''}
+                  />
+                  <FieldError msg={errors.tax_zip} />
+                </div>
+              </>
+            )}
           </div>
 
           {/* Certification */}
