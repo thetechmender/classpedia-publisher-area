@@ -42,7 +42,7 @@ function SectionCard({ icon: Icon, title, description, children }) {
           {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
         </div>
       </div>
-      <div className="px-5 py-5 space-y-4">
+      <div className="px-5 py-4 space-y-3">
         {children}
       </div>
     </div>
@@ -93,12 +93,12 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
         </p>
       </div>
 
-      <div className="flex gap-6 items-start">
-        <div className="flex-1 space-y-4">
+      <div className="flex gap-5 items-start">
+        <div className="flex-1 space-y-3">
 
           {/* ID Name */}
           <SectionCard icon={User} title="Full Name" description="Must match your government-issued photo ID exactly">
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Full Name <span className="text-destructive">*</span></Label>
               <Input
                 value={data.full_name || ''}
@@ -112,14 +112,14 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
 
           {/* ID Address */}
           <SectionCard icon={MapPin} title="ID Address" description="Enter the address shown on your government-issued ID">
-            <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+            <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
               <AlertCircle className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
               <p className="text-xs text-blue-700 leading-relaxed">
                 Enter your address as shown on your ID, even if it differs from your payment, tax, or mailing address — those are collected separately in the next steps.
               </p>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Country <span className="text-destructive">*</span></Label>
               <Select value={data.country || ''} onValueChange={(v) => onChange({ country: v })}>
                 <SelectTrigger className={errors.country ? 'border-destructive' : ''}>
@@ -132,7 +132,7 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
               <FieldError msg={errors.country} />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Address Line 1 <span className="text-destructive">*</span></Label>
               <Input
                 ref={autocompleteRef}
@@ -144,7 +144,7 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
               <FieldError msg={errors.address_line1} />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Address Line 2 <span className="font-normal normal-case text-muted-foreground">(optional)</span>
               </Label>
@@ -156,7 +156,7 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">City <span className="text-destructive">*</span></Label>
                 <Input
                   value={data.city || ''}
@@ -166,7 +166,7 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
                 />
                 <FieldError msg={errors.city} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">State / Region</Label>
                 <Input
                   value={data.state || ''}
@@ -174,7 +174,7 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
                   placeholder="State / Province"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Postal Code <span className="text-destructive">*</span></Label>
                 <Input
                   value={data.zip || ''}
@@ -190,7 +190,7 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
           {/* Other Details — DOB + Phone */}
           <SectionCard icon={Phone} title="Other Details" description="Used for account verification and payment identity">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Date of Birth <span className="text-destructive">*</span></Label>
                 <Input
                   type="date"
@@ -200,7 +200,7 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
                 />
                 <FieldError msg={errors.date_of_birth} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Phone Number <span className="text-destructive">*</span></Label>
                 <Input
                   type="tel"
