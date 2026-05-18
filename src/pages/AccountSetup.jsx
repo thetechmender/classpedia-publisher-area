@@ -5,52 +5,65 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import SetupStepIndicator from '@/components/setup/SetupStepIndicator';
-import AccountInfoStep from '@/components/setup/AccountInfoStep';
-import PaymentStep from '@/components/setup/PaymentStep';
-import TaxStep from '@/components/setup/TaxStep';
+import IdentityStep from '@/components/setup/IdentityStep';
+import AccountDetailsStep from '@/components/setup/AccountDetailsStep';
+import GettingPaidStep from '@/components/setup/GettingPaidStep';
+import TaxProfileStep from '@/components/setup/TaxProfileStep';
 import AuthorProfileStep from '@/components/setup/AuthorProfileStep';
 
+// Step validators
 const validateStep1 = (data) => {
   const errors = {};
-  if (!data.first_name?.trim()) errors.first_name = 'First name is required';
-  if (!data.last_name?.trim()) errors.last_name = 'Last name is required';
-  if (!data.email?.trim()) errors.email = 'Email is required';
-  else if (!/\S+@\S+\.\S+/.test(data.email)) errors.email = 'Enter a valid email address';
-  if (!data.country) errors.country = 'Please select your country';
+  if (!data.full_name?.trim()) errors.full_name = 'Full name is required';
+  if (!data.country) errors.country = 'Country is required';
+  if (!data.address_line1?.trim()) errors.address_line1 = 'Address is required';
+  if (!data.city?.trim()) errors.city = 'City is required';
+  if (!data.zip?.trim()) errors.zip = 'Postal code is required';
+  if (!data.date_of_birth) errors.date_of_birth = 'Date of birth is required';
+  if (!data.phone?.trim()) errors.phone = 'Phone number is required';
   return errors;
 };
 
 const validateStep2 = (data) => {
   const errors = {};
-  if (!data.payment_method) { errors.payment_method = 'Please select a payment method'; return errors; }
-  if (data.payment_method === 'bank_transfer') {
-    if (!data.bank_account_name?.trim()) errors.bank_account_name = 'Account holder name is required';
-    if (!data.bank_account_number?.trim()) errors.bank_account_number = 'Account number is required';
-    if (!data.bank_routing_number?.trim()) errors.bank_routing_number = 'Routing/IBAN is required';
-  }
-  if (data.payment_method === 'paypal') {
-    if (!data.paypal_email?.trim()) errors.paypal_email = 'PayPal email is required';
-    else if (!/\S+@\S+\.\S+/.test(data.paypal_email)) errors.paypal_email = 'Enter a valid email address';
+  if (data.business_type === 'corporation' && !data.company_name?.trim()) {
+    errors.company_name = 'Company name is required';
   }
   return errors;
 };
 
 const validateStep3 = (data) => {
   const errors = {};
-  if (data.us_person === undefined) { errors.us_person = 'Please select your US tax status'; return errors; }
-  if (data.us_person) {
-    if (!data.tax_id_type) errors.tax_id_type = 'Please select SSN or EIN';
-    if (!data.tax_id?.trim()) errors.tax_id = 'Tax ID is required';
-  } else {
-    if (!data.tax_country) errors.tax_country = 'Please select your country of tax residence';
+  if (!data.bank_country) errors.bank_country = 'Bank country is required';
+  if (!data.bank_account_number?.trim()) errors.bank_account_number = 'Account number is required';
+  if (!data.bank_account_number_confirm?.trim()) {
+    errors.bank_account_number_confirm = 'Please re-enter account number';
+  } else if (data.bank_account_number !== data.bank_account_number_confirm) {
+    errors.bank_account_number_confirm = 'Account numbers do not match';
+  }
+  if (data.bank_country === 'United States' && !data.bank_routing_number?.trim()) {
+    errors.bank_routing_number = 'Routing number is required';
+  }
+  const bankBizType = data.bank_business_type || (data.business_type === 'corporation' ? 'corporation' : 'individual');
+  if (bankBizType !== 'corporation' && !data.date_of_birth) {
+    errors.date_of_birth = 'Date of birth is required';
+  }
+  return errors;
+};
+
+const validateStep4 = (data) => {
+  const errors = {};
+  if (data.us_person === undefined || data.us_person === null) {
+    errors.us_person = 'Please indicate your U.S. tax status';
+  }
+  if ((data.us_person === true || data.us_person === 'not_sure') && !data.tax_id?.trim()) {
+    errors.tax_id = 'Tax ID (TIN) is required';
   }
   if (!data.tax_certified) errors.tax_certified = 'You must certify this information is correct';
   return errors;
 };
 
-const validateStep4 = (_data) => {
-  return {};
-};
+const validateStep5 = () => ({});
 
 export default function AccountSetup() {
   const navigate = useNavigate();
@@ -60,7 +73,11 @@ export default function AccountSetup() {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    payment_method: 'bank_transfer',
+    business_type: 'individual',
+    bank_account_type: 'checking',
+    bank_business_type: 'individual',
+    tax_classification: 'individual',
+    bank_country: 'United States',
   });
 
   const updateData = useCallback((updates) => {
@@ -88,7 +105,7 @@ export default function AccountSetup() {
   };
 
   const handleSubmit = async () => {
-    const stepErrors = validateStep4(formData);
+    const stepErrors = validateStep5(formData);
     if (Object.keys(stepErrors).length > 0) {
       setErrors(stepErrors);
       toast.error('Please fix the errors before continuing');
@@ -96,13 +113,10 @@ export default function AccountSetup() {
     }
 
     setSaving(true);
-    const fullName = [formData.first_name, formData.last_name].filter(Boolean).join(' ');
     const profile = await base44.entities.AuthorProfile.create({
       ...formData,
-      full_name: fullName,
       setup_complete: true,
     });
-    // Pre-populate the cache so Dashboard doesn't redirect back to setup
     queryClient.setQueryData(['author-profile'], [profile]);
     await base44.auth.updateMe({ author_setup_complete: true });
     setSaving(false);
@@ -155,7 +169,7 @@ export default function AccountSetup() {
 
         <div className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm">
           {currentStep === 1 && (
-            <AccountInfoStep
+            <IdentityStep
               data={formData}
               onChange={updateData}
               errors={errors}
@@ -163,7 +177,7 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 2 && (
-            <PaymentStep
+            <AccountDetailsStep
               data={formData}
               onChange={updateData}
               errors={errors}
@@ -172,7 +186,7 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 3 && (
-            <TaxStep
+            <GettingPaidStep
               data={formData}
               onChange={updateData}
               errors={errors}
@@ -181,12 +195,21 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 4 && (
+            <TaxProfileStep
+              data={formData}
+              onChange={updateData}
+              errors={errors}
+              onNext={() => handleNext(validateStep4, 5)}
+              onBack={() => goToStep(3)}
+            />
+          )}
+          {currentStep === 5 && (
             <AuthorProfileStep
               data={formData}
               onChange={updateData}
               errors={errors}
               onSubmit={handleSubmit}
-              onBack={() => goToStep(3)}
+              onBack={() => goToStep(4)}
               saving={saving}
             />
           )}
