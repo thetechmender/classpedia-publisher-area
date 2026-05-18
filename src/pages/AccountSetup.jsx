@@ -5,12 +5,22 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import SetupStepIndicator from '@/components/setup/SetupStepIndicator';
+import SignUpStep from '@/components/setup/SignUpStep';
 import IdentityStep from '@/components/setup/IdentityStep';
 import AccountDetailsStep from '@/components/setup/AccountDetailsStep';
 import TaxProfileStep from '@/components/setup/TaxProfileStep';
 import AuthorProfileStep from '@/components/setup/AuthorProfileStep';
 
 // Step validators
+const validateStep0 = (data) => {
+  const errors = {};
+  if (!data.display_name?.trim()) errors.display_name = 'Your name is required';
+  if (!data.contact_email?.trim()) errors.contact_email = 'Email address is required';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact_email)) errors.contact_email = 'Enter a valid email address';
+  if (!data.signup_phone?.trim()) errors.signup_phone = 'Mobile number is required';
+  return errors;
+};
+
 const validateStep1 = (data) => {
   const errors = {};
   if (!data.full_name?.trim()) errors.full_name = 'Full name is required';
@@ -59,7 +69,7 @@ const validateStep3 = (data) => {
   return errors;
 };
 
-const validateStep4 = () => ({});
+const validateStep5 = () => ({});
 
 export default function AccountSetup() {
   const navigate = useNavigate();
@@ -102,7 +112,7 @@ export default function AccountSetup() {
   };
 
   const handleSubmit = async () => {
-    const stepErrors = validateStep4(formData);
+    const stepErrors = validateStep5(formData);
     if (Object.keys(stepErrors).length > 0) {
       setErrors(stepErrors);
       toast.error('Please fix the errors before continuing');
@@ -166,49 +176,60 @@ export default function AccountSetup() {
 
         <div className="bg-card border rounded-2xl p-8 shadow-sm mt-2">
           {currentStep === 1 && (
+            <SignUpStep
+              data={formData}
+              onChange={updateData}
+              errors={errors}
+              onNext={() => handleNext(validateStep0, 2)}
+            />
+          )}
+          {currentStep === 2 && (
             <IdentityStep
               data={formData}
               onChange={updateData}
               errors={errors}
-              onNext={() => handleNext(validateStep1, 2)}
-            />
-          )}
-          {currentStep === 2 && (
-            <AccountDetailsStep
-              data={formData}
-              onChange={updateData}
-              errors={errors}
-              onNext={() => handleNext(validateStep2, 3)}
+              onNext={() => handleNext(validateStep1, 3)}
               onBack={() => goToStep(1)}
             />
           )}
           {currentStep === 3 && (
-            <TaxProfileStep
+            <AccountDetailsStep
               data={formData}
               onChange={updateData}
               errors={errors}
-              onNext={() => handleNext(validateStep3, 4)}
+              onNext={() => handleNext(validateStep2, 4)}
               onBack={() => goToStep(2)}
             />
           )}
           {currentStep === 4 && (
+            <TaxProfileStep
+              data={formData}
+              onChange={updateData}
+              errors={errors}
+              onNext={() => handleNext(validateStep3, 5)}
+              onBack={() => goToStep(3)}
+            />
+          )}
+          {currentStep === 5 && (
             <AuthorProfileStep
               data={formData}
               onChange={updateData}
               errors={errors}
               onSubmit={handleSubmit}
-              onBack={() => goToStep(3)}
+              onBack={() => goToStep(4)}
               saving={saving}
             />
           )}
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          By creating an account you agree to the{' '}
-          <span className="text-primary cursor-pointer hover:underline">Classpedia Terms of Service</span>{' '}
-          and{' '}
-          <span className="text-primary cursor-pointer hover:underline">Privacy Policy</span>.
-        </p>
+        {currentStep !== 1 && (
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            By creating an account you agree to the{' '}
+            <span className="text-primary cursor-pointer hover:underline">Classpedia Terms of Service</span>{' '}
+            and{' '}
+            <span className="text-primary cursor-pointer hover:underline">Privacy Policy</span>.
+          </p>
+        )}
       </div>
     </div>
   );
