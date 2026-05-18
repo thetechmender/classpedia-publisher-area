@@ -309,11 +309,9 @@ export default function AccountDetailsStep({ data, onChange, errors, onNext, onB
               {BANK_COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
-          {!data.bank_country && (
-            <p className="flex items-center gap-1 text-xs text-amber-600">
-              <Info className="w-3 h-3 shrink-0" /> Select the country where your bank account is held.
-            </p>
-          )}
+          <p className="flex items-start gap-1.5 text-xs text-muted-foreground mt-1">
+            <Info className="w-3 h-3 shrink-0 mt-0.5" /> We may require that the bank account be either issued by a bank or managed by a Payment Service Provider that is part of the Payment Service Provider Program.
+          </p>
           <FieldError msg={errors.bank_country} />
         </div>
 
@@ -390,8 +388,7 @@ export default function AccountDetailsStep({ data, onChange, errors, onNext, onB
             <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
               <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
               <p className="text-xs text-blue-700">
-                We'll verify your bank can receive payments before your first royalty is issued.{' '}
-                <span className="underline cursor-pointer font-medium">View requirements →</span>
+                We'll verify your bank can receive payments before your first royalty is issued.
               </p>
             </div>
           </>
