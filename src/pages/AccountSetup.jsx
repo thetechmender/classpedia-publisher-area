@@ -125,7 +125,7 @@ export default function AccountSetup() {
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
       <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-30">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <BookOpen className="w-4 h-4 text-primary-foreground" />
@@ -145,7 +145,7 @@ export default function AccountSetup() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-8">
+      <div className="max-w-2xl mx-auto px-6 py-8">
         {/* Welcome banner — only on step 1 */}
         {currentStep === 1 && (
           <div className="mb-8 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/40 border border-primary/20 p-6 flex flex-col sm:flex-row sm:items-center gap-4">
@@ -164,7 +164,7 @@ export default function AccountSetup() {
 
         <SetupStepIndicator currentStep={currentStep} completedSteps={completedSteps} />
 
-        <div className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm">
+        <div className="bg-card border rounded-2xl p-8 shadow-sm mt-2">
           {currentStep === 1 && (
             <IdentityStep
               data={formData}
