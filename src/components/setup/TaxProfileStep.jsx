@@ -44,7 +44,13 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
   const isBusiness = data.tax_classification === 'business';
   const taxClass = data.tax_classification || 'individual';
   const usStatus = data.us_person; // true | false | 'not_sure' | undefined
-  const taxAddressCountry = data.tax_address_country || 'United States';
+  const taxAddressCountry = data.tax_address_country || data.country || 'United States';
+  // Pre-fill tax address from identity if not set
+  const taxLine1 = data.tax_address_line1 ?? data.address_line1 ?? '';
+  const taxLine2 = data.tax_address_line2 ?? data.address_line2 ?? '';
+  const taxCity = data.tax_city ?? data.city ?? '';
+  const taxState = data.tax_state ?? data.state ?? '';
+  const taxZip = data.tax_zip ?? data.zip ?? '';
   const showTaxIdentity = usStatus !== undefined;
 
   return (
@@ -124,21 +130,20 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
                 ? 'Are you a U.S. resident entity?'
                 : 'Are you a United States (U.S.) citizen, U.S. permanent resident (green card holder), or other U.S. resident alien?'}
             </p>
-            <div className="flex gap-0">
+            <div className="flex flex-wrap gap-2">
               {[
                 { value: true, label: 'Yes' },
                 { value: false, label: 'No' },
                 ...(!isBusiness ? [{ value: 'not_sure', label: "I'm not sure if I'm a U.S. resident alien" }] : []),
-              ].map(({ value, label }, i, arr) => (
+              ].map(({ value, label }) => (
                 <button
                   key={String(value)}
                   type="button"
                   onClick={() => onChange({ us_person: value })}
                   className={cn(
-                    'px-4 py-1.5 text-sm border transition-all',
-                    i === 0 ? 'rounded-l-md' : i === arr.length - 1 ? 'rounded-r-md -ml-px' : '-ml-px',
+                    'px-4 py-1.5 text-sm border rounded-md transition-all',
                     usStatus === value
-                      ? 'bg-primary text-primary-foreground border-primary z-10'
+                      ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-background text-foreground border-border hover:bg-secondary'
                   )}
                 >
@@ -146,6 +151,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
                 </button>
               ))}
             </div>
+            <p className="text-xs text-primary cursor-pointer hover:underline">Learn about U.S. citizenship and residency ▾</p>
             <FieldError msg={errors.us_person} />
           </div>
 
@@ -263,7 +269,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
               <div className="space-y-1">
                 <Label className="text-sm font-medium text-foreground">Address line 1</Label>
                 <Input
-                  value={data.tax_address_line1 || ''}
+                  value={taxLine1}
                   onChange={(e) => onChange({ tax_address_line1: e.target.value })}
                   placeholder="Street address, P.O. box"
                   className={cn('max-w-sm', errors.tax_address_line1 ? 'border-destructive' : '')}
@@ -277,7 +283,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
                   Address line 2 <span className="text-muted-foreground font-normal">(Optional)</span>
                 </Label>
                 <Input
-                  value={data.tax_address_line2 || ''}
+                  value={taxLine2}
                   onChange={(e) => onChange({ tax_address_line2: e.target.value })}
                   placeholder="Apartment, suite, unit, building, floor etc."
                   className="max-w-sm"
@@ -288,7 +294,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
               <div className="space-y-1">
                 <Label className="text-sm font-medium text-foreground">City</Label>
                 <Input
-                  value={data.tax_city || ''}
+                  value={taxCity}
                   onChange={(e) => onChange({ tax_city: e.target.value })}
                   placeholder="City"
                   className={cn('max-w-xs', errors.tax_city ? 'border-destructive' : '')}
@@ -300,7 +306,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
               <div className="space-y-1">
                 <Label className="text-sm font-medium text-foreground">State / Province / Region</Label>
                 {taxAddressCountry === 'United States' ? (
-                  <Select value={data.tax_state || ''} onValueChange={(v) => onChange({ tax_state: v })}>
+                  <Select value={taxState} onValueChange={(v) => onChange({ tax_state: v })}>
                     <SelectTrigger className="max-w-xs">
                       <SelectValue placeholder="Select state" />
                     </SelectTrigger>
@@ -310,7 +316,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
                   </Select>
                 ) : (
                   <Input
-                    value={data.tax_state || ''}
+                    value={taxState}
                     onChange={(e) => onChange({ tax_state: e.target.value })}
                     placeholder="State / Province / Region"
                     className="max-w-xs"
@@ -322,7 +328,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
               <div className="space-y-1">
                 <Label className="text-sm font-medium text-foreground">Zip / Postal code</Label>
                 <Input
-                  value={data.tax_zip || ''}
+                  value={taxZip}
                   onChange={(e) => onChange({ tax_zip: e.target.value })}
                   placeholder="Zip / Postal code"
                   className={cn('max-w-xs', errors.tax_zip ? 'border-destructive' : '')}
