@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronLeft, ChevronRight, AlertCircle, AlertTriangle, Shield } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, AlertTriangle, Shield, FileText, MapPin, BadgeCheck } from 'lucide-react';
 import ValidationSummary from './ValidationSummary';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +41,25 @@ const FieldError = ({ msg }) => msg ? (
   </p>
 ) : null;
 
+function SectionCard({ icon: Icon, title, description, children }) {
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-4 bg-secondary/40 border-b border-border">
+        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <Icon className="w-3.5 h-3.5 text-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+        </div>
+      </div>
+      <div className="px-5 py-5 space-y-4">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function TaxProfileStep({ data, onChange, errors, onNext, onBack }) {
   const isBusiness = data.tax_classification === 'business';
   const taxClass = data.tax_classification || 'individual';
@@ -75,11 +94,8 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
       )}
 
       {/* ── GET STARTED ── */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="px-5 py-4 bg-secondary/40 border-b border-border">
-          <p className="text-sm font-semibold text-foreground">Get Started</p>
-        </div>
-        <div className="px-5 py-5 space-y-5">
+      <SectionCard icon={FileText} title="Get Started" description="Tell us how you file your taxes">
+        <div className="space-y-5">
 
           {/* Tax Classification */}
           <div className="space-y-2">
@@ -157,20 +173,16 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
           )}
 
         </div>
-      </div>
+      </SectionCard>
 
       {/* ── TAX IDENTITY INFORMATION — shown after US status answered ── */}
       {showTaxIdentity && (
         <>
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="px-5 py-4 bg-secondary/40 border-b border-border">
-              <p className="text-sm font-semibold text-foreground">Tax Identity Information</p>
-            </div>
-            <div className="px-5 py-5 space-y-4">
+          <SectionCard icon={BadgeCheck} title="Tax Identity Information" description="Your legal name and tax identification details">
 
               {/* Full name */}
               <div className="space-y-1">
-                <Label className="text-sm font-medium text-foreground">Full name</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Full name <span className="text-destructive">*</span></Label>
                 <Input
                   value={data.tax_full_name || data.full_name || ''}
                   onChange={(e) => onChange({ tax_full_name: e.target.value })}
@@ -183,9 +195,8 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
 
               {/* DBA */}
               <div className="space-y-1">
-                <Label className="text-sm font-medium text-foreground">
-                  Doing business as "DBA" or trade name{' '}
-                  <span className="text-muted-foreground font-normal">(Optional)</span>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  DBA / Trade name <span className="font-normal normal-case">(Optional)</span>
                 </Label>
                 <Input
                   value={data.dba_name || ''}
@@ -197,8 +208,8 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
               {/* US TIN */}
               {usStatus === true && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-foreground">
-                    U.S. Taxpayer Identification Number (TIN) Type
+                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    U.S. Taxpayer ID (TIN) Type <span className="text-destructive">*</span>
                   </Label>
                   <div className="flex items-center gap-2">
                     <Select
@@ -229,8 +240,8 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
               {/* Non-US foreign TIN */}
               {usStatus === false && (
                 <div className="space-y-1">
-                  <Label className="text-sm font-medium text-foreground">
-                    Taxpayer Identification Number (TIN)
+                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Taxpayer ID (TIN)
                   </Label>
                   <Input
                     value={data.tax_id || ''}
@@ -242,20 +253,15 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
                 </div>
               )}
 
-            </div>
-          </div>
+          </SectionCard>
 
           {/* ── ADDRESS ── */}
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="px-5 py-4 bg-secondary/40 border-b border-border">
-              <p className="text-sm font-semibold text-foreground">Address</p>
-            </div>
-            <div className="px-5 py-5 space-y-3">
+          <SectionCard icon={MapPin} title="Address" description="Your address for tax purposes">
               <p className="text-xs text-primary cursor-pointer hover:underline">Learn about which address to use ▾</p>
 
               {/* Country */}
               <div className="space-y-1">
-                <Label className="text-sm font-medium text-foreground">Country</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Country <span className="text-destructive">*</span></Label>
                 <Select value={taxAddressCountry} onValueChange={(v) => onChange({ tax_address_country: v })}>
                   <SelectTrigger className="max-w-xs">
                     <SelectValue placeholder="Select country" />
@@ -268,7 +274,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
 
               {/* Address line 1 */}
               <div className="space-y-1">
-                <Label className="text-sm font-medium text-foreground">Address line 1</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Address line 1 <span className="text-destructive">*</span></Label>
                 <Input
                   value={taxLine1}
                   onChange={(e) => onChange({ tax_address_line1: e.target.value })}
@@ -280,8 +286,8 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
 
               {/* Address line 2 */}
               <div className="space-y-1">
-                <Label className="text-sm font-medium text-foreground">
-                  Address line 2 <span className="text-muted-foreground font-normal">(Optional)</span>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Address line 2 <span className="font-normal normal-case">(Optional)</span>
                 </Label>
                 <Input
                   value={taxLine2}
@@ -293,7 +299,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
 
               {/* City */}
               <div className="space-y-1">
-                <Label className="text-sm font-medium text-foreground">City</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">City <span className="text-destructive">*</span></Label>
                 <Input
                   value={taxCity}
                   onChange={(e) => onChange({ tax_city: e.target.value })}
@@ -305,7 +311,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
 
               {/* State / Province / Region */}
               <div className="space-y-1">
-                <Label className="text-sm font-medium text-foreground">State / Province / Region</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">State / Province / Region</Label>
                 {taxAddressCountry === 'United States' ? (
                   <Select value={taxState} onValueChange={(v) => onChange({ tax_state: v })}>
                     <SelectTrigger className="max-w-xs">
@@ -327,7 +333,7 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
 
               {/* Zip / Postal code */}
               <div className="space-y-1">
-                <Label className="text-sm font-medium text-foreground">Zip / Postal code</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Zip / Postal code</Label>
                 <Input
                   value={taxZip}
                   onChange={(e) => onChange({ tax_zip: e.target.value })}
@@ -337,28 +343,29 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
                 <FieldError msg={errors.tax_zip} />
               </div>
 
-            </div>
-          </div>
+          </SectionCard>
 
           {/* ── CERTIFICATION ── */}
-          <div className="rounded-xl border border-border bg-card px-5 py-4 space-y-3">
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="tax-cert"
-                checked={!!data.tax_certified}
-                onCheckedChange={(v) => onChange({ tax_certified: !!v })}
-                className="mt-0.5 shrink-0"
-              />
-              <label htmlFor="tax-cert" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
-                Under penalties of perjury, I certify that all information I have entered is true, correct, and complete. I understand that providing false or fraudulent information may subject me to civil or criminal penalties under applicable law.
-              </label>
+          <SectionCard icon={Shield} title="Certification" description="Review and certify your tax information">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="tax-cert"
+                  checked={!!data.tax_certified}
+                  onCheckedChange={(v) => onChange({ tax_certified: !!v })}
+                  className="mt-0.5 shrink-0"
+                />
+                <label htmlFor="tax-cert" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                  Under penalties of perjury, I certify that all information I have entered is true, correct, and complete. I understand that providing false or fraudulent information may subject me to civil or criminal penalties under applicable law.
+                </label>
+              </div>
+              <FieldError msg={errors.tax_certified} />
+              <div className="flex items-center gap-2 text-xs text-muted-foreground border-t border-border pt-3">
+                <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
+                Your tax information is encrypted with bank-level security and never shared with third parties.
+              </div>
             </div>
-            <FieldError msg={errors.tax_certified} />
-            <div className="flex items-center gap-2 text-xs text-muted-foreground border-t border-border pt-3">
-              <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
-              Your tax information is encrypted with bank-level security and never shared with third parties.
-            </div>
-          </div>
+          </SectionCard>
         </>
       )}
 
