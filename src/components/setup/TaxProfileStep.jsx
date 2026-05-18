@@ -107,28 +107,12 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
             <FieldError msg={errors.tax_classification} />
           </div>
 
-          {/* Business: federal classification */}
-          {isBusiness && (
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium text-foreground">Federal tax classification</p>
-              <Select value={data.federal_tax_classification || ''} onValueChange={(v) => onChange({ federal_tax_classification: v })}>
-                <SelectTrigger className="max-w-xs">
-                  <SelectValue placeholder="Select classification" />
-                </SelectTrigger>
-                <SelectContent>
-                  {FEDERAL_TAX_CLASSIFICATIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FieldError msg={errors.federal_tax_classification} />
-            </div>
-          )}
-
           {/* US residency */}
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">
               {isBusiness
                 ? 'Are you a U.S. resident entity?'
-                : 'Are you a United States (U.S.) citizen, U.S. permanent resident (green card holder), or other U.S. resident alien?'}
+                : 'Are you a United States (U.S.) citizen, or U.S. permanent resident (green card holder)?'}
             </p>
             <div className="flex flex-wrap gap-2">
               {[
@@ -154,6 +138,22 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
             <p className="text-xs text-primary cursor-pointer hover:underline">Learn about U.S. citizenship and residency ▾</p>
             <FieldError msg={errors.us_person} />
           </div>
+
+          {/* Business: federal classification — shown after residency answer */}
+          {isBusiness && (
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium text-foreground">Federal tax classification</p>
+              <Select value={data.federal_tax_classification || ''} onValueChange={(v) => onChange({ federal_tax_classification: v })}>
+                <SelectTrigger className="max-w-xs">
+                  <SelectValue placeholder="Select classification" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FEDERAL_TAX_CLASSIFICATIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <FieldError msg={errors.federal_tax_classification} />
+            </div>
+          )}
 
         </div>
       </div>
