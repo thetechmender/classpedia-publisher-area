@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronRight, AlertCircle, Shield, User, MapPin, Phone } from 'lucide-react';
+import ValidationSummary from './ValidationSummary';
 
 const COUNTRIES = [
   'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Argentina', 'Armenia',
@@ -229,6 +230,8 @@ export default function IdentityStep({ data, onChange, errors, onNext }) {
           </div>
         </div>
       </div>
+
+      <ValidationSummary errors={errors} />
 
       <div className="flex justify-end pt-2 border-t border-border gap-3">
         <Button variant="outline" onClick={onNext}>Save draft</Button>

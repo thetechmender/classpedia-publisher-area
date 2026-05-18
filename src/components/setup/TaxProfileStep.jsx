@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronLeft, ChevronRight, AlertCircle, AlertTriangle, Shield } from 'lucide-react';
+import ValidationSummary from './ValidationSummary';
 import { cn } from '@/lib/utils';
 
 const COUNTRIES = [
@@ -360,6 +361,8 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
           </div>
         </>
       )}
+
+      <ValidationSummary errors={errors} />
 
       <div className="flex justify-between pt-2 border-t border-border">
         <Button variant="outline" onClick={onBack} className="gap-2">

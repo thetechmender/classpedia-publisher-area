@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, AlertCircle, Info, Building2, Banknote, User2, MapPin } from 'lucide-react';
+import ValidationSummary from './ValidationSummary';
 import { cn } from '@/lib/utils';
 
 const BANK_COUNTRIES = [
@@ -478,6 +479,8 @@ export default function AccountDetailsStep({ data, onChange, errors, onNext, onB
 
         </SectionCard>
       }
+
+      <ValidationSummary errors={errors} />
 
       <div className="flex justify-between pt-2 border-t border-border">
         <Button variant="outline" onClick={onBack} className="gap-2">
