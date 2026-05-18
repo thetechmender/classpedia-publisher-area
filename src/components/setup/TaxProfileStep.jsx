@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronLeft, ChevronRight, AlertCircle, AlertTriangle, Shield, FileText, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, AlertTriangle, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const COUNTRIES = [
@@ -30,8 +30,8 @@ const US_STATES = [
 ];
 
 const FEDERAL_TAX_CLASSIFICATIONS = [
-  'Sole Proprietor', 'Single-Member LLC', 'C Corporation', 'S Corporation',
-  'Partnership / Multi-Member LLC', 'Trust / Estate',
+  'C Corporation', 'S Corporation', 'Partnership',
+  'Trust / Estate', 'Disregarded Entity',
 ];
 
 const FieldError = ({ msg }) => msg ? (
@@ -40,32 +40,12 @@ const FieldError = ({ msg }) => msg ? (
   </p>
 ) : null;
 
-function SectionCard({ icon: Icon, title, description, children }) {
-  return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="flex items-center gap-3 px-5 py-4 bg-secondary/40 border-b border-border">
-        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <Icon className="w-3.5 h-3.5 text-primary" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground">{title}</p>
-          {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
-        </div>
-      </div>
-      <div className="px-5 py-5 space-y-4">
-        {children}
-      </div>
-    </div>
-  );
-}
-
 export default function TaxProfileStep({ data, onChange, errors, onNext, onBack }) {
   const isBusiness = data.tax_classification === 'business';
-  const isUSResident = data.us_person === true;
-  const isUSResident_notSure = data.us_person === 'not_sure';
-  const taxCountry = data.tax_address_country || data.country || 'United States';
-  const usingSameAddress = data.tax_use_same_address !== false;
-  const hasIdentityAddress = !!(data.address_line1 && data.city);
+  const taxClass = data.tax_classification || 'individual';
+  const usStatus = data.us_person; // true | false | 'not_sure' | undefined
+  const taxAddressCountry = data.tax_address_country || 'United States';
+  const showTaxIdentity = usStatus !== undefined;
 
   return (
     <div className="space-y-6">
@@ -73,13 +53,13 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
       <div className="pb-1">
         <h2 className="text-xl font-semibold text-foreground">Tax Information</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Required for royalty payments. Failure to provide accurate tax information may result in delayed payments or maximum U.S. tax withholding.
+          Failure to provide the information below may cause a delay in our ability to issue payments and/or result in maximum U.S. tax withholding on your earnings.
         </p>
       </div>
 
       {/* Incomplete warning */}
       {!data.tax_certified && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-3">
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3">
           <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
           <p className="text-xs text-amber-800 leading-relaxed">
             <span className="font-semibold">Action required:</span> You must complete your tax profile to receive royalty payments.
@@ -87,125 +67,138 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
         </div>
       )}
 
-      {/* ── Get Started: Classification + US Status ── */}
-      <SectionCard icon={FileText} title="Get Started" description="Tell us your tax classification and residency status">
-
-        {/* Tax classification toggle */}
-        <div className="space-y-2">
-          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tax Classification <span className="text-destructive">*</span></Label>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { value: 'individual', label: 'Individual', desc: 'Includes sole proprietors and single-member LLC owners' },
-              { value: 'business', label: 'Business', desc: 'Corporations, partnerships, trusts, or multi-member LLCs' },
-            ].map(opt => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onChange({ tax_classification: opt.value })}
-                className={cn(
-                  'text-left rounded-xl border-2 px-4 py-3 transition-all',
-                  data.tax_classification === opt.value || (!data.tax_classification && opt.value === 'individual')
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/40'
-                )}
-              >
-                <p className="text-sm font-semibold text-foreground">{opt.label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
-              </button>
-            ))}
-          </div>
+      {/* ── GET STARTED ── */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-4 bg-secondary/40 border-b border-border">
+          <p className="text-sm font-semibold text-foreground">Get Started</p>
         </div>
+        <div className="px-5 py-5 space-y-5">
 
-        {/* Business: federal classification dropdown */}
-        {isBusiness && (
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Federal Tax Classification <span className="text-destructive">*</span></Label>
-            <Select value={data.federal_tax_classification || ''} onValueChange={(v) => onChange({ federal_tax_classification: v })}>
-              <SelectTrigger className="max-w-sm">
-                <SelectValue placeholder="Select classification" />
-              </SelectTrigger>
-              <SelectContent>
-                {FEDERAL_TAX_CLASSIFICATIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <FieldError msg={errors.federal_tax_classification} />
+          {/* Tax Classification */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">What is your tax classification?</p>
+            <div className="flex gap-0">
+              {['individual', 'business'].map((val, i) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => onChange({ tax_classification: val })}
+                  className={cn(
+                    'px-5 py-1.5 text-sm border transition-all',
+                    i === 0 ? 'rounded-l-md' : 'rounded-r-md -ml-px',
+                    taxClass === val
+                      ? 'bg-primary text-primary-foreground border-primary z-10'
+                      : 'bg-background text-foreground border-border hover:bg-secondary'
+                  )}
+                >
+                  {val === 'individual' ? 'Individual' : 'Business'}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              "Individual" includes Sole Proprietors or Disregarded Entity where the owner is an individual.
+            </p>
+            <FieldError msg={errors.tax_classification} />
           </div>
-        )}
 
-        {/* U.S. residency question */}
-        <div className="space-y-2">
-          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">U.S. Tax Status <span className="text-destructive">*</span></Label>
-          <p className="text-xs text-muted-foreground">
-            {isBusiness
-              ? 'Is this a U.S. resident entity (incorporated or domiciled in the U.S.)?'
-              : 'Are you a U.S. citizen, U.S. permanent resident (green card holder), or U.S. resident alien?'}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { value: true, label: 'Yes' },
-              { value: false, label: 'No' },
-              ...(!isBusiness ? [{ value: 'not_sure', label: "Not sure" }] : []),
-            ].map(({ value, label }) => (
-              <button
-                key={String(value)}
-                type="button"
-                onClick={() => onChange({ us_person: value })}
-                className={cn(
-                  'px-5 py-2 rounded-lg border-2 text-sm font-medium transition-all',
-                  data.us_person === value
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-background hover:border-primary/40'
-                )}
-              >
-                {label}
-              </button>
-            ))}
+          {/* Business: federal classification */}
+          {isBusiness && (
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium text-foreground">Federal tax classification</p>
+              <Select value={data.federal_tax_classification || ''} onValueChange={(v) => onChange({ federal_tax_classification: v })}>
+                <SelectTrigger className="max-w-xs">
+                  <SelectValue placeholder="Select classification" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FEDERAL_TAX_CLASSIFICATIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <FieldError msg={errors.federal_tax_classification} />
+            </div>
+          )}
+
+          {/* US residency */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">
+              {isBusiness
+                ? 'Are you a U.S. resident entity?'
+                : 'Are you a United States (U.S.) citizen, U.S. permanent resident (green card holder), or other U.S. resident alien?'}
+            </p>
+            <div className="flex gap-0">
+              {[
+                { value: true, label: 'Yes' },
+                { value: false, label: 'No' },
+                ...(!isBusiness ? [{ value: 'not_sure', label: "I'm not sure if I'm a U.S. resident alien" }] : []),
+              ].map(({ value, label }, i, arr) => (
+                <button
+                  key={String(value)}
+                  type="button"
+                  onClick={() => onChange({ us_person: value })}
+                  className={cn(
+                    'px-4 py-1.5 text-sm border transition-all',
+                    i === 0 ? 'rounded-l-md' : i === arr.length - 1 ? 'rounded-r-md -ml-px' : '-ml-px',
+                    usStatus === value
+                      ? 'bg-primary text-primary-foreground border-primary z-10'
+                      : 'bg-background text-foreground border-border hover:bg-secondary'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <FieldError msg={errors.us_person} />
           </div>
-          <FieldError msg={errors.us_person} />
+
         </div>
-      </SectionCard>
+      </div>
 
-      {/* ── Tax Identity + TIN — shown once US status chosen ── */}
-      {data.us_person !== undefined && (
+      {/* ── TAX IDENTITY INFORMATION — shown after US status answered ── */}
+      {showTaxIdentity && (
         <>
-          <SectionCard icon={FileText} title="Tax Identity Information" description="Your name and tax ID as they appear on your tax return">
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="px-5 py-4 bg-secondary/40 border-b border-border">
+              <p className="text-sm font-semibold text-foreground">Tax Identity Information</p>
+            </div>
+            <div className="px-5 py-5 space-y-4">
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Full Legal Name <span className="text-destructive">*</span></Label>
+              {/* Full name */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium text-foreground">Full name</Label>
                 <Input
                   value={data.tax_full_name || data.full_name || ''}
                   onChange={(e) => onChange({ tax_full_name: e.target.value })}
-                  placeholder="Full legal name as it appears on your tax return"
+                  placeholder="Full legal name as on your tax return"
                   className={cn('max-w-sm', errors.tax_full_name ? 'border-destructive' : '')}
                 />
-                <p className="text-xs text-primary cursor-pointer hover:underline">Which name should I enter? ▾</p>
+                <p className="text-xs text-primary cursor-pointer hover:underline">Learn about which name to enter ▾</p>
                 <FieldError msg={errors.tax_full_name} />
               </div>
 
-              <div className="col-span-2 space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">DBA / Trade Name <span className="font-normal normal-case text-muted-foreground">(optional)</span></Label>
+              {/* DBA */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium text-foreground">
+                  Doing business as "DBA" or trade name{' '}
+                  <span className="text-muted-foreground font-normal">(Optional)</span>
+                </Label>
                 <Input
                   value={data.dba_name || ''}
                   onChange={(e) => onChange({ dba_name: e.target.value })}
-                  placeholder="Doing business as — if different from legal name"
                   className="max-w-sm"
                 />
               </div>
-            </div>
 
-            {/* US TIN */}
-            {(isUSResident || isUSResident_notSure) && (
-              <div className="space-y-3 pt-1 border-t border-border">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">U.S. Taxpayer Identification Number (TIN) <span className="text-destructive">*</span></Label>
-                <div className="flex items-end gap-3 flex-wrap">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">TIN Type</Label>
+              {/* US TIN */}
+              {(usStatus === true || usStatus === 'not_sure') && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-foreground">
+                    U.S. Taxpayer Identification Number (TIN) Type
+                  </Label>
+                  <div className="flex items-center gap-2">
                     <Select
                       value={data.tax_id_type || 'ssn'}
                       onValueChange={(v) => onChange({ tax_id_type: v })}
                     >
-                      <SelectTrigger className="w-64">
+                      <SelectTrigger className="w-60">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -215,155 +208,132 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">TIN Number</Label>
-                    <Input
-                      value={data.tax_id || ''}
-                      onChange={(e) => onChange({ tax_id: e.target.value })}
-                      placeholder={data.tax_id_type === 'ein' ? 'XX-XXXXXXX' : 'XXX-XX-XXXX'}
-                      className={cn('w-44', errors.tax_id ? 'border-destructive' : '')}
-                    />
-                  </div>
+                  <Input
+                    value={data.tax_id || ''}
+                    onChange={(e) => onChange({ tax_id: e.target.value })}
+                    placeholder={data.tax_id_type === 'ein' ? 'XX-XXXXXXX' : 'XXX-XX-XXXX'}
+                    className={cn('max-w-xs', errors.tax_id ? 'border-destructive' : '')}
+                  />
+                  <FieldError msg={errors.tax_id} />
+                  <p className="text-xs text-primary cursor-pointer hover:underline">Learn which TIN type to select and where to find it ▾</p>
                 </div>
-                <FieldError msg={errors.tax_id} />
-                <p className="text-xs text-primary cursor-pointer hover:underline">Which TIN type should I select? ▾</p>
-              </div>
-            )}
+              )}
 
-            {/* Non-US: foreign TIN */}
-            {data.us_person === false && (
-              <div className="space-y-1.5 pt-1 border-t border-border">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Foreign Tax ID <span className="font-normal normal-case text-muted-foreground">(if applicable)</span></Label>
+              {/* Non-US foreign TIN */}
+              {usStatus === false && (
+                <div className="space-y-1">
+                  <Label className="text-sm font-medium text-foreground">
+                    Taxpayer Identification Number (TIN)
+                  </Label>
+                  <Input
+                    value={data.tax_id || ''}
+                    onChange={(e) => onChange({ tax_id: e.target.value })}
+                    placeholder="Your country's tax identification number"
+                    className="max-w-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">Leave blank if your country does not issue a tax ID number.</p>
+                </div>
+              )}
+
+            </div>
+          </div>
+
+          {/* ── ADDRESS ── */}
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="px-5 py-4 bg-secondary/40 border-b border-border">
+              <p className="text-sm font-semibold text-foreground">Address</p>
+            </div>
+            <div className="px-5 py-5 space-y-3">
+              <p className="text-xs text-primary cursor-pointer hover:underline">Learn about which address to use ▾</p>
+
+              {/* Country */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium text-foreground">Country</Label>
+                <Select value={taxAddressCountry} onValueChange={(v) => onChange({ tax_address_country: v })}>
+                  <SelectTrigger className="max-w-xs">
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Address line 1 */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium text-foreground">Address line 1</Label>
                 <Input
-                  value={data.tax_id || ''}
-                  onChange={(e) => onChange({ tax_id: e.target.value })}
-                  placeholder="Your country's tax identification number"
-                  className="max-w-xs"
+                  value={data.tax_address_line1 || ''}
+                  onChange={(e) => onChange({ tax_address_line1: e.target.value })}
+                  placeholder="Street address, P.O. box"
+                  className={cn('max-w-sm', errors.tax_address_line1 ? 'border-destructive' : '')}
                 />
-                <p className="text-xs text-muted-foreground">Leave blank if your country does not issue a tax ID number.</p>
+                <FieldError msg={errors.tax_address_line1} />
               </div>
-            )}
 
-          </SectionCard>
-
-          {/* ── Tax Address ── */}
-          <SectionCard icon={MapPin} title="Tax Address" description="Your permanent residence or principal place of business for tax purposes">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">This address is used for tax withholding and form generation (W-9, W-8BEN, etc.).</p>
-              <span className="text-xs text-primary cursor-pointer hover:underline whitespace-nowrap ml-3">Which address? ▾</span>
-            </div>
-
-            {/* Two clear address options */}
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                {
-                  mode: true,
-                  label: 'Use identity address',
-                  preview: hasIdentityAddress
-                    ? `${data.address_line1}, ${data.city}, ${data.country}`
-                    : 'No identity address on file',
-                  disabled: !hasIdentityAddress,
-                },
-                {
-                  mode: false,
-                  label: 'Enter a different address',
-                  preview: 'Provide a separate tax address',
-                  disabled: false,
-                },
-              ].map(opt => (
-                <button
-                  key={String(opt.mode)}
-                  type="button"
-                  disabled={opt.disabled}
-                  onClick={() => onChange({ tax_use_same_address: opt.mode })}
-                  className={cn(
-                    'relative text-left rounded-xl border-2 px-4 py-3 transition-all',
-                    usingSameAddress === opt.mode && !opt.disabled
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/40',
-                    opt.disabled && 'opacity-40 cursor-not-allowed'
-                  )}
-                >
-                  {usingSameAddress === opt.mode && !opt.disabled && (
-                    <span className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                    </span>
-                  )}
-                  <p className="text-xs font-semibold text-foreground mb-1">{opt.label}</p>
-                  <p className="text-[11px] text-muted-foreground leading-snug">{opt.preview}</p>
-                </button>
-              ))}
-            </div>
-
-            {/* Show chosen address */}
-            {usingSameAddress && hasIdentityAddress ? (
-              <div className="rounded-lg border border-border bg-secondary/20 px-4 py-3 text-sm leading-relaxed">
-                <p className="text-foreground">{data.address_line1}{data.address_line2 ? `, ${data.address_line2}` : ''}</p>
-                <p className="text-muted-foreground text-xs mt-0.5">
-                  {[data.city, data.state, data.zip].filter(Boolean).join(', ')} · {data.country}
-                </p>
+              {/* Address line 2 */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium text-foreground">
+                  Address line 2 <span className="text-muted-foreground font-normal">(Optional)</span>
+                </Label>
+                <Input
+                  value={data.tax_address_line2 || ''}
+                  onChange={(e) => onChange({ tax_address_line2: e.target.value })}
+                  placeholder="Apartment, suite, unit, building, floor etc."
+                  className="max-w-sm"
+                />
               </div>
-            ) : !usingSameAddress && (
-              <div className="space-y-3 rounded-xl border border-border bg-secondary/10 px-4 py-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Country</Label>
-                  <Select value={taxCountry} onValueChange={(v) => onChange({ tax_address_country: v })}>
+
+              {/* City */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium text-foreground">City</Label>
+                <Input
+                  value={data.tax_city || ''}
+                  onChange={(e) => onChange({ tax_city: e.target.value })}
+                  placeholder="City"
+                  className={cn('max-w-xs', errors.tax_city ? 'border-destructive' : '')}
+                />
+                <FieldError msg={errors.tax_city} />
+              </div>
+
+              {/* State / Province / Region */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium text-foreground">State / Province / Region</Label>
+                {taxAddressCountry === 'United States' ? (
+                  <Select value={data.tax_state || ''} onValueChange={(v) => onChange({ tax_state: v })}>
                     <SelectTrigger className="max-w-xs">
-                      <SelectValue placeholder="Select country" />
+                      <SelectValue placeholder="Select state" />
                     </SelectTrigger>
                     <SelectContent className="max-h-60">
-                      {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      {US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Address Line 1 <span className="text-destructive">*</span></Label>
+                ) : (
                   <Input
-                    value={data.tax_address_line1 || ''}
-                    onChange={(e) => onChange({ tax_address_line1: e.target.value })}
-                    placeholder="Street address"
-                    className={errors.tax_address_line1 ? 'border-destructive' : ''}
+                    value={data.tax_state || ''}
+                    onChange={(e) => onChange({ tax_state: e.target.value })}
+                    placeholder="State / Province / Region"
+                    className="max-w-xs"
                   />
-                  <FieldError msg={errors.tax_address_line1} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Address Line 2 <span className="font-normal normal-case text-muted-foreground">(optional)</span></Label>
-                  <Input
-                    value={data.tax_address_line2 || ''}
-                    onChange={(e) => onChange({ tax_address_line2: e.target.value })}
-                    placeholder="Apartment, suite, unit, etc."
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">City <span className="text-destructive">*</span></Label>
-                    <Input value={data.tax_city || ''} onChange={(e) => onChange({ tax_city: e.target.value })} placeholder="City" className={errors.tax_city ? 'border-destructive' : ''} />
-                    <FieldError msg={errors.tax_city} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">State</Label>
-                    {taxCountry === 'United States' ? (
-                      <Select value={data.tax_state || ''} onValueChange={(v) => onChange({ tax_state: v })}>
-                        <SelectTrigger><SelectValue placeholder="State" /></SelectTrigger>
-                        <SelectContent className="max-h-60">
-                          {US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input value={data.tax_state || ''} onChange={(e) => onChange({ tax_state: e.target.value })} placeholder="State / Region" />
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Postal <span className="text-destructive">*</span></Label>
-                    <Input value={data.tax_zip || ''} onChange={(e) => onChange({ tax_zip: e.target.value })} placeholder="ZIP" className={errors.tax_zip ? 'border-destructive' : ''} />
-                    <FieldError msg={errors.tax_zip} />
-                  </div>
-                </div>
+                )}
               </div>
-            )}
-          </SectionCard>
 
-          {/* ── Certification ── */}
+              {/* Zip / Postal code */}
+              <div className="space-y-1">
+                <Label className="text-sm font-medium text-foreground">Zip / Postal code</Label>
+                <Input
+                  value={data.tax_zip || ''}
+                  onChange={(e) => onChange({ tax_zip: e.target.value })}
+                  placeholder="Zip / Postal code"
+                  className={cn('max-w-xs', errors.tax_zip ? 'border-destructive' : '')}
+                />
+                <FieldError msg={errors.tax_zip} />
+              </div>
+
+            </div>
+          </div>
+
+          {/* ── CERTIFICATION ── */}
           <div className="rounded-xl border border-border bg-card px-5 py-4 space-y-3">
             <div className="flex items-start gap-3">
               <Checkbox
