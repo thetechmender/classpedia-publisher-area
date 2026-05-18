@@ -32,8 +32,10 @@ const US_STATES = [
 
 const FEDERAL_TAX_CLASSIFICATIONS = [
   'C Corporation', 'S Corporation', 'Partnership',
-  'Trust / Estate', 'Disregarded Entity',
+  'Trust / Estate', 'Limited liability company', 'Other',
 ];
+
+const LLC_TYPES = ['S Corporation', 'C Corporation', 'Partnership'];
 
 const FieldError = ({ msg }) => msg ? (
   <p className="flex items-center gap-1 text-xs text-destructive mt-1">
@@ -158,18 +160,43 @@ export default function TaxProfileStep({ data, onChange, errors, onNext, onBack 
 
           {/* Business: federal classification — shown after residency answer */}
           {isBusiness && (
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium text-foreground">Federal tax classification</p>
-              <Select value={data.federal_tax_classification || ''} onValueChange={(v) => onChange({ federal_tax_classification: v })}>
-                <SelectTrigger className="max-w-xs">
-                  <SelectValue placeholder="Select classification" />
-                </SelectTrigger>
-                <SelectContent>
-                  {FEDERAL_TAX_CLASSIFICATIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FieldError msg={errors.federal_tax_classification} />
-            </div>
+            <>
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium text-foreground">Federal tax classification</p>
+                <Select
+                  value={data.federal_tax_classification || ''}
+                  onValueChange={(v) => onChange({ federal_tax_classification: v, llc_type: undefined })}
+                >
+                  <SelectTrigger className="max-w-xs">
+                    <SelectValue placeholder="Select classification" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FEDERAL_TAX_CLASSIFICATIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-primary cursor-pointer hover:underline">Learn about federal tax classification ▾</p>
+                <FieldError msg={errors.federal_tax_classification} />
+              </div>
+
+              {/* LLC type — only shown when Limited liability company is selected */}
+              {data.federal_tax_classification === 'Limited liability company' && (
+                <div className="space-y-1.5">
+                  <p className="text-sm font-medium text-foreground">LLC type</p>
+                  <Select
+                    value={data.llc_type || ''}
+                    onValueChange={(v) => onChange({ llc_type: v })}
+                  >
+                    <SelectTrigger className="max-w-xs">
+                      <SelectValue placeholder="Select LLC type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LLC_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FieldError msg={errors.llc_type} />
+                </div>
+              )}
+            </>
           )}
 
         </div>

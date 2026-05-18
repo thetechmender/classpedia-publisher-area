@@ -49,6 +49,12 @@ const validateStep3 = (data) => {
   if ((data.us_person === true || data.us_person === 'not_sure') && !data.tax_id?.trim()) {
     errors.tax_id = 'Tax ID (TIN) is required';
   }
+  if (data.tax_classification === 'business' && !data.federal_tax_classification) {
+    errors.federal_tax_classification = 'Federal tax classification is required';
+  }
+  if (data.federal_tax_classification === 'Limited liability company' && !data.llc_type) {
+    errors.llc_type = 'LLC type is required';
+  }
   if (!data.tax_certified) errors.tax_certified = 'You must certify this information is correct';
   return errors;
 };
