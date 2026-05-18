@@ -8,10 +8,9 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
   ChevronLeft, ChevronRight, DollarSign, Globe, Info,
-  Percent, AlertCircle, X, Search, Save } from
+  Percent, AlertCircle, X, Search } from
 'lucide-react';
 import { cn } from '@/lib/utils';
-import PublishValidationSummary from './PublishValidationSummary';
 
 // ── Policy constants ──────────────────────────────────────────────────────────
 const SELECT_MIN_PRICE_FREE = 1.99;
@@ -147,7 +146,7 @@ function TerritoryPicker({ selected = [], onChange }) {
 
 }
 
-export default function PricingStep({ data, onChange, errors, onNext, onBack, onSaveDraft }) {
+export default function PricingStep({ data, onChange, errors, onNext, onBack }) {
   const [selectExpanded, setSelectExpanded] = useState(false);
 
   const price = parseFloat(data.list_price) || 0;
@@ -382,18 +381,11 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack, on
         </p>
       </Section>
 
-      <PublishValidationSummary errors={errors} />
-
       {/* Navigation */}
       <div className="flex justify-between pt-2">
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onBack} className="gap-2">
-            <ChevronLeft className="w-4 h-4" /> Back
-          </Button>
-          <Button variant="outline" onClick={onSaveDraft} className="gap-2">
-            <Save className="w-4 h-4" /> Save Draft
-          </Button>
-        </div>
+        <Button variant="outline" onClick={onBack} className="gap-2">
+          <ChevronLeft className="w-4 h-4" /> Back
+        </Button>
         <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
           Review & Submit <ChevronRight className="w-4 h-4" />
         </Button>

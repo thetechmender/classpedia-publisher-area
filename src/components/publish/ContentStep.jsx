@@ -6,9 +6,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import {
   ChevronLeft, ChevronRight, Upload, FileText, ImageIcon,
-  X, Info, Cpu, Eye, BookOpen, CheckCircle2, AlertCircle, Layers, BookOpenCheck, Save
+  X, Info, Cpu, Eye, BookOpen, CheckCircle2, AlertCircle, Layers, BookOpenCheck
 } from 'lucide-react';
-import PublishValidationSummary from './PublishValidationSummary';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -315,7 +314,7 @@ function CoverSection({ data, onChange, errors, uploading, setUploading, coverRe
   );
 }
 
-export default function ContentStep({ data, onChange, errors, onNext, onBack, onSaveDraft }) {
+export default function ContentStep({ data, onChange, errors, onNext, onBack }) {
   const manuscriptRef = useRef(null);
   const coverRef = useRef(null);
   const [uploading, setUploading] = useState({ manuscript: false, cover: false, back_cover: false, spine: false });
@@ -533,18 +532,11 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack, on
         </div>
       </Section>
 
-      <PublishValidationSummary errors={errors} />
-
       {/* Navigation */}
       <div className="flex justify-between pt-2">
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onBack} className="gap-2">
-            <ChevronLeft className="w-4 h-4" /> Back
-          </Button>
-          <Button variant="outline" onClick={onSaveDraft} className="gap-2">
-            <Save className="w-4 h-4" /> Save Draft
-          </Button>
-        </div>
+        <Button variant="outline" onClick={onBack} className="gap-2">
+          <ChevronLeft className="w-4 h-4" /> Back
+        </Button>
         <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
           Save & Continue <ChevronRight className="w-4 h-4" />
         </Button>

@@ -87,13 +87,6 @@
       "type": "string",
       "description": "Author biography shown on book pages"
     },
-    "writing_genres": {
-      "type": "array",
-      "description": "Writing genres/categories the author specializes in",
-      "items": {
-        "type": "string"
-      }
-    },
     "website": {
       "type": "string",
       "description": "Author website URL"
