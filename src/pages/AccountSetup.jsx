@@ -13,12 +13,12 @@ import AuthorProfileStep from '@/components/setup/AuthorProfileStep';
 // Step validators
 const validateStep1 = (data) => {
   const errors = {};
-  // full_name auto-built from first+last
   if (!data.full_name?.trim()) errors.full_name = 'First and last name are required';
   if (!data.country) errors.country = 'Country is required';
   if (!data.address_line1?.trim()) errors.address_line1 = 'Address is required';
   if (!data.city?.trim()) errors.city = 'City is required';
   if (!data.zip?.trim()) errors.zip = 'Postal code is required';
+  if (!data.date_of_birth) errors.date_of_birth = 'Date of birth is required';
   if (!data.phone?.trim()) errors.phone = 'Phone number is required';
   return errors;
 };
@@ -37,10 +37,6 @@ const validateStep2 = (data) => {
   }
   if (data.bank_country === 'United States' && !data.bank_routing_number?.trim()) {
     errors.bank_routing_number = 'Routing number is required';
-  }
-  const bankBizType = data.bank_business_type || (data.business_type === 'corporation' ? 'corporation' : 'individual');
-  if (bankBizType !== 'corporation' && !data.date_of_birth) {
-    errors.date_of_birth = 'Date of birth is required';
   }
   return errors;
 };

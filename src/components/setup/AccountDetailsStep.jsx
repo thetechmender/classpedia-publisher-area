@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronLeft, ChevronRight, AlertCircle, Info } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, Info, Building2, Banknote, User2, MapPin } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-// All KDP-supported bank countries, alphabetically
 const BANK_COUNTRIES = [
   'Argentina', 'Australia', 'Austria', 'Bahrain', 'Bangladesh', 'Belgium',
   'Bolivia', 'Brazil', 'Bulgaria', 'Canada', 'Chile', 'China', 'Colombia',
@@ -24,460 +23,471 @@ const BANK_COUNTRIES = [
   'United Kingdom', 'United States', 'Uruguay', 'Venezuela', 'Vietnam',
 ];
 
+const ADDR_COUNTRIES = [
+  'Argentina', 'Australia', 'Austria', 'Bangladesh', 'Belgium', 'Brazil',
+  'Canada', 'Chile', 'China', 'Colombia', 'Czech Republic', 'Denmark',
+  'Egypt', 'Finland', 'France', 'Germany', 'Hungary', 'India', 'Indonesia',
+  'Ireland', 'Israel', 'Italy', 'Japan', 'Kenya', 'Malaysia', 'Mexico',
+  'Netherlands', 'New Zealand', 'Nigeria', 'Norway', 'Pakistan', 'Philippines',
+  'Poland', 'Portugal', 'Romania', 'Russia', 'Singapore', 'South Africa',
+  'South Korea', 'Spain', 'Sweden', 'Switzerland', 'Thailand', 'Turkey',
+  'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Vietnam',
+];
+
 const FieldError = ({ msg }) => msg ? (
   <p className="flex items-center gap-1 text-xs text-destructive mt-1">
-    <AlertCircle className="w-3 h-3" /> {msg}
+    <AlertCircle className="w-3 h-3 shrink-0" /> {msg}
   </p>
 ) : null;
 
-function AddressDisplay({ data }) {
-  if (!data.address_line1) return null;
+function SectionCard({ icon: Icon, title, description, children }) {
   return (
-    <div className="text-sm text-foreground border border-border rounded-md px-3 py-2.5 bg-secondary/20 leading-relaxed">
-      <p>{data.address_line1}{data.address_line2 ? `, ${data.address_line2}` : ''}</p>
-      <p>{[data.city, data.state, data.zip].filter(Boolean).join(', ')}</p>
-      <p>{data.country}</p>
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-4 bg-secondary/40 border-b border-border">
+        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <Icon className="w-3.5 h-3.5 text-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+        </div>
+      </div>
+      <div className="px-5 py-5 space-y-4">
+        {children}
+      </div>
     </div>
   );
 }
 
-function InlineAddressFields({ prefix, data, onChange, errors }) {
-  const COUNTRIES = [
-    'Argentina', 'Australia', 'Austria', 'Bangladesh', 'Belgium', 'Brazil',
-    'Canada', 'Chile', 'China', 'Colombia', 'Czech Republic', 'Denmark',
-    'Egypt', 'Finland', 'France', 'Germany', 'Hungary', 'India', 'Indonesia',
-    'Ireland', 'Israel', 'Italy', 'Japan', 'Kenya', 'Malaysia', 'Mexico',
-    'Netherlands', 'New Zealand', 'Nigeria', 'Norway', 'Pakistan', 'Philippines',
-    'Poland', 'Portugal', 'Romania', 'Russia', 'Singapore', 'South Africa',
-    'South Korea', 'Spain', 'Sweden', 'Switzerland', 'Thailand', 'Turkey',
-    'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Vietnam',
-  ];
-  const field = (name) => `${prefix}_${name}`;
+// Address card selector: "Use existing" OR "Enter new"
+function AddressSelector({ identityData, addrPrefix, data, onChange, errors }) {
+  const hasIdentity = !!(identityData.address_line1 && identityData.city);
+  // mode: 'existing' | 'new'
+  const mode = data[`${addrPrefix}_mode`] || (hasIdentity ? 'existing' : 'new');
+  const setMode = (m) => onChange({ [`${addrPrefix}_mode`]: m });
+
   return (
-    <div className="space-y-3 border border-border rounded-lg p-4 bg-secondary/10">
-      <div className="space-y-1.5">
-        <Label>Country <span className="text-destructive">*</span></Label>
-        <Select value={data[field('country')] || ''} onValueChange={(v) => onChange({ [field('country')]: v })}>
-          <SelectTrigger className={errors[field('country')] ? 'border-destructive' : ''}>
-            <SelectValue placeholder="Select country" />
-          </SelectTrigger>
-          <SelectContent className="max-h-60">
-            {COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <FieldError msg={errors[field('country')]} />
+    <div className="space-y-3">
+      {/* Option cards */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Option A: Use existing */}
+        <button
+          type="button"
+          onClick={() => setMode('existing')}
+          disabled={!hasIdentity}
+          className={cn(
+            'relative text-left rounded-xl border-2 px-4 py-3 transition-all',
+            mode === 'existing' && hasIdentity
+              ? 'border-primary bg-primary/5'
+              : 'border-border bg-card hover:border-primary/40',
+            !hasIdentity && 'opacity-40 cursor-not-allowed'
+          )}
+        >
+          {mode === 'existing' && hasIdentity && (
+            <span className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-white" />
+            </span>
+          )}
+          <p className="text-xs font-semibold text-foreground mb-1">Use existing address</p>
+          {hasIdentity ? (
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              {identityData.address_line1}, {identityData.city}, {identityData.country}
+            </p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">No identity address on file</p>
+          )}
+        </button>
+
+        {/* Option B: Enter new */}
+        <button
+          type="button"
+          onClick={() => setMode('new')}
+          className={cn(
+            'relative text-left rounded-xl border-2 px-4 py-3 transition-all',
+            mode === 'new'
+              ? 'border-primary bg-primary/5'
+              : 'border-border bg-card hover:border-primary/40'
+          )}
+        >
+          {mode === 'new' && (
+            <span className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-white" />
+            </span>
+          )}
+          <p className="text-xs font-semibold text-foreground mb-1">Enter a new address</p>
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            Provide a different address for this purpose
+          </p>
+        </button>
       </div>
-      <div className="space-y-1.5">
-        <Label>Address Line 1 <span className="text-destructive">*</span></Label>
-        <Input
-          value={data[field('line1')] || ''}
-          onChange={(e) => onChange({ [field('line1')]: e.target.value })}
-          placeholder="Street address, P.O. box"
-          className={errors[field('line1')] ? 'border-destructive' : ''}
-        />
-        <FieldError msg={errors[field('line1')]} />
-      </div>
-      <div className="space-y-1.5">
-        <Label>Address Line 2 <span className="text-muted-foreground font-normal text-xs">(Optional)</span></Label>
-        <Input
-          value={data[field('line2')] || ''}
-          onChange={(e) => onChange({ [field('line2')]: e.target.value })}
-          placeholder="Apartment, suite, unit, etc."
-        />
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <div className="space-y-1.5">
-          <Label>City <span className="text-destructive">*</span></Label>
-          <Input
-            value={data[field('city')] || ''}
-            onChange={(e) => onChange({ [field('city')]: e.target.value })}
-            placeholder="City"
-            className={errors[field('city')] ? 'border-destructive' : ''}
-          />
-          <FieldError msg={errors[field('city')]} />
+
+      {/* If existing — show address preview */}
+      {mode === 'existing' && hasIdentity && (
+        <div className="rounded-lg border border-border bg-secondary/20 px-4 py-3 text-sm text-foreground leading-relaxed">
+          <p>{identityData.address_line1}{identityData.address_line2 ? `, ${identityData.address_line2}` : ''}</p>
+          <p className="text-muted-foreground text-xs mt-0.5">{[identityData.city, identityData.state, identityData.zip].filter(Boolean).join(', ')} · {identityData.country}</p>
         </div>
-        <div className="space-y-1.5">
-          <Label>State / Region</Label>
-          <Input
-            value={data[field('state')] || ''}
-            onChange={(e) => onChange({ [field('state')]: e.target.value })}
-            placeholder="State"
-          />
+      )}
+
+      {/* If new — show inline fields */}
+      {mode === 'new' && (
+        <div className="space-y-3 rounded-xl border border-border bg-secondary/10 px-4 py-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Country <span className="text-destructive">*</span></Label>
+            <Select value={data[`${addrPrefix}_country`] || ''} onValueChange={(v) => onChange({ [`${addrPrefix}_country`]: v })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {ADDR_COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Address Line 1 <span className="text-destructive">*</span></Label>
+            <Input
+              value={data[`${addrPrefix}_line1`] || ''}
+              onChange={(e) => onChange({ [`${addrPrefix}_line1`]: e.target.value })}
+              placeholder="Street address, P.O. box"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Address Line 2 <span className="font-normal normal-case text-muted-foreground">(optional)</span></Label>
+            <Input
+              value={data[`${addrPrefix}_line2`] || ''}
+              onChange={(e) => onChange({ [`${addrPrefix}_line2`]: e.target.value })}
+              placeholder="Apartment, suite, unit, etc."
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">City <span className="text-destructive">*</span></Label>
+              <Input
+                value={data[`${addrPrefix}_city`] || ''}
+                onChange={(e) => onChange({ [`${addrPrefix}_city`]: e.target.value })}
+                placeholder="City"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">State</Label>
+              <Input
+                value={data[`${addrPrefix}_state`] || ''}
+                onChange={(e) => onChange({ [`${addrPrefix}_state`]: e.target.value })}
+                placeholder="State"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Postal <span className="text-destructive">*</span></Label>
+              <Input
+                value={data[`${addrPrefix}_zip`] || ''}
+                onChange={(e) => onChange({ [`${addrPrefix}_zip`]: e.target.value })}
+                placeholder="ZIP"
+              />
+            </div>
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label>Postal Code <span className="text-destructive">*</span></Label>
-          <Input
-            value={data[field('zip')] || ''}
-            onChange={(e) => onChange({ [field('zip')]: e.target.value })}
-            placeholder="ZIP / Postal"
-            className={errors[field('zip')] ? 'border-destructive' : ''}
-          />
-          <FieldError msg={errors[field('zip')]} />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
 
 export default function AccountDetailsStep({ data, onChange, errors, onNext, onBack }) {
   const isCorporation = data.business_type === 'corporation';
-  // Bank recipient type — defaults to mirror top-level business type
   const bankBizType = data.bank_business_type || (isCorporation ? 'corporation' : 'individual');
   const isBankCorp = bankBizType === 'corporation';
-
-  // Address mode for account holder address
-  const [useExistingAddr, setUseExistingAddr] = useState(true);
-  const hasIdentityAddress = !!(data.address_line1 && data.city);
-
-  const handleUseSameAddress = (checked) => {
-    setUseExistingAddr(checked);
-    if (checked) {
-      // Clear custom bank address fields when switching back to "use existing"
-      onChange({
-        bank_addr_country: undefined, bank_addr_line1: undefined, bank_addr_line2: undefined,
-        bank_addr_city: undefined, bank_addr_state: undefined, bank_addr_zip: undefined,
-      });
-    }
-  };
+  const bankCountrySelected = !!data.bank_country;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
-      {/* ───────────────────────────────
-          SECTION 1: ACCOUNT DETAILS
-      ─────────────────────────────── */}
-      <div className="space-y-5">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">Account Details</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Select your business type and confirm your account information.
-          </p>
-        </div>
+      {/* ── PAGE HEADER ── */}
+      <div className="pb-1">
+        <h2 className="text-xl font-semibold text-foreground">Account Details & Getting Paid</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Confirm your account type and set up your bank account to receive royalty payments.
+        </p>
+      </div>
+
+      {/* ─────────────────────────────────────────
+          PART 1: ACCOUNT DETAILS
+      ───────────────────────────────────────── */}
+      <SectionCard icon={Building2} title="Account Details" description="Select your business type and verify your account information">
 
         {/* Business Type */}
         <div className="space-y-2">
-          <Label className="text-sm font-semibold">Business Type <span className="text-destructive">*</span></Label>
-          <RadioGroup
-            value={data.business_type || 'individual'}
-            onValueChange={(v) => onChange({ business_type: v, bank_business_type: v })}
-            className="flex gap-6"
-          >
-            <label className="flex items-center gap-2 cursor-pointer">
-              <RadioGroupItem value="individual" />
-              <span className="text-sm font-medium">Individual / Sole Proprietor</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <RadioGroupItem value="corporation" />
-              <span className="text-sm font-medium">Corporation / Business Entity</span>
-            </label>
-          </RadioGroup>
-          <p className="text-xs text-muted-foreground">
-            Select "Corporation" if you are publishing on behalf of a company. For individual authors (including sole proprietors), select "Individual".
-          </p>
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Business Type <span className="text-destructive">*</span></Label>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { value: 'individual', label: 'Individual / Sole Proprietor', desc: 'For individual authors publishing under their own name' },
+              { value: 'corporation', label: 'Corporation / Business', desc: 'For companies or publishing entities' },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onChange({ business_type: opt.value, bank_business_type: opt.value })}
+                className={cn(
+                  'text-left rounded-xl border-2 px-4 py-3 transition-all',
+                  data.business_type === opt.value
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/40'
+                )}
+              >
+                <p className="text-sm font-semibold text-foreground">{opt.label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Account holder block */}
-        <div className="rounded-lg border border-border bg-secondary/10 p-4 space-y-3">
+        {/* Account Holder Info */}
+        <div className="rounded-lg border border-border bg-secondary/20 px-4 py-3 space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Account Holder</p>
           {!isCorporation ? (
-            <>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Account Holder</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Full Name</p>
-                  <p className="text-sm font-medium text-foreground mt-0.5">{data.full_name || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Phone</p>
-                  <p className="text-sm font-medium text-foreground mt-0.5">{data.phone || '—'}</p>
-                </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Full Name</p>
+                <p className="font-medium text-foreground mt-0.5">{data.full_name || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Date of Birth</p>
+                <p className="font-medium text-foreground mt-0.5">{data.date_of_birth || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Phone</p>
+                <p className="font-medium text-foreground mt-0.5">{data.phone || '—'}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Address</p>
-                {hasIdentityAddress ? (
-                  <p className="text-sm font-medium text-foreground mt-0.5">
-                    {data.address_line1}{data.address_line2 ? `, ${data.address_line2}` : ''}, {[data.city, data.state, data.zip].filter(Boolean).join(', ')}, {data.country}
-                  </p>
-                ) : <p className="text-sm text-muted-foreground mt-0.5">Not provided</p>}
+                <p className="font-medium text-foreground mt-0.5 text-xs">
+                  {data.address_line1 ? `${data.address_line1}, ${data.city}, ${data.country}` : '—'}
+                </p>
               </div>
-              <button onClick={onBack} className="text-xs text-primary hover:underline">← Edit identity information</button>
-            </>
+            </div>
           ) : (
-            <>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Corporate Account Details</p>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label>Company / Publishing Entity Name <span className="text-destructive">*</span></Label>
-                  <Input
-                    value={data.company_name || ''}
-                    onChange={(e) => onChange({ company_name: e.target.value })}
-                    placeholder="Legal company name"
-                    className={errors.company_name ? 'border-destructive' : ''}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter the legal name of your company. If not yet incorporated, you may use your full name.
-                  </p>
-                  <FieldError msg={errors.company_name} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Business Phone <span className="text-destructive">*</span></Label>
-                  <Input
-                    type="tel"
-                    value={data.phone || ''}
-                    onChange={(e) => onChange({ phone: e.target.value })}
-                    placeholder="+1 555 000 0000"
-                    className={errors.phone ? 'border-destructive' : ''}
-                  />
-                  <FieldError msg={errors.phone} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Registered Address</Label>
-                  {hasIdentityAddress ? (
-                    <AddressDisplay data={data} />
-                  ) : <p className="text-sm text-muted-foreground">No address on file.</p>}
-                  <button onClick={onBack} className="text-xs text-primary hover:underline">← Edit in Your Identity step</button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* ───────────────────────────────
-          SECTION 2: GETTING PAID
-      ─────────────────────────────── */}
-      <div className="space-y-5 border-t border-border pt-6">
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">Getting Paid</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Provide your bank account details to receive electronic royalty payments. Royalties are paid approximately 60 days after the end of the month in which sales are reported.
-          </p>
-        </div>
-
-        {/* ── Tell us about your bank ── */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-2">Tell us about your bank</h3>
-
-          {/* Bank Country — no default, force active selection */}
-          <div className="space-y-1.5">
-            <Label>Where is your bank located? <span className="text-destructive">*</span></Label>
-            <Select
-              value={data.bank_country || ''}
-              onValueChange={(v) => onChange({ bank_country: v })}
-            >
-              <SelectTrigger className={`${!data.bank_country || errors.bank_country ? 'border-destructive' : ''}`}>
-                <SelectValue placeholder="— Select a country —" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                {BANK_COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            {!data.bank_country && (
-              <p className="text-xs text-amber-600 flex items-center gap-1">
-                <Info className="w-3 h-3" /> Please select the country where your bank is located.
-              </p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Your bank account must be able to receive electronic payments (ACH or wire transfer). We support banks in most countries.
-            </p>
-            <FieldError msg={errors.bank_country} />
-          </div>
-
-          {/* Account type — only show for US or when country is selected */}
-          {data.bank_country && (
-            <>
-              {data.bank_country === 'United States' && (
-                <div className="space-y-1.5">
-                  <Label>Type of Account <span className="text-destructive">*</span></Label>
-                  <RadioGroup
-                    value={data.bank_account_type || 'checking'}
-                    onValueChange={(v) => onChange({ bank_account_type: v })}
-                    className="flex gap-6"
-                  >
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <RadioGroupItem value="checking" /><span className="text-sm">Checking</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <RadioGroupItem value="savings" /><span className="text-sm">Savings</span>
-                    </label>
-                  </RadioGroup>
-                </div>
-              )}
-
-              {/* Account Numbers */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Account Number <span className="text-destructive">*</span></Label>
-                  <Input
-                    value={data.bank_account_number || ''}
-                    onChange={(e) => onChange({ bank_account_number: e.target.value })}
-                    placeholder="Bank account number"
-                    className={errors.bank_account_number ? 'border-destructive' : ''}
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                    {data.bank_country === 'United States'
-                      ? 'Appears at the bottom of your check — the second set of numbers.'
-                      : 'Your bank account number or IBAN.'}
-                  </p>
-                  <FieldError msg={errors.bank_account_number} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Re-enter Account Number <span className="text-destructive">*</span></Label>
-                  <Input
-                    value={data.bank_account_number_confirm || ''}
-                    onChange={(e) => onChange({ bank_account_number_confirm: e.target.value })}
-                    placeholder="Re-enter account number"
-                    className={errors.bank_account_number_confirm ? 'border-destructive' : ''}
-                  />
-                  <FieldError msg={errors.bank_account_number_confirm} />
-                </div>
-              </div>
-
-              {/* Routing / IBAN */}
+            <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label>
-                  {data.bank_country === 'United States' ? 'Routing Number' : 'IBAN / Sort Code / Routing Number'}
-                  {data.bank_country === 'United States' && <span className="text-destructive"> *</span>}
-                </Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Company / Publishing Entity Name <span className="text-destructive">*</span></Label>
                 <Input
-                  value={data.bank_routing_number || ''}
-                  onChange={(e) => onChange({ bank_routing_number: e.target.value })}
-                  placeholder={data.bank_country === 'United States' ? '9-digit routing number' : 'IBAN or bank routing code'}
-                  className={errors.bank_routing_number ? 'border-destructive' : ''}
+                  value={data.company_name || ''}
+                  onChange={(e) => onChange({ company_name: e.target.value })}
+                  placeholder="Legal company name"
+                  className={errors.company_name ? 'border-destructive' : ''}
+                />
+                <p className="text-xs text-muted-foreground">Legal name of your publishing company or entity.</p>
+                <FieldError msg={errors.company_name} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Business Phone <span className="text-destructive">*</span></Label>
+                <Input
+                  type="tel"
+                  value={data.phone || ''}
+                  onChange={(e) => onChange({ phone: e.target.value })}
+                  placeholder="+1 555 000 0000"
+                  className={errors.phone ? 'border-destructive' : ''}
+                />
+                <FieldError msg={errors.phone} />
+              </div>
+            </div>
+          )}
+          <button onClick={onBack} className="text-xs text-primary hover:underline mt-1">← Edit identity information</button>
+        </div>
+      </SectionCard>
+
+      {/* ─────────────────────────────────────────
+          PART 2: GETTING PAID
+      ───────────────────────────────────────── */}
+      <SectionCard icon={Banknote} title="Getting Paid" description="Bank account to receive your royalty payments (paid ~60 days after month end)">
+
+        {/* Bank country */}
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Where is your bank located? <span className="text-destructive">*</span></Label>
+          <Select value={data.bank_country || ''} onValueChange={(v) => onChange({ bank_country: v })}>
+            <SelectTrigger className={cn(!data.bank_country || errors.bank_country ? 'border-destructive' : '')}>
+              <SelectValue placeholder="— Select country —" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              {BANK_COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {!data.bank_country && (
+            <p className="flex items-center gap-1 text-xs text-amber-600">
+              <Info className="w-3 h-3 shrink-0" /> Select the country where your bank account is held.
+            </p>
+          )}
+          <FieldError msg={errors.bank_country} />
+        </div>
+
+        {bankCountrySelected && (
+          <>
+            {/* Account type — US only */}
+            {data.bank_country === 'United States' && (
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Type of Account <span className="text-destructive">*</span></Label>
+                <RadioGroup
+                  value={data.bank_account_type || 'checking'}
+                  onValueChange={(v) => onChange({ bank_account_type: v })}
+                  className="flex gap-6"
+                >
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <RadioGroupItem value="checking" /><span className="text-sm">Checking</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <RadioGroupItem value="savings" /><span className="text-sm">Savings</span>
+                  </label>
+                </RadioGroup>
+              </div>
+            )}
+
+            {/* Account numbers */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Account Number <span className="text-destructive">*</span></Label>
+                <Input
+                  value={data.bank_account_number || ''}
+                  onChange={(e) => onChange({ bank_account_number: e.target.value })}
+                  placeholder="Account number"
+                  className={errors.bank_account_number ? 'border-destructive' : ''}
                 />
                 <p className="text-[10px] text-muted-foreground">
                   {data.bank_country === 'United States'
-                    ? '9-digit bank routing code. Appears at the bottom of your check — the first set of numbers.'
-                    : 'For international transfers: IBAN (Europe), sort code (UK), BSB (Australia), or SWIFT/BIC.'}
+                    ? 'Second set of numbers at the bottom of your check.'
+                    : 'Your bank account number or IBAN.'}
                 </p>
-                <FieldError msg={errors.bank_routing_number} />
+                <FieldError msg={errors.bank_account_number} />
               </div>
-
-              <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
-                <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                <p className="text-xs text-blue-700 leading-relaxed">
-                  We'll verify that your bank account can receive payments from us before your first payment is issued. <span className="underline cursor-pointer font-medium">View bank account requirements →</span>
-                </p>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Re-enter Account Number <span className="text-destructive">*</span></Label>
+                <Input
+                  value={data.bank_account_number_confirm || ''}
+                  onChange={(e) => onChange({ bank_account_number_confirm: e.target.value })}
+                  placeholder="Confirm account number"
+                  className={errors.bank_account_number_confirm ? 'border-destructive' : ''}
+                />
+                <FieldError msg={errors.bank_account_number_confirm} />
               </div>
-            </>
-          )}
-        </div>
-
-        {/* ── Tell us about the recipient ── */}
-        {data.bank_country && (
-          <div className="space-y-4 border-t border-border pt-5">
-            <h3 className="text-sm font-semibold text-foreground border-b border-border pb-2">Tell us about the bank account recipient</h3>
-
-            {/* Recipient Business Type */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">Recipient Type <span className="text-destructive">*</span></Label>
-              <RadioGroup
-                value={bankBizType}
-                onValueChange={(v) => onChange({ bank_business_type: v })}
-                className="flex gap-6"
-              >
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <RadioGroupItem value="individual" /><span className="text-sm">Individual</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <RadioGroupItem value="corporation" /><span className="text-sm">Corporation / Business</span>
-                </label>
-              </RadioGroup>
-              <p className="text-xs text-muted-foreground">
-                Select "Corporation" if the bank account belongs to a business entity rather than a private individual.
-              </p>
             </div>
 
-            {/* Date of Birth OR Incorporation */}
-            {!isBankCorp ? (
+            {/* Routing / IBAN */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {data.bank_country === 'United States' ? 'Routing Number' : 'IBAN / Sort Code / Routing Number'}
+                {data.bank_country === 'United States' && <span className="text-destructive"> *</span>}
+              </Label>
+              <Input
+                value={data.bank_routing_number || ''}
+                onChange={(e) => onChange({ bank_routing_number: e.target.value })}
+                placeholder={data.bank_country === 'United States' ? '9-digit routing number' : 'IBAN or local bank code'}
+                className={cn('max-w-sm', errors.bank_routing_number ? 'border-destructive' : '')}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                {data.bank_country === 'United States'
+                  ? 'First set of numbers at the bottom of your check (9 digits).'
+                  : 'IBAN (Europe), sort code (UK), BSB (Australia), or SWIFT/BIC.'}
+              </p>
+              <FieldError msg={errors.bank_routing_number} />
+            </div>
+
+            <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+              <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-blue-700">
+                We'll verify your bank can receive payments before your first royalty is issued.{' '}
+                <span className="underline cursor-pointer font-medium">View requirements →</span>
+              </p>
+            </div>
+          </>
+        )}
+      </SectionCard>
+
+      {/* ─────────────────────────────────────────
+          PART 3: BANK ACCOUNT RECIPIENT
+      ───────────────────────────────────────── */}
+      {bankCountrySelected && (
+        <SectionCard icon={User2} title="Bank Account Recipient" description="Who owns the bank account that will receive payments">
+
+          {/* Recipient Type */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Recipient Type <span className="text-destructive">*</span></Label>
+            <RadioGroup
+              value={bankBizType}
+              onValueChange={(v) => onChange({ bank_business_type: v })}
+              className="flex gap-6"
+            >
+              <label className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem value="individual" /><span className="text-sm">Individual</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <RadioGroupItem value="corporation" /><span className="text-sm">Corporation / Business</span>
+              </label>
+            </RadioGroup>
+            <p className="text-xs text-muted-foreground">Select "Corporation" only if the bank account is registered under a business entity.</p>
+          </div>
+
+          {/* DOB or Incorporation */}
+          {!isBankCorp ? (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Date of Birth <span className="text-destructive">*</span></Label>
+              <Input
+                type="date"
+                value={data.date_of_birth || ''}
+                onChange={(e) => onChange({ date_of_birth: e.target.value })}
+                className={cn('max-w-xs', errors.date_of_birth ? 'border-destructive' : '')}
+              />
+              <p className="text-xs text-muted-foreground">Date of birth of the individual receiving funds — required for identity verification.</p>
+              <FieldError msg={errors.date_of_birth} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Date of Birth <span className="text-destructive">*</span></Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Place of Incorporation <span className="text-destructive">*</span></Label>
+                <Input
+                  value={data.place_of_incorporation || ''}
+                  onChange={(e) => onChange({ place_of_incorporation: e.target.value })}
+                  placeholder="e.g., Delaware, USA"
+                />
+                <p className="text-xs text-muted-foreground">State or country where the business was incorporated.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Date of Incorporation <span className="text-destructive">*</span></Label>
                 <Input
                   type="date"
-                  value={data.date_of_birth || ''}
-                  onChange={(e) => onChange({ date_of_birth: e.target.value })}
-                  className={errors.date_of_birth ? 'border-destructive' : ''}
+                  value={data.date_of_incorporation || ''}
+                  onChange={(e) => onChange({ date_of_incorporation: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Enter the date of birth of the individual receiving funds. Required for identity verification.
-                </p>
-                <FieldError msg={errors.date_of_birth} />
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Place of Incorporation <span className="text-destructive">*</span></Label>
-                  <Input
-                    value={data.place_of_incorporation || ''}
-                    onChange={(e) => onChange({ place_of_incorporation: e.target.value })}
-                    placeholder="e.g., Delaware, USA"
-                  />
-                  <p className="text-xs text-muted-foreground">State or country where the business was incorporated.</p>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Date of Incorporation <span className="text-destructive">*</span></Label>
-                  <Input
-                    type="date"
-                    value={data.date_of_incorporation || ''}
-                    onChange={(e) => onChange({ date_of_incorporation: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">Date the company was legally incorporated.</p>
-                </div>
-              </div>
-            )}
-
-            {/* Account Holder Name */}
-            <div className="space-y-1.5">
-              <Label>Account Holder Name <span className="text-destructive">*</span></Label>
-              <Input
-                value={data.bank_account_name || (isBankCorp ? data.company_name : data.full_name) || ''}
-                onChange={(e) => onChange({ bank_account_name: e.target.value })}
-                placeholder={isBankCorp ? 'Company name on bank account' : 'Full name on bank account'}
-              />
-              <p className="text-xs text-muted-foreground">
-                This must exactly match the name registered with your bank. Mismatches may delay or prevent payment.
-              </p>
             </div>
+          )}
 
-            {/* Account Holder Address */}
-            <div className="space-y-2">
-              <Label>Account Holder Address <span className="text-destructive">*</span></Label>
-
-              {hasIdentityAddress && (
-                <div className="flex items-center gap-2 mb-2">
-                  <Checkbox
-                    id="use-same-addr"
-                    checked={useExistingAddr}
-                    onCheckedChange={handleUseSameAddress}
-                  />
-                  <label htmlFor="use-same-addr" className="text-sm cursor-pointer text-foreground">
-                    Use my identity address
-                  </label>
-                </div>
-              )}
-
-              {useExistingAddr && hasIdentityAddress ? (
-                <AddressDisplay data={data} />
-              ) : (
-                <InlineAddressFields
-                  prefix="bank_addr"
-                  data={data}
-                  onChange={onChange}
-                  errors={errors}
-                />
-              )}
-
-              {!hasIdentityAddress && (
-                <p className="text-xs text-muted-foreground">
-                  No identity address found. Please enter the address for the bank account holder.
-                </p>
-              )}
-              <FieldError msg={errors.bank_holder_address} />
-            </div>
+          {/* Account holder name */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Account Holder Name <span className="text-destructive">*</span></Label>
+            <Input
+              value={data.bank_account_name || (isBankCorp ? data.company_name : data.full_name) || ''}
+              onChange={(e) => onChange({ bank_account_name: e.target.value })}
+              placeholder={isBankCorp ? 'Company name on bank account' : 'Full name on bank account'}
+              className="max-w-sm"
+            />
+            <p className="text-xs text-muted-foreground">Must exactly match the name registered with your bank. Mismatches may delay payment.</p>
           </div>
-        )}
-      </div>
 
-      <div className="flex justify-between pt-4 border-t">
+          {/* Account holder address — two clear options */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+              <MapPin className="w-3 h-3" /> Account Holder Address <span className="text-destructive">*</span>
+            </Label>
+            <AddressSelector
+              identityData={data}
+              addrPrefix="bank_addr"
+              data={data}
+              onChange={onChange}
+              errors={errors}
+            />
+            <FieldError msg={errors.bank_holder_address} />
+          </div>
+
+        </SectionCard>
+      )}
+
+      <div className="flex justify-between pt-2 border-t border-border">
         <Button variant="outline" onClick={onBack} className="gap-2">
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
