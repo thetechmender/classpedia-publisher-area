@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -38,9 +38,6 @@ const FORM_REF_ID = generateRefId();
 export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
   const isUS = data.us_person === true;
   const formName = isUS ? 'W-9' : 'W-8BEN';
-  const formTitle = isUS
-    ? 'Request for Taxpayer Identification Number and Certification'
-    : 'Certificate of Foreign Status of Beneficial Owner for United States Tax Withholding and Reporting (Individuals)';
 
   // Show preview+sign block once required fields are filled
   const canShowPreview = data.us_person !== undefined && (
@@ -221,53 +218,29 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
               </div>
             )}
 
-            {/* Form preview card */}
+            {/* Form document preview — blank */}
             <div className="border border-border rounded-lg overflow-hidden text-xs">
               <div className="bg-muted/50 px-4 py-2 border-b border-border text-center text-muted-foreground font-mono">
                 Reference Id: {FORM_REF_ID}
               </div>
-              <div className="grid grid-cols-[80px_1fr_80px] border-b border-border">
-                <div className="px-3 py-2 border-r border-border text-muted-foreground">
-                  <p className="font-medium text-[10px]">Form {formName}</p>
-                </div>
-                <div className="px-4 py-3 text-center">
-                  <p className="font-bold text-sm leading-snug">SUBSTITUTE</p>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{formTitle}</p>
-                </div>
-                <div className="px-2 py-2 border-l border-border text-[9px] text-muted-foreground text-center">
-                  SUBSTITUTE<br />(Rev. October 2021)
-                </div>
+              {/* Empty document body */}
+              <div className="bg-white px-6 py-10 min-h-[180px] flex flex-col items-center justify-center gap-3">
+                <FileText className="w-10 h-10 text-muted-foreground/30" />
+                <p className="text-xs text-muted-foreground">IRS Form {formName} — document preview</p>
               </div>
+            </div>
 
-              {/* Fields preview */}
-              <div className="divide-y divide-border">
-                <div className="grid grid-cols-2 divide-x divide-border">
-                  <div className="px-3 py-2">
-                    <p className="text-[10px] text-muted-foreground mb-1">1 Name of individual who is the beneficial owner</p>
-                    <p className="font-medium">{[data.first_name, data.last_name].filter(Boolean).join(' ') || '—'}</p>
-                  </div>
-                  <div className="px-3 py-2">
-                    <p className="text-[10px] text-muted-foreground mb-1">2 {isUS ? 'Tax ID Type' : 'Country of citizenship'}</p>
-                    <p className="font-medium">{isUS ? (data.tax_id_type?.toUpperCase() || '—') : (data.tax_country || data.country || '—')}</p>
-                  </div>
-                </div>
-                <div className="px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground mb-1">3 Permanent residence address</p>
-                  <p className="font-medium">{[data.address_line1, data.city, data.state, data.zip, data.country].filter(Boolean).join(', ') || '—'}</p>
-                </div>
-                {isUS && (
-                  <div className="px-3 py-2">
-                    <p className="text-[10px] text-muted-foreground mb-1">4 {data.tax_id_type === 'ein' ? 'Employer Identification Number (EIN)' : 'Social Security Number (SSN)'}</p>
-                    <p className="font-medium tracking-widest">{data.tax_id ? '•'.repeat(data.tax_id.length) : '—'}</p>
-                  </div>
-                )}
-                {!isUS && data.tax_id && (
-                  <div className="px-3 py-2">
-                    <p className="text-[10px] text-muted-foreground mb-1">4 Foreign Tax ID</p>
-                    <p className="font-medium">{data.tax_id}</p>
-                  </div>
-                )}
-              </div>
+            {/* E-signature input */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Electronic Signature <span className="text-destructive">*</span></Label>
+              <p className="text-xs text-muted-foreground">Type your full legal name as your electronic signature</p>
+              <Input
+                value={data.esignature || ''}
+                onChange={e => onChange({ esignature: e.target.value })}
+                placeholder="Your full legal name"
+                className={cn('font-serif text-base italic', errors.esignature ? 'border-destructive' : '')}
+              />
+              <FieldError msg={errors.esignature} />
             </div>
 
             {/* Certification */}
@@ -286,7 +259,7 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
               <FieldError msg={errors.tax_certified} />
             </div>
 
-            {data.tax_certified && data.esign_consent && (
+            {data.tax_certified && data.esign_consent && data.esignature?.trim() && (
               <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
                 <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
                 <p className="text-xs text-green-700 font-medium">

@@ -93,6 +93,10 @@
       "description": "Author consented to electronic signature for IRS tax form",
       "default": false
     },
+    "esignature": {
+      "type": "string",
+      "description": "Author's electronic signature (typed full legal name)"
+    },
     "author_bio": {
       "type": "string",
       "description": "Author biography shown on book pages"
