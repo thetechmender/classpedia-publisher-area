@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
   ChevronLeft, Send, BookOpen, FileText, DollarSign,
-  CheckCircle2, AlertTriangle, Shield, Globe, Pencil,
-  Star, ShoppingCart, Heart, Share2, ChevronDown, ChevronUp,
-  Package, RotateCcw, Lock, Award
+  CheckCircle2, AlertTriangle, Shield, Globe, Pencil, Award
 } from 'lucide-react';
 
 const SectionHeader = ({ icon: Icon, title, step, onEdit }) => (
@@ -40,228 +38,63 @@ const AGE_LABELS = {
   '18_plus': '18+ years',
 };
 
-// ── Amazon-style storefront preview ─────────────────────────────────────────
-function StorefrontPreview({ data }) {
-  const [descExpanded, setDescExpanded] = useState(false);
+// ── Clean book listing card preview ──────────────────────────────────────────
+function BookPreviewCard({ data }) {
   const price = parseFloat(data.list_price) || 0;
-  const authorEarning = (price * 0.7).toFixed(2);
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden bg-white text-slate-800 font-sans text-sm shadow-sm">
-      {/* Store top bar */}
-      <div className="bg-slate-800 px-4 py-2 flex items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <div className="w-5 h-5 rounded bg-indigo-500 flex items-center justify-center">
-            <BookOpen className="w-3 h-3 text-white" />
-          </div>
-          <span className="text-white text-xs font-bold tracking-wide">Classpedia</span>
-        </div>
-        <div className="flex-1 bg-white/10 rounded h-6 flex items-center px-2">
-          <span className="text-white/40 text-xs truncate">Search books, authors, topics…</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-white/60 text-xs hidden sm:block">Sign in</span>
-          <ShoppingCart className="w-4 h-4 text-white/60" />
-        </div>
+    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="px-5 py-3.5 bg-secondary/40 border-b border-border flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-green-500" />
+        <p className="text-sm font-medium text-foreground">Listing preview</p>
+        <span className="text-xs text-muted-foreground">— how your book will appear on Classpedia</span>
       </div>
-
-      {/* Breadcrumb */}
-      <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 text-xs text-slate-400">
-        Books &rsaquo; {(data.categories || [])[0] || 'Education'} &rsaquo;{' '}
-        <span className="text-indigo-600">{data.title || 'Your Book'}</span>
-      </div>
-
-      {/* Main product layout */}
-      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-6">
+      <div className="p-5 flex gap-5">
         {/* Cover */}
-        <div className="flex flex-col items-center gap-2 sm:block">
-          <div className="relative">
-            {data.cover_url ? (
-              <img
-                src={data.cover_url}
-                alt="Cover"
-                className="w-36 h-52 object-cover rounded shadow-lg border border-slate-200"
-              />
-            ) : (
-              <div className="w-36 h-52 bg-gradient-to-br from-indigo-100 to-slate-100 rounded shadow-lg border border-slate-200 flex items-center justify-center">
-                <BookOpen className="w-10 h-10 text-indigo-300" />
-              </div>
-            )}
-            <div className="absolute top-2 left-2 bg-amber-400 text-slate-900 text-[9px] font-bold px-1.5 py-0.5 rounded">
-              NEW
-            </div>
-          </div>
-          <button className="text-xs text-indigo-600 hover:underline mt-1 hidden sm:block">
-            Look inside ›
-          </button>
-        </div>
-
-        {/* Main info */}
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold text-slate-900 leading-tight">
-            {data.title || 'Book Title'}
-          </h1>
-          {data.subtitle && (
-            <p className="text-base text-slate-500 mt-0.5">{data.subtitle}</p>
-          )}
-
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            {data.author_name && (
-              <span className="text-sm">
-                by <span className="text-indigo-600 hover:underline cursor-pointer font-medium">{data.author_name}</span>
-              </span>
-            )}
-            {(data.contributors || []).slice(0, 1).map((c, i) => (
-              <span key={i} className="text-sm text-slate-500">({c.role}: {c.name})</span>
-            ))}
-          </div>
-
-          {/* Star rating (sample) */}
-          <div className="flex items-center gap-2 mt-2">
-            <div className="flex">
-              {[1,2,3,4,5].map(s => (
-                <Star key={s} className={`w-4 h-4 ${s <= 4 ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'}`} />
-              ))}
-            </div>
-            <span className="text-xs text-indigo-600 hover:underline cursor-pointer">4.2 · 124 ratings</span>
-          </div>
-
-          <Separator className="my-3" />
-
-          {/* Categories */}
-          {(data.categories || []).length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {data.categories.map(c => (
-                <span key={c} className="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">{c}</span>
-              ))}
-            </div>
-          )}
-
-          {/* Description */}
-          <div className="text-sm text-slate-700 leading-relaxed">
-            <p className={descExpanded ? '' : 'line-clamp-4'}>
-              {data.description || 'Your book description will appear here, giving readers a compelling overview of what they can expect from your eBook.'}
-            </p>
-            {data.description && data.description.length > 220 && (
-              <button
-                onClick={() => setDescExpanded(!descExpanded)}
-                className="text-indigo-600 hover:underline text-xs mt-1 flex items-center gap-0.5"
-              >
-                {descExpanded ? <><ChevronUp className="w-3 h-3" /> Read less</> : <><ChevronDown className="w-3 h-3" /> Read more</>}
-              </button>
-            )}
-          </div>
-
-          {/* Book details */}
-          <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-500">
-            <div><span className="font-medium text-slate-700">Language:</span> {data.language || '—'}</div>
-            <div><span className="font-medium text-slate-700">Format:</span> eBook</div>
-            {data.isbn && <div><span className="font-medium text-slate-700">ISBN:</span> {data.isbn}</div>}
-            {data.publication_date && <div><span className="font-medium text-slate-700">Published:</span> {data.publication_date}</div>}
-            {data.edition_number && <div><span className="font-medium text-slate-700">Edition:</span> {data.edition_number}</div>}
-            {data.series_name && <div><span className="font-medium text-slate-700">Series:</span> {data.series_name}</div>}
-          </div>
-
-          {/* Keywords */}
-          {(data.keywords || []).length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1">
-              {data.keywords.map(kw => (
-                <span key={kw} className="border border-slate-200 text-slate-500 text-[11px] px-2 py-0.5 rounded hover:bg-slate-50 cursor-pointer">
-                  {kw}
-                </span>
-              ))}
+        <div className="shrink-0">
+          {data.cover_url ? (
+            <img src={data.cover_url} alt="Cover" className="w-28 h-40 object-cover rounded-lg shadow-md border border-border" />
+          ) : (
+            <div className="w-28 h-40 rounded-lg bg-gradient-to-br from-primary/10 to-accent/20 border border-border flex items-center justify-center shadow-sm">
+              <BookOpen className="w-8 h-8 text-primary/40" />
             </div>
           )}
         </div>
-
-        {/* Buy box */}
-        <div className="sm:w-52 rounded-lg border border-slate-200 p-4 flex flex-col gap-3 self-start">
+        {/* Info */}
+        <div className="flex-1 min-w-0 space-y-2">
           <div>
-            <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">eBook</p>
-            <p className="text-2xl font-bold text-slate-900 mt-0.5">
-              {price > 0 ? `$${price.toFixed(2)}` : <span className="text-slate-300 text-base">Set price</span>}
-            </p>
-            {price > 0 && (
-              <p className="text-xs text-green-600 font-medium mt-0.5">
-                Includes free worldwide delivery
-              </p>
+            <h3 className="text-base font-semibold text-foreground leading-snug">{data.title || 'Untitled'}</h3>
+            {data.subtitle && <p className="text-sm text-muted-foreground mt-0.5">{data.subtitle}</p>}
+            {data.author_name && (
+              <p className="text-sm text-muted-foreground mt-1">by <span className="text-primary font-medium">{data.author_name}</span></p>
             )}
           </div>
 
-          <button className="w-full bg-amber-400 hover:bg-amber-500 text-slate-900 font-semibold text-sm py-2 rounded-lg flex items-center justify-center gap-2 transition-colors">
-            <ShoppingCart className="w-4 h-4" /> Buy Now
-          </button>
-          <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm py-2 rounded-lg flex items-center justify-center gap-2 transition-colors">
-            Read Sample
-          </button>
-
-          <div className="text-xs text-slate-500 space-y-1.5">
-            <div className="flex items-center gap-1.5"><Package className="w-3.5 h-3.5" /> Delivered instantly</div>
-            <div className="flex items-center gap-1.5"><RotateCcw className="w-3.5 h-3.5" /> 14-day return policy</div>
-            <div className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Secure checkout</div>
-          </div>
-
-          <Separator />
-
-          <div className="flex justify-between">
-            <button className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700">
-              <Heart className="w-3.5 h-3.5" /> Wishlist
-            </button>
-            <button className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700">
-              <Share2 className="w-3.5 h-3.5" /> Share
-            </button>
-          </div>
-
-          {data.classpedia_select && (
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 flex items-center gap-2">
-              <Award className="w-4 h-4 text-indigo-500 shrink-0" />
-              <p className="text-[11px] text-indigo-700 font-medium">Included in Classpedia Select</p>
+          {(data.categories || []).length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {data.categories.map(c => (
+                <span key={c} className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary/8 text-primary border border-primary/15">{c}</span>
+              ))}
             </div>
           )}
-        </div>
-      </div>
 
-      {/* About the author strip */}
-      {data.author_name && (
-        <div className="border-t border-slate-100 px-4 sm:px-6 py-4 bg-slate-50">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">About the Author</p>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
-              {data.author_name[0]?.toUpperCase()}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-800">{data.author_name}</p>
-              <p className="text-xs text-indigo-600 hover:underline cursor-pointer">View all books by this author</p>
-            </div>
+          {data.description && (
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{data.description}</p>
+          )}
+
+          <div className="flex items-center gap-4 pt-1">
+            {price > 0 && (
+              <p className="text-base font-bold text-foreground">${price.toFixed(2)} <span className="text-xs font-normal text-muted-foreground">USD</span></p>
+            )}
+            {data.classpedia_select && (
+              <div className="flex items-center gap-1 text-xs text-primary">
+                <Award className="w-3.5 h-3.5" /> Classpedia Select
+              </div>
+            )}
+            {data.language && (
+              <span className="text-xs text-muted-foreground">{data.language}</span>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* Sample reviews strip */}
-      <div className="border-t border-slate-100 px-4 sm:px-6 py-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Customer Reviews</p>
-        <div className="space-y-3">
-          {[
-            { name: 'Sarah M.', stars: 5, text: 'An outstanding read — clear, engaging, and packed with insights.' },
-            { name: 'James T.', stars: 4, text: 'Very well written. I learned a lot and finished it in one sitting.' },
-          ].map((r, i) => (
-            <div key={i} className="flex gap-3">
-              <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
-                {r.name[0]}
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-slate-700">{r.name}</span>
-                  <div className="flex">
-                    {[1,2,3,4,5].map(s => (
-                      <Star key={s} className={`w-3 h-3 ${s <= r.stars ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'}`} />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{r.text}</p>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>
@@ -298,15 +131,8 @@ export default function ReviewStep({ data, onBack, onPublish, onEdit, publishing
         </div>
       )}
 
-      {/* Storefront Preview */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          <p className="text-sm font-medium text-foreground">Customer-facing listing preview</p>
-          <span className="text-xs text-muted-foreground">— this is how your book will appear on Classpedia</span>
-        </div>
-        <StorefrontPreview data={data} />
-      </div>
+      {/* Book Preview Card */}
+      <BookPreviewCard data={data} />
 
       {/* Metadata summary */}
       <div className="bg-card border rounded-xl p-6">

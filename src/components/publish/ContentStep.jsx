@@ -546,6 +546,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
       {showPreviewer && (
         <BookPreviewer book={data} onClose={() => setShowPreviewer(false)} />
       )}
+
     </div>
   );
 }

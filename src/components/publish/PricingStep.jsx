@@ -19,6 +19,7 @@ const SELECT_ENROLLMENT_DAYS = 60;
 const AUTHOR_ROYALTY = 70;
 const PLATFORM_CUT = 30;
 const PRICE_MIN = 1.99;
+
 const PRICE_MAX = 199.99;
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -168,61 +169,48 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
 
       {/* ── 1. Classpedia Select ── */}
       <Section title="Classpedia Select Enrollment">
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          <span className="font-medium text-foreground">Reach more readers. Maximize your sales potential.</span>
-          {' '}<span className="text-xs text-muted-foreground">(Optional)</span>
-        </p>
-        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          Classpedia Select is a free, 60-day program for eBooks. It allows you to run promotions — including making your book free for up to 3 days every 60 days.
-        </p>
-        <p className="text-xs text-muted-foreground mt-1.5 italic">
-          Not sure yet? You can opt into Classpedia Select later from your book's dashboard at any time.
-        </p>
-
-        <button
-          onClick={() => setSelectExpanded(!selectExpanded)}
-          className="text-xs text-primary hover:underline mt-1 flex items-center gap-1">
-          
-          Rules and requirements {selectExpanded ? '▲' : '▼'}
-        </button>
-
-        {selectExpanded &&
-        <div className="mt-3 bg-secondary/40 rounded-lg px-4 py-3 text-xs text-muted-foreground space-y-1.5 border border-border">
-            <p>• Your eBook must be exclusive to Classpedia during the {SELECT_ENROLLMENT_DAYS}-day enrollment period.</p>
-            <p>• You may offer your eBook for free for up to <strong>{SELECT_FREE_DAYS} days</strong> per {SELECT_ENROLLMENT_DAYS}-day period.</p>
-            <p>• After a free promotion, the minimum list price is <strong>${SELECT_MIN_PRICE_FREE.toFixed(2)}</strong>.</p>
-            <p>• Enrollment auto-renews unless you opt out before the period ends.</p>
-            <p>• You retain copyright of your work at all times.</p>
+        <div className="flex items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Reach more readers with Classpedia Select</p>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+              A free {SELECT_ENROLLMENT_DAYS}-day exclusive program that lets you run promotions — including up to {SELECT_FREE_DAYS} free days per enrollment window.
+            </p>
+            <button
+              onClick={() => setSelectExpanded(!selectExpanded)}
+              className="text-xs text-primary hover:underline mt-2 flex items-center gap-1">
+              Rules and requirements {selectExpanded ? '▲' : '▼'}
+            </button>
+            {selectExpanded && (
+              <div className="mt-3 bg-secondary/40 rounded-lg px-4 py-3 text-xs text-muted-foreground space-y-1.5 border border-border">
+                <p>• Your eBook must be exclusive to Classpedia during the {SELECT_ENROLLMENT_DAYS}-day enrollment period.</p>
+                <p>• You may offer your eBook for free for up to <strong>{SELECT_FREE_DAYS} days</strong> per {SELECT_ENROLLMENT_DAYS}-day period.</p>
+                <p>• After a free promotion, the minimum list price is <strong>${SELECT_MIN_PRICE_FREE.toFixed(2)}</strong>.</p>
+                <p>• Enrollment auto-renews unless you opt out before the period ends.</p>
+                <p>• You retain copyright of your work at all times.</p>
+              </div>
+            )}
           </div>
-        }
-
-        <div className="mt-4">
-          <label className={cn(
-            'flex items-start gap-3 rounded-xl border-2 px-4 py-3.5 cursor-pointer transition-all',
-            data.classpedia_select ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
-          )}>
-            <Checkbox
-              checked={!!data.classpedia_select}
-              onCheckedChange={(v) => onChange({ classpedia_select: !!v })}
-              className="mt-0.5" />
-            
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                Enroll this book in Classpedia Select
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {SELECT_ENROLLMENT_DAYS}-day exclusive enrollment · Up to {SELECT_FREE_DAYS} free-promotion days · Min. price ${SELECT_MIN_PRICE_FREE.toFixed(2)} after free period
-              </p>
-            </div>
-          </label>
+          <div className="shrink-0 pt-0.5">
+            <label className={cn(
+              'flex items-center gap-2.5 rounded-xl border-2 px-4 py-2.5 cursor-pointer transition-all whitespace-nowrap',
+              data.classpedia_select ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:border-primary/40 text-foreground'
+            )}>
+              <Checkbox
+                checked={!!data.classpedia_select}
+                onCheckedChange={(v) => onChange({ classpedia_select: !!v })}
+              />
+              <span className="text-sm font-medium">Enroll</span>
+            </label>
+            <p className="text-[10px] text-muted-foreground mt-1.5 text-center">You can also do this later<br/>from your book's dashboard</p>
+          </div>
         </div>
 
-        {data.classpedia_select &&
-        <InfoBox>
+        {data.classpedia_select && (
+          <InfoBox>
             By enrolling, you confirm this eBook will be exclusive to Classpedia for {SELECT_ENROLLMENT_DAYS} days.
             You can run up to {SELECT_FREE_DAYS} free-promotion days per enrollment window.
           </InfoBox>
-        }
+        )}
       </Section>
 
       {/* ── 2. Territories ── */}

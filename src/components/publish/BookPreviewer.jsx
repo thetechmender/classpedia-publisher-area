@@ -624,19 +624,23 @@ export default function BookPreviewer({ book, onClose }) {
         </div>
 
         {/* ── Bottom quality-check bar ── */}
-        <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between px-5 py-3 gap-2 sm:gap-4"
-          style={{ background: 'rgba(10,11,18,0.95)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="flex items-start gap-2 text-amber-400/80">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <p className="text-[11px] leading-relaxed">
-              {"Check for margin issues, cut-off text, or formatting problems before publishing. If something looks wrong and you can't fix it, contact our support team."}
+        <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between px-5 py-2.5 gap-2 sm:gap-4"
+          style={{ background: 'rgba(16,18,28,0.97)', borderTop: '1px solid rgba(245,158,11,0.15)' }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-5 h-5 rounded-md bg-amber-500/15 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-3 h-3 text-amber-400" />
+            </div>
+            <p className="text-[11px] text-white/50 leading-relaxed">
+              Review margins, cut-off text, and formatting before publishing.{' '}
+              <span className="text-white/30">If something looks wrong and you can't fix it,</span>{' '}
+              <a href="mailto:support@classpedia.ai" className="text-indigo-400 hover:text-indigo-300 transition-colors">contact support</a>.
             </p>
           </div>
           <a
             href="mailto:support@classpedia.ai"
-            className="flex items-center gap-1.5 shrink-0 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors ml-5 sm:ml-0"
+            className="hidden sm:flex items-center gap-1.5 shrink-0 text-[11px] font-medium text-indigo-400/70 hover:text-indigo-300 transition-colors border border-indigo-500/20 rounded-lg px-3 py-1.5 bg-indigo-500/5 hover:bg-indigo-500/10"
           >
-            <MessageCircle className="w-3.5 h-3.5" />
+            <MessageCircle className="w-3 h-3" />
             Contact Support
           </a>
         </div>

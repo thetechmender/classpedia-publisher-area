@@ -261,18 +261,7 @@ export default function PublishBook() {
             })}
           </nav>
 
-          {/* Tips */}
-          <div className="px-5 py-5 border-t">
-            <div className="bg-primary/5 border border-primary/15 rounded-xl p-4">
-              <p className="text-xs font-semibold text-primary mb-1.5">💡 Publishing Tip</p>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                {currentStep === 1 && 'A strong book description dramatically increases conversion. Take time to write a compelling blurb.'}
-                {currentStep === 2 && 'Cover images are the #1 factor in click-through rate. Use high-resolution art that matches your genre.'}
-                {currentStep === 3 && 'Books priced $2.99–$9.99 qualify for the 70% royalty plan — the highest available.'}
-                {currentStep === 4 && 'Review time is typically 24–72 hours. You cannot edit your book while it\'s under review.'}
-              </p>
-            </div>
-          </div>
+
         </aside>
 
         {/* Main content */}
