@@ -75,47 +75,95 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
 
       {/* Preferred Categories */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-border flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <Tag className="w-4 h-4 text-muted-foreground" /> Preferred Categories
-              <span className="text-muted-foreground font-normal text-xs">(Optional)</span>
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Select up to 3 genres you primarily write in — helps us tailor your experience</p>
+        <div className="px-5 py-3.5 border-b border-border">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Tag className="w-4 h-4 text-muted-foreground" /> Preferred Categories
+                <span className="text-muted-foreground font-normal text-xs">(Optional)</span>
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Select up to 3 genres you primarily write in — helps us tailor your experience</p>
+            </div>
+            {/* Progress dots */}
+            <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className={cn(
+                    'w-2 h-2 rounded-full transition-all duration-200',
+                    i < (data.preferred_categories || []).length
+                      ? 'bg-primary scale-110'
+                      : 'bg-border'
+                  )}
+                />
+              ))}
+              <span className="text-xs text-muted-foreground ml-1">
+                {(data.preferred_categories || []).length}/3
+              </span>
+            </div>
           </div>
+
+          {/* Selected chips preview */}
           {(data.preferred_categories || []).length > 0 && (
-            <span className="shrink-0 text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full mt-0.5">
-              {(data.preferred_categories || []).length} / 3
-            </span>
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {(data.preferred_categories || []).map(cat => (
+                <span
+                  key={cat}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground"
+                >
+                  {cat}
+                  <button
+                    type="button"
+                    onClick={() => onChange({ preferred_categories: (data.preferred_categories || []).filter(c => c !== cat) })}
+                    className="w-3.5 h-3.5 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center leading-none transition-colors"
+                    aria-label={`Remove ${cat}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
           )}
         </div>
+
         <div className="px-5 py-4">
+          {(data.preferred_categories || []).length >= 3 && (
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+              Maximum 3 categories selected. Remove one to choose a different category.
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             {BOOK_CATEGORIES.map((cat) => {
               const selected = (data.preferred_categories || []).includes(cat);
               const atMax = (data.preferred_categories || []).length >= 3;
+              const disabled = !selected && atMax;
               return (
                 <button
                   key={cat}
                   type="button"
+                  disabled={disabled}
                   onClick={() => {
                     const current = data.preferred_categories || [];
                     if (selected) {
                       onChange({ preferred_categories: current.filter(c => c !== cat) });
-                    } else if (!atMax) {
+                    } else {
                       onChange({ preferred_categories: [...current, cat] });
                     }
                   }}
                   className={cn(
-                    'px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150',
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150',
                     selected
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                      : atMax
-                        ? 'bg-muted/40 text-muted-foreground border-border cursor-not-allowed opacity-40'
-                        : 'bg-background text-foreground border-border hover:border-primary/60 hover:text-primary hover:bg-primary/5 cursor-pointer'
+                      ? 'bg-primary/10 text-primary border-primary/40 ring-1 ring-primary/30 shadow-sm'
+                      : disabled
+                        ? 'bg-transparent text-muted-foreground/40 border-border/40 cursor-not-allowed'
+                        : 'bg-background text-foreground border-border hover:border-primary/50 hover:text-primary hover:bg-primary/5 cursor-pointer'
                   )}
                 >
-                  {selected && <span className="mr-1 text-[10px]">✓</span>}
+                  {selected && (
+                    <svg className="w-3 h-3 shrink-0" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
                   {cat}
                 </button>
               );
