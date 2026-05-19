@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, FileText, AlertCircle, Info, Shield, CheckCircle2, MapPin, Globe } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, AlertCircle, Info, Shield, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const FieldError = ({ msg }) => msg ? (
@@ -87,14 +87,12 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
               label: 'U.S. person',
               description: 'U.S. citizen, resident alien, or U.S.-incorporated entity',
               form: 'W-9',
-              Icon: MapPin,
             },
             {
               value: false,
               label: 'Non-U.S. person',
               description: 'Individual or entity outside the United States',
               form: 'W-8BEN',
-              Icon: Globe,
             },
           ].map(opt => {
             const selected = data.us_person === opt.value;
@@ -116,14 +114,6 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
                   selected ? 'border-primary' : 'border-muted-foreground/30'
                 )}>
                   {selected && <div className="w-2 h-2 rounded-full bg-primary" />}
-                </div>
-
-                {/* Icon */}
-                <div className={cn(
-                  'w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-colors',
-                  selected ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                )}>
-                  <opt.Icon className="w-4 h-4" />
                 </div>
 
                 <div className="flex-1 min-w-0">
