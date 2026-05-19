@@ -276,7 +276,7 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
         <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20">
-          Save & Continue <ChevronRight className="w-4 h-4" />
+          Complete Setup <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
     </div>

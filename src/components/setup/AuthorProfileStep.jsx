@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronLeft, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube, Tag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BOOK_CATEGORIES = [
@@ -24,7 +24,7 @@ const FieldError = ({ msg }) => msg ? (
   </p>
 ) : null;
 
-export default function AuthorProfileStep({ data, onChange, errors, onSubmit, onBack, saving }) {
+export default function AuthorProfileStep({ data, onChange, errors, onSubmit, onNext, onBack, saving }) {
   const bioLen = (data.author_bio || '').length;
 
   return (
@@ -198,26 +198,23 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
         </div>
       </div>
 
-      {/* What happens next */}
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
-        <p className="text-sm font-semibold text-foreground mb-2">🎉 Almost there!</p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Once you complete your profile, you'll be taken to your Author Dashboard where you can start publishing your first eBook.
-          You can update your profile information at any time.
-        </p>
-      </div>
-
       <div className="flex justify-between pt-2">
         <Button variant="outline" onClick={onBack} className="gap-2">
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
-        <Button
-          onClick={onSubmit}
-          disabled={saving}
-          className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20"
-        >
-          {saving ? 'Setting up your account…' : 'Complete Setup & Go to Dashboard'}
-        </Button>
+        {onNext ? (
+          <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20">
+            Save & Continue <ChevronRight className="w-4 h-4" />
+          </Button>
+        ) : (
+          <Button
+            onClick={onSubmit}
+            disabled={saving}
+            className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20"
+          >
+            {saving ? 'Setting up your account…' : 'Complete Setup & Go to Dashboard'}
+          </Button>
+        )}
       </div>
     </div>
   );

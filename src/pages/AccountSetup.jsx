@@ -19,7 +19,10 @@ const validateStep2 = (data) => {
   return errors;
 };
 
-const validateStep3 = (data) => {
+// Step 3: Author Profile — no required fields
+const validateStep3 = (_data) => ({});
+
+const validateStep4 = (data) => {
   const errors = {};
   if (!data.payment_method) { errors.payment_method = 'Please select a payment method'; return errors; }
   if (data.payment_method === 'bank_transfer') {
@@ -34,7 +37,7 @@ const validateStep3 = (data) => {
   return errors;
 };
 
-const validateStep4 = (data) => {
+const validateStep5 = (data) => {
   const errors = {};
   if (data.us_person === undefined) { errors.us_person = 'Please select your US tax status'; return errors; }
   if (data.us_person) {
@@ -47,10 +50,6 @@ const validateStep4 = (data) => {
   if (!data.esign_consent) errors.esign_consent = 'You must consent to provide an electronic signature';
   if (!data.esignature?.trim()) errors.esignature = 'Please type your full name as your electronic signature';
   return errors;
-};
-
-const validateStep5 = (_data) => {
-  return {};
 };
 
 export default function AccountSetup() {
@@ -175,7 +174,7 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 3 && (
-            <PaymentStep
+            <AuthorProfileStep
               data={formData}
               onChange={updateData}
               errors={errors}
@@ -184,7 +183,7 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 4 && (
-            <TaxStep
+            <PaymentStep
               data={formData}
               onChange={updateData}
               errors={errors}
@@ -193,13 +192,12 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 5 && (
-            <AuthorProfileStep
+            <TaxStep
               data={formData}
               onChange={updateData}
               errors={errors}
-              onSubmit={handleSubmit}
+              onNext={handleSubmit}
               onBack={() => goToStep(4)}
-              saving={saving}
             />
           )}
         </div>
