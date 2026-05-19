@@ -3,8 +3,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronLeft, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube } from 'lucide-react';
+import { ChevronLeft, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const BOOK_CATEGORIES = [
+  'Arts & Photography', 'Biographies & Memoirs', 'Business & Money',
+  'Children\'s Books', 'Comics & Graphic Novels', 'Computers & Technology',
+  'Cookbooks, Food & Wine', 'Crafts, Hobbies & Home', 'Education & Teaching',
+  'Engineering & Transportation', 'Health, Fitness & Dieting', 'History',
+  'Humor & Entertainment', 'Law', 'LGBTQ+', 'Literature & Fiction',
+  'Medical Books', 'Mystery, Thriller & Suspense', 'Parenting & Relationships',
+  'Politics & Social Sciences', 'Reference', 'Religion & Spirituality',
+  'Romance', 'Science & Math', 'Science Fiction & Fantasy', 'Self-Help',
+  'Sports & Outdoors', 'Teen & Young Adult', 'Travel',
+];
 
 const FieldError = ({ msg }) => msg ? (
   <p className="flex items-center gap-1 text-xs text-destructive mt-1">
@@ -58,6 +70,49 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
               <li>• You can add personal details to make it relatable</li>
             </ul>
           </div>
+        </div>
+      </div>
+
+      {/* Preferred Categories */}
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
+          <h3 className="text-sm font-semibold flex items-center gap-2"><Tag className="w-4 h-4 text-muted-foreground" /> Preferred Categories <span className="text-muted-foreground font-normal text-xs ml-1">(Optional)</span></h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Select up to 3 genres you primarily write in — helps us tailor your experience</p>
+        </div>
+        <div className="px-5 py-5">
+          <div className="flex flex-wrap gap-2">
+            {BOOK_CATEGORIES.map((cat) => {
+              const selected = (data.preferred_categories || []).includes(cat);
+              const atMax = (data.preferred_categories || []).length >= 3;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => {
+                    const current = data.preferred_categories || [];
+                    if (selected) {
+                      onChange({ preferred_categories: current.filter(c => c !== cat) });
+                    } else if (!atMax) {
+                      onChange({ preferred_categories: [...current, cat] });
+                    }
+                  }}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                    selected
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : atMax
+                        ? 'bg-secondary/30 text-muted-foreground border-border cursor-not-allowed opacity-50'
+                        : 'bg-background text-foreground border-border hover:border-primary hover:text-primary'
+                  )}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+          {(data.preferred_categories || []).length > 0 && (
+            <p className="text-xs text-muted-foreground mt-3">{(data.preferred_categories || []).length} / 3 selected</p>
+          )}
         </div>
       </div>
 

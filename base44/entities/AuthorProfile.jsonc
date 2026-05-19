@@ -87,6 +87,13 @@
       "type": "string",
       "description": "Author biography shown on book pages"
     },
+    "preferred_categories": {
+      "type": "array",
+      "description": "Up to 3 preferred book genres/categories the author writes in",
+      "items": {
+        "type": "string"
+      }
+    },
     "website": {
       "type": "string",
       "description": "Author website URL"
