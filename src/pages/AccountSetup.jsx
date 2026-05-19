@@ -5,22 +5,21 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import SetupStepIndicator from '@/components/setup/SetupStepIndicator';
+import CreateAccountStep from '@/components/setup/CreateAccountStep';
 import AccountInfoStep from '@/components/setup/AccountInfoStep';
 import PaymentStep from '@/components/setup/PaymentStep';
 import TaxStep from '@/components/setup/TaxStep';
 import AuthorProfileStep from '@/components/setup/AuthorProfileStep';
 
-const validateStep1 = (data) => {
+const validateStep2 = (data) => {
   const errors = {};
   if (!data.first_name?.trim()) errors.first_name = 'First name is required';
   if (!data.last_name?.trim()) errors.last_name = 'Last name is required';
-  if (!data.email?.trim()) errors.email = 'Email is required';
-  else if (!/\S+@\S+\.\S+/.test(data.email)) errors.email = 'Enter a valid email address';
   if (!data.country) errors.country = 'Please select your country';
   return errors;
 };
 
-const validateStep2 = (data) => {
+const validateStep3 = (data) => {
   const errors = {};
   if (!data.payment_method) { errors.payment_method = 'Please select a payment method'; return errors; }
   if (data.payment_method === 'bank_transfer') {
@@ -35,7 +34,7 @@ const validateStep2 = (data) => {
   return errors;
 };
 
-const validateStep3 = (data) => {
+const validateStep4 = (data) => {
   const errors = {};
   if (data.us_person === undefined) { errors.us_person = 'Please select your US tax status'; return errors; }
   if (data.us_person) {
@@ -48,7 +47,7 @@ const validateStep3 = (data) => {
   return errors;
 };
 
-const validateStep4 = (_data) => {
+const validateStep5 = (_data) => {
   return {};
 };
 
@@ -88,7 +87,7 @@ export default function AccountSetup() {
   };
 
   const handleSubmit = async () => {
-    const stepErrors = validateStep4(formData);
+    const stepErrors = validateStep5(formData);
     if (Object.keys(stepErrors).length > 0) {
       setErrors(stepErrors);
       toast.error('Please fix the errors before continuing');
@@ -136,7 +135,7 @@ export default function AccountSetup() {
 
       <div className="max-w-3xl mx-auto px-6 py-8">
         {/* Welcome banner — only on step 1 */}
-        {currentStep === 1 && (
+        {currentStep === 1 && false && (
           <div className="mb-8 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/40 border border-primary/20 p-6 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shrink-0">
               <BookOpen className="w-6 h-6 text-primary-foreground" />
@@ -155,15 +154,17 @@ export default function AccountSetup() {
 
         <div className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm">
           {currentStep === 1 && (
-            <AccountInfoStep
+            <CreateAccountStep
               data={formData}
               onChange={updateData}
-              errors={errors}
-              onNext={() => handleNext(validateStep1, 2)}
+              onNext={() => {
+                setCompletedSteps(prev => [...new Set([...prev, 1])]);
+                goToStep(2);
+              }}
             />
           )}
           {currentStep === 2 && (
-            <PaymentStep
+            <AccountInfoStep
               data={formData}
               onChange={updateData}
               errors={errors}
@@ -172,7 +173,7 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 3 && (
-            <TaxStep
+            <PaymentStep
               data={formData}
               onChange={updateData}
               errors={errors}
@@ -181,12 +182,21 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 4 && (
+            <TaxStep
+              data={formData}
+              onChange={updateData}
+              errors={errors}
+              onNext={() => handleNext(validateStep4, 5)}
+              onBack={() => goToStep(3)}
+            />
+          )}
+          {currentStep === 5 && (
             <AuthorProfileStep
               data={formData}
               onChange={updateData}
               errors={errors}
               onSubmit={handleSubmit}
-              onBack={() => goToStep(3)}
+              onBack={() => goToStep(4)}
               saving={saving}
             />
           )}

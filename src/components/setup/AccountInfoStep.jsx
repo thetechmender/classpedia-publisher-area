@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronRight, User, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, User, AlertCircle } from 'lucide-react';
 
 const COUNTRIES = [
 'Argentina', 'Australia', 'Austria', 'Bangladesh', 'Belgium', 'Brazil',
@@ -23,7 +23,7 @@ const FieldError = ({ msg }) => msg ?
   </p> :
 null;
 
-export default function AccountInfoStep({ data, onChange, errors, onNext }) {
+export default function AccountInfoStep({ data, onChange, errors, onNext, onBack }) {
   const autocompleteRef = useRef(null);
 
   useEffect(() => {
@@ -77,8 +77,8 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
           <User className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold font-serif">Your Account Information</h2>
-          <p className="text-sm text-muted-foreground">Tell us about yourself so we can set up your account</p>
+          <h2 className="text-xl font-semibold font-serif">Your Identity</h2>
+          <p className="text-sm text-muted-foreground">Enter your legal name and address for your account</p>
         </div>
       </div>
 
@@ -108,33 +108,6 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
                 className={errors.last_name ? 'border-destructive' : ''} />
               <FieldError msg={errors.last_name} />
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Contact Info */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
-          <h3 className="text-sm font-semibold">Contact Information</h3>
-        </div>
-        <div className="px-5 py-5 space-y-4">
-          <div className="space-y-1.5">
-            <Label>Email Address <span className="text-destructive">*</span></Label>
-            <Input
-              type="email"
-              value={data.email || ''}
-              onChange={(e) => onChange({ email: e.target.value })}
-              placeholder="john@example.com"
-              className={errors.email ? 'border-destructive' : ''} />
-            <FieldError msg={errors.email} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Phone Number</Label>
-            <Input
-              type="tel"
-              value={data.phone || ''}
-              onChange={(e) => onChange({ phone: e.target.value })}
-              placeholder="+1 (555) 000-0000" />
           </div>
         </div>
       </div>
@@ -193,8 +166,13 @@ export default function AccountInfoStep({ data, onChange, errors, onNext }) {
         </div>
       </div>
 
-      <div className="flex justify-end pt-2">
-        <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20">
+      <div className="flex justify-between pt-2">
+        {onBack && (
+          <Button variant="outline" onClick={onBack} className="gap-2">
+            <ChevronLeft className="w-4 h-4" /> Back
+          </Button>
+        )}
+        <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 ml-auto">
           Save & Continue <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
