@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronLeft, ChevronRight, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube, Tag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube, Tag, Search, X, Plus, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BOOK_CATEGORIES = [
@@ -23,6 +23,113 @@ const FieldError = ({ msg }) => msg ? (
     <AlertCircle className="w-3 h-3" /> {msg}
   </p>
 ) : null;
+
+function CategoryPicker({ selected, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [customInput, setCustomInput] = useState('');
+  const containerRef = useRef(null);
+  const atMax = selected.length >= 3;
+
+  const filtered = query.trim()
+    ? BOOK_CATEGORIES.filter(c => c.toLowerCase().includes(query.toLowerCase()) && !selected.includes(c))
+    : BOOK_CATEGORIES.filter(c => !selected.includes(c));
+
+  const showAddCustom = query.trim() &&
+    !BOOK_CATEGORIES.some(c => c.toLowerCase() === query.toLowerCase()) &&
+    !selected.some(c => c.toLowerCase() === query.toLowerCase());
+
+  const add = (cat) => {
+    if (!atMax && !selected.includes(cat)) {
+      onChange([...selected, cat]);
+      setQuery('');
+      setOpen(false);
+    }
+  };
+
+  const remove = (cat) => onChange(selected.filter(c => c !== cat));
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="space-y-2">
+      {/* Selected chips */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map(cat => (
+            <span key={cat} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/25">
+              {cat}
+              <button type="button" onClick={() => remove(cat)} className="hover:text-destructive transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Trigger / search input */}
+      {!atMax ? (
+        <div className="relative">
+          <div
+            className={cn(
+              'flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 cursor-text',
+              open && 'ring-1 ring-ring border-ring'
+            )}
+            onClick={() => setOpen(true)}
+          >
+            <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <input
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+              placeholder="Search or type a custom category…"
+              value={query}
+              onChange={e => { setQuery(e.target.value); setOpen(true); }}
+              onFocus={() => setOpen(true)}
+            />
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          </div>
+
+          {open && (
+            <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
+              <div className="max-h-52 overflow-y-auto py-1">
+                {filtered.length === 0 && !showAddCustom && (
+                  <p className="px-3 py-2 text-xs text-muted-foreground">No categories found.</p>
+                )}
+                {filtered.map(cat => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onMouseDown={e => { e.preventDefault(); add(cat); }}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    {cat}
+                  </button>
+                ))}
+                {showAddCustom && (
+                  <button
+                    type="button"
+                    onMouseDown={e => { e.preventDefault(); add(query.trim()); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-primary/5 transition-colors border-t border-border"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add "{query.trim()}"
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 border border-border">
+          Maximum 3 categories selected — remove one to change.
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function AuthorProfileStep({ data, onChange, errors, onSubmit, onNext, onBack, saving }) {
   const bioLen = (data.author_bio || '').length;
@@ -66,100 +173,26 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
 
       {/* Preferred Categories */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-border">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-sm font-semibold flex items-center gap-2">
-                <Tag className="w-4 h-4 text-muted-foreground" /> Preferred Categories
-                <span className="text-muted-foreground font-normal text-xs">(Optional)</span>
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Select up to 3 genres you primarily write in — helps us tailor your experience</p>
-            </div>
-            {/* Progress dots */}
-            <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-              {[0, 1, 2].map(i => (
-                <div
-                  key={i}
-                  className={cn(
-                    'w-2 h-2 rounded-full transition-all duration-200',
-                    i < (data.preferred_categories || []).length
-                      ? 'bg-primary scale-110'
-                      : 'bg-border'
-                  )}
-                />
-              ))}
-              <span className="text-xs text-muted-foreground ml-1">
-                {(data.preferred_categories || []).length}/3
-              </span>
-            </div>
+        <div className="px-5 py-3.5 bg-secondary/40 border-b border-border flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Tag className="w-4 h-4 text-muted-foreground" /> Preferred Categories
+              <span className="text-muted-foreground font-normal text-xs">(Optional)</span>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Up to 3 genres you primarily write in</p>
           </div>
-
-          {/* Selected chips preview */}
-          {(data.preferred_categories || []).length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {(data.preferred_categories || []).map(cat => (
-                <span
-                  key={cat}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground"
-                >
-                  {cat}
-                  <button
-                    type="button"
-                    onClick={() => onChange({ preferred_categories: (data.preferred_categories || []).filter(c => c !== cat) })}
-                    className="w-3.5 h-3.5 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center leading-none transition-colors"
-                    aria-label={`Remove ${cat}`}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {[0, 1, 2].map(i => (
+              <div key={i} className={cn('w-2 h-2 rounded-full transition-all duration-200', i < (data.preferred_categories || []).length ? 'bg-primary' : 'bg-border')} />
+            ))}
+            <span className="text-xs text-muted-foreground ml-1">{(data.preferred_categories || []).length}/3</span>
+          </div>
         </div>
-
         <div className="px-5 py-4">
-          {(data.preferred_categories || []).length >= 3 && (
-            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
-              Maximum 3 categories selected. Remove one to choose a different category.
-            </p>
-          )}
-          <div className="flex flex-wrap gap-2">
-            {BOOK_CATEGORIES.map((cat) => {
-              const selected = (data.preferred_categories || []).includes(cat);
-              const atMax = (data.preferred_categories || []).length >= 3;
-              const disabled = !selected && atMax;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => {
-                    const current = data.preferred_categories || [];
-                    if (selected) {
-                      onChange({ preferred_categories: current.filter(c => c !== cat) });
-                    } else {
-                      onChange({ preferred_categories: [...current, cat] });
-                    }
-                  }}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150',
-                    selected
-                      ? 'bg-primary/10 text-primary border-primary/40 ring-1 ring-primary/30 shadow-sm'
-                      : disabled
-                        ? 'bg-transparent text-muted-foreground/40 border-border/40 cursor-not-allowed'
-                        : 'bg-background text-foreground border-border hover:border-primary/50 hover:text-primary hover:bg-primary/5 cursor-pointer'
-                  )}
-                >
-                  {selected && (
-                    <svg className="w-3 h-3 shrink-0" viewBox="0 0 12 12" fill="none">
-                      <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
+          <CategoryPicker
+            selected={data.preferred_categories || []}
+            onChange={cats => onChange({ preferred_categories: cats })}
+          />
         </div>
       </div>
 
