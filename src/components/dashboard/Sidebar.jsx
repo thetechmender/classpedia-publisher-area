@@ -1,8 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import {
-  BookOpen, CreditCard, User, LayoutDashboard, Plus,
-  TrendingUp, FileText, HelpCircle, Star, LogOut, Bell
+  BookOpen, CreditCard, User, LayoutDashboard,
+  TrendingUp, HelpCircle, Star, LogOut, Bell
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
@@ -17,7 +16,6 @@ const NAV_SECTIONS = [
     label: 'Publishing',
     items: [
       { id: 'books',     label: 'My Books',         icon: BookOpen },
-      { id: 'publish',   label: 'Publish New Book', icon: Plus, isAction: true },
       { id: 'reviews',   label: 'Reviews & Issues', icon: Star },
     ]
   },
@@ -77,35 +75,26 @@ export default function Sidebar({ activeTab, onTabChange, authorProfile, books =
               </p>
             )}
             <div className="flex flex-col gap-0.5">
-              {section.items.map(({ id, label, icon: Icon, isAction }) =>
-                id === 'publish' ? (
-                  <Link key={id} to="/publish"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-primary/10 text-primary hover:bg-primary/20"
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    {label}
-                  </Link>
-                ) : (
-                  <button
-                    key={id}
-                    onClick={() => onTabChange(id)}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full',
-                      activeTab === id
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                    )}
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span className="flex-1">{label}</span>
-                    {id === 'overview' && notifCount > 0 && (
-                      <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center shrink-0">
-                        {notifCount}
-                      </span>
-                    )}
-                  </button>
-                )
-              )}
+              {section.items.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => onTabChange(id)}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full',
+                    activeTab === id
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  )}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="flex-1">{label}</span>
+                  {id === 'overview' && notifCount > 0 && (
+                    <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center shrink-0">
+                      {notifCount}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
         ))}
