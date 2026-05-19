@@ -281,6 +281,20 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated }) {
         <InfoRow label="Tax Country" value={authorProfile.tax_country} />
         <InfoRow label="Tax ID Type" value={authorProfile.tax_id_type?.toUpperCase()} />
         <InfoRow label="Tax ID"      value={authorProfile.tax_id ? `****${authorProfile.tax_id.slice(-4)}` : null} placeholder="Not provided" />
+        {authorProfile.us_person !== undefined && (
+          <div className="px-5 py-4 border-t flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+              <div>
+                <p className="text-sm font-medium">IRS Form {authorProfile.us_person ? 'W-9' : 'W-8BEN'}</p>
+                <p className="text-xs text-muted-foreground">Signed during account setup · {authorProfile.esignature ? `Signed by ${authorProfile.esignature}` : 'On file'}</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0" onClick={() => toast.info('Document download is available via Classpedia support.')}>
+              <FileText className="w-3.5 h-3.5" /> Download Form
+            </Button>
+          </div>
+        )}
         <div className="px-5 py-3 bg-secondary/10 border-t flex items-center gap-2">
           <AlertCircle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           <p className="text-xs text-muted-foreground">Tax information is legally sensitive. Contact support to update.</p>
