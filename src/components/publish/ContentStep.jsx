@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import BookPreviewer from './BookPreviewer';
 
 const Section = ({ icon: Icon, title, subtitle, children }) => (
-  <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+  <div className="rounded-xl border border-border bg-card shadow-sm">
     <div className="flex items-start gap-3 px-5 py-4 bg-secondary/40 border-b border-border">
       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
         <Icon className="w-4 h-4 text-primary" />

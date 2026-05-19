@@ -41,7 +41,7 @@ const COUNTRIES = [
 
 
 const Section = ({ title, children }) =>
-<div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+<div className="rounded-xl border border-border bg-card shadow-sm">
     <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
     </div>
