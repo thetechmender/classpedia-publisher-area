@@ -1,5 +1,7 @@
 import React from 'react';
-import { FileText, ShieldCheck, AlertTriangle, CheckCircle } from 'lucide-react';
+import { FileText, ShieldCheck, AlertTriangle, CheckCircle, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function TaxTab({ authorProfile }) {
   const hasFiledTax = !!(authorProfile?.tax_id && authorProfile?.tax_country);
@@ -48,6 +50,22 @@ export default function TaxTab({ authorProfile }) {
             </div>
           ))}
         </div>
+        {authorProfile?.us_person !== undefined && (
+          <div className="px-5 py-4 border-t flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+              <div>
+                <p className="text-sm font-medium">IRS Form {authorProfile.us_person ? 'W-9' : 'W-8BEN'}</p>
+                <p className="text-xs text-muted-foreground">
+                  Signed during account setup{authorProfile.esignature ? ` · Signed by ${authorProfile.esignature}` : ' · On file'}
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0" onClick={() => toast.info('Document download is available via Classpedia support.')}>
+              <Download className="w-3.5 h-3.5" /> Download Form
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Withholding info */}
