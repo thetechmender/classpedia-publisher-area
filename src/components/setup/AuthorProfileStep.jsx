@@ -41,9 +41,11 @@ function CategoryPicker({ selected, onChange }) {
 
   const add = (cat) => {
     if (!atMax && !selected.includes(cat)) {
-      onChange([...selected, cat]);
+      const next = [...selected, cat];
+      onChange(next);
       setQuery('');
-      setOpen(false);
+      // keep open unless now at max
+      if (next.length >= 3) setOpen(false);
     }
   };
 
@@ -95,6 +97,11 @@ function CategoryPicker({ selected, onChange }) {
 
           {open && (
             <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
+              {!query.trim() && (
+                <p className="px-3 pt-2 pb-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                  All Categories
+                </p>
+              )}
               <div className="max-h-52 overflow-y-auto py-1">
                 {filtered.length === 0 && !showAddCustom && (
                   <p className="px-3 py-2 text-xs text-muted-foreground">No categories found.</p>
@@ -104,7 +111,7 @@ function CategoryPicker({ selected, onChange }) {
                     key={cat}
                     type="button"
                     onMouseDown={e => { e.preventDefault(); add(cat); }}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                    className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                   >
                     {cat}
                   </button>
@@ -172,7 +179,7 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
       </div>
 
       {/* Preferred Categories */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="px-5 py-3.5 bg-secondary/40 border-b border-border flex items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-semibold flex items-center gap-2">
