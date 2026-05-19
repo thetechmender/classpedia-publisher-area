@@ -83,6 +83,16 @@
       "type": "boolean",
       "description": "Is a US person for tax purposes"
     },
+    "tax_certified": {
+      "type": "boolean",
+      "description": "Author certified tax information is correct",
+      "default": false
+    },
+    "esign_consent": {
+      "type": "boolean",
+      "description": "Author consented to electronic signature for IRS tax form",
+      "default": false
+    },
     "author_bio": {
       "type": "string",
       "description": "Author biography shown on book pages"

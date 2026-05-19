@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, FileText, AlertCircle, Info, Shield } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, AlertCircle, Info, Shield, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const FieldError = ({ msg }) => msg ? (
@@ -27,8 +27,27 @@ const TAX_COUNTRIES = [
   'Other',
 ];
 
+// Generate a reference ID like KDP does
+const generateRefId = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return Array.from({ length: 18 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+};
+
+const FORM_REF_ID = generateRefId();
+
 export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
   const isUS = data.us_person === true;
+  const formName = isUS ? 'W-9' : 'W-8BEN';
+  const formTitle = isUS
+    ? 'Request for Taxpayer Identification Number and Certification'
+    : 'Certificate of Foreign Status of Beneficial Owner for United States Tax Withholding and Reporting (Individuals)';
+
+  // Show preview+sign block once required fields are filled
+  const canShowPreview = data.us_person !== undefined && (
+    isUS
+      ? (data.tax_id_type && data.tax_id?.trim())
+      : (data.tax_country)
+  );
 
   return (
     <div className="space-y-6">
@@ -166,8 +185,93 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
               </>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Preview & Sign — shown once required fields are complete */}
+      {canShowPreview && (
+        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
+            <h3 className="text-sm font-semibold">Preview and Sign</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Please review your information, then provide your electronic signature to submit.
+            </p>
+          </div>
+          <div className="px-5 py-5 space-y-4">
+
+            {/* E-signature consent */}
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox
+                checked={!!data.esign_consent}
+                onCheckedChange={v => onChange({ esign_consent: !!v })}
+                className="mt-0.5"
+              />
+              <p className="text-sm leading-relaxed">
+                I consent to provide electronic signature for the information provided as per IRS Form {formName}
+              </p>
+            </label>
+
+            {data.esign_consent && (
+              <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+                <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  If you provide an electronic signature, you will be able to submit your tax information immediately.
+                </p>
+              </div>
+            )}
+
+            {/* Form preview card */}
+            <div className="border border-border rounded-lg overflow-hidden text-xs">
+              <div className="bg-muted/50 px-4 py-2 border-b border-border text-center text-muted-foreground font-mono">
+                Reference Id: {FORM_REF_ID}
+              </div>
+              <div className="grid grid-cols-[80px_1fr_80px] border-b border-border">
+                <div className="px-3 py-2 border-r border-border text-muted-foreground">
+                  <p className="font-medium text-[10px]">Form {formName}</p>
+                </div>
+                <div className="px-4 py-3 text-center">
+                  <p className="font-bold text-sm leading-snug">SUBSTITUTE</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{formTitle}</p>
+                </div>
+                <div className="px-2 py-2 border-l border-border text-[9px] text-muted-foreground text-center">
+                  SUBSTITUTE<br />(Rev. October 2021)
+                </div>
+              </div>
+
+              {/* Fields preview */}
+              <div className="divide-y divide-border">
+                <div className="grid grid-cols-2 divide-x divide-border">
+                  <div className="px-3 py-2">
+                    <p className="text-[10px] text-muted-foreground mb-1">1 Name of individual who is the beneficial owner</p>
+                    <p className="font-medium">{[data.first_name, data.last_name].filter(Boolean).join(' ') || '—'}</p>
+                  </div>
+                  <div className="px-3 py-2">
+                    <p className="text-[10px] text-muted-foreground mb-1">2 {isUS ? 'Tax ID Type' : 'Country of citizenship'}</p>
+                    <p className="font-medium">{isUS ? (data.tax_id_type?.toUpperCase() || '—') : (data.tax_country || data.country || '—')}</p>
+                  </div>
+                </div>
+                <div className="px-3 py-2">
+                  <p className="text-[10px] text-muted-foreground mb-1">3 Permanent residence address</p>
+                  <p className="font-medium">{[data.address_line1, data.city, data.state, data.zip, data.country].filter(Boolean).join(', ') || '—'}</p>
+                </div>
+                {isUS && (
+                  <div className="px-3 py-2">
+                    <p className="text-[10px] text-muted-foreground mb-1">4 {data.tax_id_type === 'ein' ? 'Employer Identification Number (EIN)' : 'Social Security Number (SSN)'}</p>
+                    <p className="font-medium tracking-widest">{data.tax_id ? '•'.repeat(data.tax_id.length) : '—'}</p>
+                  </div>
+                )}
+                {!isUS && data.tax_id && (
+                  <div className="px-3 py-2">
+                    <p className="text-[10px] text-muted-foreground mb-1">4 Foreign Tax ID</p>
+                    <p className="font-medium">{data.tax_id}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Certification */}
-            <div className="mt-4 pt-4 border-t border-border">
+            <div className="pt-2 border-t border-border">
               <label className="flex items-start gap-3 cursor-pointer">
                 <Checkbox
                   checked={!!data.tax_certified}
@@ -181,6 +285,15 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
               </label>
               <FieldError msg={errors.tax_certified} />
             </div>
+
+            {data.tax_certified && data.esign_consent && (
+              <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
+                <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                <p className="text-xs text-green-700 font-medium">
+                  Your tax form is signed and ready to submit.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

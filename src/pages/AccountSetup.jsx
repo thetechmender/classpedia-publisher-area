@@ -44,6 +44,7 @@ const validateStep4 = (data) => {
     if (!data.tax_country) errors.tax_country = 'Please select your country of tax residence';
   }
   if (!data.tax_certified) errors.tax_certified = 'You must certify this information is correct';
+  if (!data.esign_consent) errors.esign_consent = 'You must consent to provide an electronic signature';
   return errors;
 };
 
