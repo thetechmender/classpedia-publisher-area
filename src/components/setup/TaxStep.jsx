@@ -195,77 +195,73 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
               Please review your information, then provide your electronic signature to submit.
             </p>
           </div>
-          <div className="px-5 py-5 space-y-4">
+          <div className="px-5 py-5 space-y-5">
 
-            {/* E-signature consent */}
-            <label className="flex items-start gap-3 cursor-pointer">
-              <Checkbox
-                checked={!!data.esign_consent}
-                onCheckedChange={v => onChange({ esign_consent: !!v })}
-                className="mt-0.5"
-              />
-              <p className="text-sm leading-relaxed">
-                I consent to provide electronic signature for the information provided as per IRS Form {formName}
-              </p>
-            </label>
-
-            {data.esign_consent && (
-              <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
-                <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                <p className="text-xs text-blue-700 leading-relaxed">
-                  If you provide an electronic signature, you will be able to submit your tax information immediately.
-                </p>
-              </div>
-            )}
-
-            {/* Form document preview — blank */}
-            <div className="border border-border rounded-lg overflow-hidden text-xs">
-              <div className="bg-muted/50 px-4 py-2 border-b border-border text-center text-muted-foreground font-mono">
-                Reference Id: {FORM_REF_ID}
-              </div>
-              {/* Empty document body */}
-              <div className="bg-white px-6 py-10 min-h-[180px] flex flex-col items-center justify-center gap-3">
-                <FileText className="w-10 h-10 text-muted-foreground/30" />
-                <p className="text-xs text-muted-foreground">IRS Form {formName} — document preview</p>
-              </div>
-            </div>
-
-            {/* E-signature input */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Electronic Signature <span className="text-destructive">*</span></Label>
-              <p className="text-xs text-muted-foreground">Type your full legal name as your electronic signature</p>
-              <Input
-                value={data.esignature || ''}
-                onChange={e => onChange({ esignature: e.target.value })}
-                placeholder="Your full legal name"
-                className={cn('font-serif text-base italic', errors.esignature ? 'border-destructive' : '')}
-              />
-              <FieldError msg={errors.esignature} />
-            </div>
-
-            {/* Certification */}
-            <div className="pt-2 border-t border-border">
+            {/* Step 1: E-signature consent — always shown */}
+            <div className="space-y-1">
               <label className="flex items-start gap-3 cursor-pointer">
                 <Checkbox
-                  checked={!!data.tax_certified}
-                  onCheckedChange={v => onChange({ tax_certified: !!v })}
-                  className="mt-0.5"
+                  checked={!!data.esign_consent}
+                  onCheckedChange={v => onChange({ esign_consent: !!v, ...(!v && { esignature: '', tax_certified: false }) })}
+                  className="mt-0.5 shrink-0"
                 />
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Under penalties of perjury, I certify that all information I have entered is true, correct, and complete.
-                  I understand that any false statement may subject me to penalties.
+                <p className="text-sm leading-relaxed">
+                  I consent to provide an electronic signature for the information provided as per IRS Form <strong>{formName}</strong>
                 </p>
               </label>
-              <FieldError msg={errors.tax_certified} />
+              <FieldError msg={errors.esign_consent} />
             </div>
 
-            {data.tax_certified && data.esign_consent && data.esignature?.trim() && (
-              <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
-                <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-                <p className="text-xs text-green-700 font-medium">
-                  Your tax form is signed and ready to submit.
-                </p>
-              </div>
+            {/* Step 2: Form preview + signature — only after consent */}
+            {data.esign_consent && (
+              <>
+                {/* Form document preview */}
+                <div className="border border-border rounded-lg overflow-hidden text-xs">
+                  <div className="bg-muted/50 px-4 py-2 border-b border-border text-center text-muted-foreground font-mono text-[11px]">
+                    Reference ID: {FORM_REF_ID}
+                  </div>
+                  <div className="bg-white px-6 py-10 flex flex-col items-center justify-center gap-3">
+                    <FileText className="w-10 h-10 text-muted-foreground/30" />
+                    <p className="text-xs text-muted-foreground">IRS Form {formName} — document preview</p>
+                  </div>
+                </div>
+
+                {/* E-signature input */}
+                <div className="space-y-1.5">
+                  <Label>Electronic Signature <span className="text-destructive">*</span></Label>
+                  <p className="text-xs text-muted-foreground">Type your full legal name exactly as it appears on your ID</p>
+                  <Input
+                    value={data.esignature || ''}
+                    onChange={e => onChange({ esignature: e.target.value })}
+                    placeholder="Your full legal name"
+                    className={cn('font-serif text-base italic', errors.esignature ? 'border-destructive' : '')}
+                  />
+                  <FieldError msg={errors.esignature} />
+                </div>
+
+                {/* Perjury certification */}
+                <div className="pt-2 border-t border-border space-y-1">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <Checkbox
+                      checked={!!data.tax_certified}
+                      onCheckedChange={v => onChange({ tax_certified: !!v })}
+                      className="mt-0.5 shrink-0"
+                    />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Under penalties of perjury, I certify that all information I have entered is true, correct, and complete.
+                      I understand that any false statement may subject me to penalties.
+                    </p>
+                  </label>
+                  <FieldError msg={errors.tax_certified} />
+                </div>
+
+                {data.tax_certified && data.esignature?.trim() && (
+                  <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                    <p className="text-xs text-green-700 font-medium">Your tax form is signed and ready to submit.</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
