@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, FileText, AlertCircle, Info, Shield, CheckCircle2 } from 'lucide-react';
@@ -79,34 +78,61 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
           <h3 className="text-sm font-semibold">US Tax Status <span className="text-destructive">*</span></h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Select the option that best describes your tax residency</p>
         </div>
         <div className="px-5 py-5 space-y-3">
-          <RadioGroup
-            value={data.us_person === true ? 'yes' : data.us_person === false ? 'no' : ''}
-            onValueChange={v => onChange({ us_person: v === 'yes' })}
-            className="space-y-3"
-          >
-            <label className={cn(
-              'flex items-start gap-3 rounded-xl border-2 px-4 py-3.5 cursor-pointer transition-all',
-              data.us_person === true ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
-            )}>
-              <RadioGroupItem value="yes" className="mt-0.5" />
-              <div>
-                <p className="text-sm font-medium">I am a U.S. person</p>
-                <p className="text-xs text-muted-foreground mt-0.5">U.S. citizen, resident alien, or U.S. entity. You'll complete a W-9 equivalent.</p>
-              </div>
-            </label>
-            <label className={cn(
-              'flex items-start gap-3 rounded-xl border-2 px-4 py-3.5 cursor-pointer transition-all',
-              data.us_person === false ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
-            )}>
-              <RadioGroupItem value="no" className="mt-0.5" />
-              <div>
-                <p className="text-sm font-medium">I am not a U.S. person</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Non-U.S. individual or entity. You'll complete a W-8 equivalent.</p>
-              </div>
-            </label>
-          </RadioGroup>
+          {[
+            {
+              value: true,
+              label: 'I am a U.S. person',
+              description: 'U.S. citizen, resident alien, or U.S. entity',
+              form: 'W-9',
+              flag: '🇺🇸',
+            },
+            {
+              value: false,
+              label: 'I am not a U.S. person',
+              description: 'Non-U.S. individual or entity (international)',
+              form: 'W-8BEN',
+              flag: '🌍',
+            },
+          ].map(opt => {
+            const selected = data.us_person === opt.value;
+            return (
+              <button
+                key={String(opt.value)}
+                type="button"
+                onClick={() => onChange({ us_person: opt.value, tax_id_type: undefined, tax_id: '', tax_country: '' })}
+                className={cn(
+                  'w-full flex items-center gap-4 rounded-xl border-2 px-4 py-4 text-left transition-all duration-150',
+                  selected
+                    ? 'border-primary bg-primary/5 shadow-sm'
+                    : 'border-border bg-background hover:border-primary/40 hover:bg-secondary/20'
+                )}
+              >
+                {/* Radio dot */}
+                <div className={cn(
+                  'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
+                  selected ? 'border-primary' : 'border-muted-foreground/40'
+                )}>
+                  {selected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                </div>
+                <span className="text-xl shrink-0">{opt.flag}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">{opt.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
+                </div>
+                <span className={cn(
+                  'shrink-0 text-xs font-medium px-2.5 py-1 rounded-full border',
+                  selected
+                    ? 'bg-primary/10 text-primary border-primary/20'
+                    : 'bg-secondary text-muted-foreground border-border'
+                )}>
+                  {opt.form}
+                </span>
+              </button>
+            );
+          })}
           <FieldError msg={errors.us_person} />
         </div>
       </div>
@@ -120,20 +146,38 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
           <div className="px-5 py-5 space-y-4">
             {isUS ? (
               <>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label>Tax ID Type <span className="text-destructive">*</span></Label>
-                  <RadioGroup
-                    value={data.tax_id_type || ''}
-                    onValueChange={v => onChange({ tax_id_type: v })}
-                    className="flex gap-4"
-                  >
-                    {['ssn', 'ein'].map(t => (
-                      <label key={t} className="flex items-center gap-2 cursor-pointer">
-                        <RadioGroupItem value={t} />
-                        <span className="text-sm font-medium uppercase">{t}</span>
-                      </label>
-                    ))}
-                  </RadioGroup>
+                  <div className="flex gap-3">
+                    {[
+                      { value: 'ssn', label: 'SSN', description: 'Social Security Number' },
+                      { value: 'ein', label: 'EIN', description: 'Employer Identification Number' },
+                    ].map(opt => {
+                      const sel = data.tax_id_type === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => onChange({ tax_id_type: opt.value })}
+                          className={cn(
+                            'flex-1 flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all duration-150',
+                            sel ? 'border-primary bg-primary/5' : 'border-border bg-background hover:border-primary/40'
+                          )}
+                        >
+                          <div className={cn(
+                            'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0',
+                            sel ? 'border-primary' : 'border-muted-foreground/40'
+                          )}>
+                            {sel && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold">{opt.label}</p>
+                            <p className="text-xs text-muted-foreground">{opt.description}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                   <FieldError msg={errors.tax_id_type} />
                 </div>
                 <div className="space-y-1.5">
