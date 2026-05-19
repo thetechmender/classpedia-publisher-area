@@ -75,11 +75,21 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
 
       {/* Preferred Categories */}
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
-          <h3 className="text-sm font-semibold flex items-center gap-2"><Tag className="w-4 h-4 text-muted-foreground" /> Preferred Categories <span className="text-muted-foreground font-normal text-xs ml-1">(Optional)</span></h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Select up to 3 genres you primarily write in — helps us tailor your experience</p>
+        <div className="px-5 py-3.5 border-b border-border flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Tag className="w-4 h-4 text-muted-foreground" /> Preferred Categories
+              <span className="text-muted-foreground font-normal text-xs">(Optional)</span>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Select up to 3 genres you primarily write in — helps us tailor your experience</p>
+          </div>
+          {(data.preferred_categories || []).length > 0 && (
+            <span className="shrink-0 text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full mt-0.5">
+              {(data.preferred_categories || []).length} / 3
+            </span>
+          )}
         </div>
-        <div className="px-5 py-5">
+        <div className="px-5 py-4">
           <div className="flex flex-wrap gap-2">
             {BOOK_CATEGORIES.map((cat) => {
               const selected = (data.preferred_categories || []).includes(cat);
@@ -97,22 +107,20 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
                     }
                   }}
                   className={cn(
-                    'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                    'px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150',
                     selected
-                      ? 'bg-primary text-primary-foreground border-primary'
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                       : atMax
-                        ? 'bg-secondary/30 text-muted-foreground border-border cursor-not-allowed opacity-50'
-                        : 'bg-background text-foreground border-border hover:border-primary hover:text-primary'
+                        ? 'bg-muted/40 text-muted-foreground border-border cursor-not-allowed opacity-40'
+                        : 'bg-background text-foreground border-border hover:border-primary/60 hover:text-primary hover:bg-primary/5 cursor-pointer'
                   )}
                 >
+                  {selected && <span className="mr-1 text-[10px]">✓</span>}
                   {cat}
                 </button>
               );
             })}
           </div>
-          {(data.preferred_categories || []).length > 0 && (
-            <p className="text-xs text-muted-foreground mt-3">{(data.preferred_categories || []).length} / 3 selected</p>
-          )}
         </div>
       </div>
 
