@@ -38,7 +38,7 @@ function StatCard({ icon: Icon, label, value, sub, color = 'text-foreground', ac
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'royalties', label: 'By Book' },
-  { id: 'payouts', label: 'How You Get Paid' },
+
   { id: 'method', label: 'Payment Method' },
 ];
 
@@ -210,8 +210,7 @@ export default function PaymentsTab({ books, authorProfile }) {
         </div>
       )}
 
-      {/* HOW YOU GET PAID */}
-      {tab === 'payouts' && (
+      {tab === 'payouts_disabled' && (
         <div className="space-y-4">
           <div className="bg-card border rounded-xl overflow-hidden">
             <div className="px-5 py-4 border-b bg-secondary/30">
