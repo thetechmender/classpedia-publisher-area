@@ -60,16 +60,7 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
             </p>
           </div>
 
-          {/* Bio tips */}
-          <div className="bg-secondary/30 rounded-lg p-3 border border-border">
-            <p className="text-xs font-medium text-foreground mb-2">Tips for a great bio:</p>
-            <ul className="space-y-1 text-xs text-muted-foreground">
-              <li>• Write in third person ("She is..." not "I am...")</li>
-              <li>• Mention your writing background or expertise</li>
-              <li>• Keep it concise — 100–300 words works best</li>
-              <li>• You can add personal details to make it relatable</li>
-            </ul>
-          </div>
+
         </div>
       </div>
 
