@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  LayoutDashboard, BookOpen, CreditCard, User, Menu, X, Search
+  LayoutDashboard, BookOpen, CreditCard, User, Menu, X, Bell
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import Sidebar from '@/components/dashboard/Sidebar';
 import TopBar from '@/components/dashboard/TopBar';
-import SearchTrigger from '@/components/SearchTrigger';
 import OverviewTab from '@/components/dashboard/OverviewTab';
 import BooksTab from '@/components/dashboard/BooksTab';
 import PaymentsTab from '@/components/dashboard/PaymentsTab';
@@ -81,14 +80,14 @@ export default function Dashboard() {
       <div className="fixed bottom-0 left-0 w-[400px] h-[300px] bg-accent/20 rounded-full blur-3xl pointer-events-none" />
 
       {/* Sidebar — desktop */}
-      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} authorProfile={authorProfile} />
+      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} authorProfile={authorProfile} books={books} />
 
       {/* Mobile sidebar overlay */}
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileSidebarOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0 w-64 bg-card shadow-xl z-50">
-            <Sidebar activeTab={activeTab} onTabChange={handleTabChange} authorProfile={authorProfile} mobile />
+            <Sidebar activeTab={activeTab} onTabChange={handleTabChange} authorProfile={authorProfile} books={books} mobile />
           </div>
         </div>
       )}
@@ -97,20 +96,7 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col min-w-0 relative">
 
         {/* Desktop top bar */}
-        <div className="border-b bg-card/90 backdrop-blur-sm sticky top-0 z-30 px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-              <BookOpen className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold leading-none">Classpedia</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Publishing Platform</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <SearchTrigger />
-          </div>
-        </div>
+        <TopBar authorProfile={authorProfile} books={books} />
 
         {/* Mobile top bar */}
         <div className="md:hidden border-b bg-card/90 backdrop-blur-sm sticky top-0 z-30 px-4 py-3 flex items-center justify-between">
@@ -123,7 +109,18 @@ export default function Dashboard() {
             </div>
             <span className="text-sm font-semibold">Classpedia</span>
           </div>
-          <span className="text-xs font-medium text-muted-foreground capitalize px-2.5 py-1 rounded-full bg-secondary">{activeTab}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground capitalize px-2.5 py-1 rounded-full bg-secondary">{activeTab}</span>
+            <div className="relative">
+              <Bell className="w-4 h-4 text-muted-foreground" />
+              {(() => {
+                const c = [!authorProfile?.payment_method, !authorProfile?.tax_id, books.filter(b => b.status === 'draft').length > 0].filter(Boolean).length;
+                return c > 0 ? (
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center">{c}</span>
+                ) : null;
+              })()}
+            </div>
+          </div>
         </div>
 
         {/* Page content */}

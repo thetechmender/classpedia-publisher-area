@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Bell, Plus, BookOpen, HelpCircle } from 'lucide-react';
+import { Search, Plus, BookOpen, HelpCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import NotificationCenter from './NotificationCenter';
 
 export default function TopBar({ authorProfile, books = [] }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,7 +17,7 @@ export default function TopBar({ authorProfile, books = [] }) {
     : [];
 
   return (
-    <header className="hidden md:flex h-14 border-b bg-card/80 backdrop-blur-sm sticky top-0 z-30 items-center px-6 gap-4">
+    <header className="hidden md:flex h-14 border-b bg-card/90 backdrop-blur-sm sticky top-0 z-30 items-center px-6 gap-4">
       {/* Search */}
       <div className="relative flex-1 max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -44,7 +44,7 @@ export default function TopBar({ authorProfile, books = [] }) {
                     </div>
                 }
                 <div className="min-w-0">
-                  <p className="font-medium truncate">{book.title}</p>
+                  <p className="text-sm font-medium truncate">{book.title}</p>
                   <p className="text-xs text-muted-foreground capitalize">{book.status?.replace('_', ' ')}</p>
                 </div>
               </Link>
@@ -65,9 +65,7 @@ export default function TopBar({ authorProfile, books = [] }) {
         <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
           <HelpCircle className="w-4 h-4" />
         </button>
-        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors relative">
-          <Bell className="w-4 h-4" />
-        </button>
+        <NotificationCenter books={books} authorProfile={authorProfile} />
         <div className="w-px h-5 bg-border mx-1" />
         <Link to="/publish">
           <Button size="sm" className="gap-1.5 h-8 text-xs px-3">

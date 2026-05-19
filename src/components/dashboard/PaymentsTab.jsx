@@ -60,7 +60,7 @@ export default function PaymentsTab({ books, authorProfile }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold font-serif">Payments & Royalties</h2>
+          <h2 className="text-xl font-bold">Payments & Royalties</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Your earnings, payout history, and payment settings.</p>
         </div>
         <Button variant="outline" size="sm" className="gap-2 text-xs">

@@ -1,11 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Plus, BookOpen, CheckCircle2, Clock, FileEdit, TrendingUp,
-  DollarSign, AlertTriangle, ArrowRight, ChevronRight,
-  Zap, User, CreditCard, FileText, BarChart3
+  DollarSign, ChevronRight, Zap, User, CreditCard, FileText,
+  BarChart3, ArrowUpRight, Sparkles, CalendarDays
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -27,14 +26,14 @@ const STATUS_CONFIG = {
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.draft;
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
+    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
   );
 }
 
-function KpiCard({ icon: Icon, label, value, sub, color, onClick }) {
+function KpiCard({ icon: Icon, label, value, sub, color, trend, onClick }) {
   return (
     <button
       onClick={onClick}
@@ -42,7 +41,9 @@ function KpiCard({ icon: Icon, label, value, sub, color, onClick }) {
     >
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <Icon className={`w-4 h-4 ${color}`} />
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color.replace('text-', 'bg-').replace('-600', '-100').replace('-foreground', '/10')}`}>
+          <Icon className={`w-4 h-4 ${color}`} />
+        </div>
       </div>
       <p className={`text-2xl font-bold tracking-tight ${color}`}>{value}</p>
       {sub && <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>}
@@ -57,26 +58,37 @@ function ActionItem({ icon: Icon, iconBg, title, subtitle, cta, ctaFn, urgency }
         <Icon className="w-4 h-4" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+        <p className="text-sm font-semibold">{title}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{subtitle}</p>
       </div>
       {urgency && (
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
           urgency === 'high' ? 'bg-red-100 text-red-700' :
           urgency === 'medium' ? 'bg-amber-100 text-amber-700' :
-          'bg-secondary text-muted-foreground'
+          'bg-slate-100 text-slate-600'
         }`}>
           {urgency === 'high' ? 'Urgent' : urgency === 'medium' ? 'Pending' : 'Optional'}
         </span>
       )}
       <button
         onClick={ctaFn}
-        className="text-xs text-primary font-medium hover:underline flex items-center gap-0.5 shrink-0"
+        className="text-xs text-primary font-semibold hover:underline flex items-center gap-0.5 shrink-0"
       >
         {cta} <ChevronRight className="w-3 h-3" />
       </button>
     </div>
   );
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function getFormattedDate() {
+  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 export default function OverviewTab({ books, authorProfile, onTabChange }) {
@@ -93,13 +105,12 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
     .filter(b => b.status === 'published' && b.list_price)
     .reduce((sum, b) => sum + b.list_price * (parseFloat(b.royalty_plan || 70) / 100), 0);
 
-  // Build action items
   const actions = [];
   if (!authorProfile?.payment_method) {
     actions.push({
       icon: CreditCard, iconBg: 'bg-red-100 text-red-600',
       title: 'Set up your payment method',
-      subtitle: 'You need a payment method to receive royalty payouts.',
+      subtitle: 'Add your bank account or PayPal to receive royalty payouts.',
       cta: 'Add now', ctaFn: () => onTabChange('payments'), urgency: 'high',
     });
   }
@@ -107,23 +118,23 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
     actions.push({
       icon: FileText, iconBg: 'bg-amber-100 text-amber-600',
       title: 'Complete your tax information',
-      subtitle: 'Required for royalty processing and compliance.',
-      cta: 'Complete', ctaFn: () => onTabChange('tax'), urgency: 'medium',
+      subtitle: 'Required for royalty processing and IRS compliance.',
+      cta: 'Complete', ctaFn: () => onTabChange('payments'), urgency: 'medium',
     });
   }
   if (!authorProfile?.author_bio) {
     actions.push({
       icon: User, iconBg: 'bg-blue-100 text-blue-600',
       title: 'Add your author biography',
-      subtitle: 'Readers want to know who you are. Add a bio to your profile.',
+      subtitle: 'Readers convert better when there\'s a compelling author bio.',
       cta: 'Add bio', ctaFn: () => onTabChange('profile'), urgency: 'low',
     });
   }
   books.filter(b => b.status === 'draft').slice(0, 2).forEach(book => {
     actions.push({
       icon: FileEdit, iconBg: 'bg-slate-100 text-slate-600',
-      title: `Continue draft: "${book.title}"`,
-      subtitle: 'This draft is waiting to be completed and submitted.',
+      title: `Continue: "${book.title}"`,
+      subtitle: 'This draft is waiting to be completed and published.',
       cta: 'Continue', ctaFn: () => window.location.href = `/book/${book.id}`, urgency: 'medium',
     });
   });
@@ -131,12 +142,11 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
     actions.push({
       icon: BookOpen, iconBg: 'bg-primary/10 text-primary',
       title: 'Publish your first eBook',
-      subtitle: 'Start earning royalties by submitting your first title.',
+      subtitle: 'Start earning royalties by submitting your first title today.',
       cta: 'Start now', ctaFn: () => window.location.href = '/publish', urgency: 'medium',
     });
   }
 
-  // Account readiness
   const readinessItems = [
     { label: 'Account Info',    done: !!(authorProfile?.full_name && authorProfile?.country) },
     { label: 'Payment Method',  done: !!authorProfile?.payment_method },
@@ -146,68 +156,91 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
   const readinessPct = Math.round((readinessItems.filter(r => r.done).length / readinessItems.length) * 100);
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
 
-      {/* ── Hero ── */}
-      <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-accent/30 to-accent/10 border border-primary/15 p-6 flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="flex-1">
-          <p className="text-xs text-primary font-semibold uppercase tracking-widest mb-1">Author Dashboard</p>
-          <h2 className="text-2xl font-bold font-serif">
-            Welcome back, {firstName}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-            {stats.total === 0
-              ? 'Your publishing workspace is ready. Start by publishing your first eBook.'
-              : stats.in_review > 0
-                ? `${stats.in_review} book${stats.in_review > 1 ? 's' : ''} currently under review. ${stats.published} live.`
-                : `${stats.published} title${stats.published !== 1 ? 's' : ''} live. Keep publishing to grow your catalog.`}
-          </p>
-          <div className="flex flex-wrap gap-2 mt-4">
-            <Link to="/publish">
-              <Button size="sm" className="gap-1.5 shadow-sm shadow-primary/20">
-                <Plus className="w-4 h-4" /> Publish New Book
-              </Button>
-            </Link>
-            {stats.total > 0 && (
-              <Button size="sm" variant="outline" onClick={() => onTabChange('books')} className="gap-1.5">
-                <BookOpen className="w-4 h-4" /> My Books
-              </Button>
-            )}
+      {/* ── Welcome Hero ── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-blue-700 p-7 text-white shadow-lg shadow-primary/20">
+        {/* Background decoration */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'radial-gradient(circle at 80% 20%, white 1px, transparent 1px), radial-gradient(circle at 20% 80%, white 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }} />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-center gap-6">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <CalendarDays className="w-3.5 h-3.5 text-white/60" />
+              <p className="text-xs text-white/60 font-medium">{getFormattedDate()}</p>
+            </div>
+            <p className="text-sm font-medium text-white/70 mb-1">{getGreeting()},</p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {firstName} <Sparkles className="w-6 h-6 inline-block ml-1 text-yellow-300" />
+            </h1>
+            <p className="text-sm text-white/75 mt-2 leading-relaxed max-w-md">
+              {stats.total === 0
+                ? 'Your publishing workspace is ready. Start by submitting your first eBook.'
+                : stats.in_review > 0
+                  ? `${stats.in_review} book${stats.in_review > 1 ? 's' : ''} currently under review · ${stats.published} live on platform.`
+                  : stats.published > 0
+                    ? `${stats.published} title${stats.published !== 1 ? 's' : ''} live on the platform. Keep publishing to grow your catalog.`
+                    : 'You have drafts in progress. Complete them to start earning royalties.'}
+            </p>
+            <div className="flex flex-wrap gap-2 mt-5">
+              <Link to="/publish">
+                <Button size="sm" variant="secondary" className="gap-1.5 bg-white text-primary hover:bg-white/90 font-semibold shadow-sm">
+                  <Plus className="w-4 h-4" /> Publish New Book
+                </Button>
+              </Link>
+              {stats.total > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onTabChange('books')}
+                  className="gap-1.5 text-white/90 hover:bg-white/15 hover:text-white border border-white/20"
+                >
+                  <BookOpen className="w-4 h-4" /> My Books
+                </Button>
+              )}
+            </div>
           </div>
+
+          {/* Account Readiness Card */}
+          {readinessPct < 100 && (
+            <div className="sm:w-52 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-5 shrink-0">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-bold text-white/90 uppercase tracking-wide">Account Setup</p>
+                <span className="text-lg font-bold text-white">{readinessPct}%</span>
+              </div>
+              <div className="w-full bg-white/20 rounded-full h-1.5 mb-4">
+                <div
+                  className="bg-white h-1.5 rounded-full transition-all"
+                  style={{ width: `${readinessPct}%` }}
+                />
+              </div>
+              <div className="space-y-2">
+                {readinessItems.map(r => (
+                  <div key={r.label} className="flex items-center gap-2">
+                    {r.done
+                      ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                      : <div className="w-3.5 h-3.5 rounded-full border-2 border-white/40 shrink-0" />
+                    }
+                    <span className={`text-xs ${r.done ? 'text-white' : 'text-white/50'}`}>{r.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        {readinessPct < 100 && (
-          <div className="sm:w-52 bg-card/80 rounded-xl border border-border p-4 shrink-0">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold">Account Readiness</p>
-              <span className="text-xs font-bold text-primary">{readinessPct}%</span>
-            </div>
-            <div className="w-full bg-secondary rounded-full h-1.5 mb-3">
-              <div
-                className="bg-primary h-1.5 rounded-full transition-all"
-                style={{ width: `${readinessPct}%` }}
-              />
-            </div>
-            <div className="space-y-1.5">
-              {readinessItems.map(r => (
-                <div key={r.label} className="flex items-center gap-2">
-                  {r.done
-                    ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    : <div className="w-3.5 h-3.5 rounded-full border-2 border-muted-foreground/30 shrink-0" />
-                  }
-                  <span className={`text-xs ${r.done ? 'text-foreground' : 'text-muted-foreground'}`}>{r.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── KPI Strip ── */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <KpiCard icon={BookOpen}     label="Total Titles"    value={stats.total}      color="text-foreground"        onClick={() => onTabChange('books')} />
-        <KpiCard icon={CheckCircle2} label="Published"       value={stats.published}  color="text-emerald-600"       onClick={() => onTabChange('books')} sub={stats.published > 0 ? 'Live on platform' : 'None yet'} />
-        <KpiCard icon={Clock}        label="In Review"       value={stats.in_review}  color="text-amber-600"         onClick={() => onTabChange('reviews')} sub={stats.in_review > 0 ? 'Est. 72hrs' : 'None pending'} />
-        <KpiCard icon={FileEdit}     label="Drafts"          value={stats.draft}      color="text-muted-foreground"  onClick={() => onTabChange('books')} sub={stats.draft > 0 ? 'Awaiting completion' : 'No open drafts'} />
+        <KpiCard icon={BookOpen}     label="Total Titles"   value={stats.total}      color="text-foreground"        onClick={() => onTabChange('books')} />
+        <KpiCard icon={CheckCircle2} label="Published"      value={stats.published}  color="text-emerald-600"       onClick={() => onTabChange('books')} sub={stats.published > 0 ? 'Live on platform' : 'None yet'} />
+        <KpiCard icon={Clock}        label="In Review"      value={stats.in_review}  color="text-amber-600"         onClick={() => onTabChange('reviews')} sub={stats.in_review > 0 ? 'Est. 72hrs' : 'None pending'} />
+        <KpiCard icon={FileEdit}     label="Drafts"         value={stats.draft}      color="text-muted-foreground"  onClick={() => onTabChange('books')} sub={stats.draft > 0 ? 'Awaiting completion' : 'No open drafts'} />
         <KpiCard
           icon={DollarSign}
           label="Est. Royalties"
@@ -218,20 +251,24 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
         {/* ── Action Center ── */}
         <div className="lg:col-span-2 bg-card border rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b bg-secondary/30 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-semibold">Action Center</h3>
+              <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                <Zap className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <h2 className="text-sm font-semibold">Action Center</h2>
             </div>
-            <span className="text-xs text-muted-foreground">{actions.length} item{actions.length !== 1 ? 's' : ''}</span>
+            <span className="text-xs text-muted-foreground font-medium">{actions.length} item{actions.length !== 1 ? 's' : ''}</span>
           </div>
           {actions.length === 0 ? (
-            <div className="px-5 py-10 text-center">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
+            <div className="px-5 py-12 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+              </div>
               <p className="text-sm font-semibold">All caught up!</p>
               <p className="text-xs text-muted-foreground mt-1">No pending actions. Keep publishing great books.</p>
             </div>
@@ -243,8 +280,10 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
         {/* ── Royalties Snapshot ── */}
         <div className="bg-card border rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b bg-secondary/30 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-primary" />
-            <h3 className="text-sm font-semibold">Royalties</h3>
+            <div className="w-6 h-6 rounded-md bg-emerald-100 flex items-center justify-center">
+              <BarChart3 className="w-3.5 h-3.5 text-emerald-600" />
+            </div>
+            <h2 className="text-sm font-semibold">Royalties</h2>
           </div>
           <div className="p-5 space-y-4">
             <div className="text-center py-2">
@@ -259,7 +298,7 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
                 <Bar dataKey="royalties" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex justify-between items-center py-2 border-t">
                 <span className="text-xs text-muted-foreground">Pending Payout</span>
                 <span className="text-xs font-semibold">$0.00</span>
@@ -271,22 +310,24 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
             </div>
             <button
               onClick={() => onTabChange('royalties')}
-              className="w-full text-xs text-primary font-medium hover:underline flex items-center justify-center gap-1 pt-1"
+              className="w-full text-xs text-primary font-semibold hover:underline flex items-center justify-center gap-1 pt-1"
             >
-              View full earnings <ArrowRight className="w-3 h-3" />
+              View full earnings <ArrowUpRight className="w-3 h-3" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── Recent Books Table ── */}
+      {/* ── Recent Books ── */}
       <div className="bg-card border rounded-2xl overflow-hidden">
         <div className="px-5 py-4 border-b bg-secondary/30 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-primary" />
-            <h3 className="text-sm font-semibold">Recent Books</h3>
+            <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+              <BookOpen className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <h2 className="text-sm font-semibold">Recent Books</h2>
           </div>
-          <button onClick={() => onTabChange('books')} className="text-xs text-primary hover:underline flex items-center gap-0.5">
+          <button onClick={() => onTabChange('books')} className="text-xs text-primary font-semibold hover:underline flex items-center gap-0.5">
             View all <ChevronRight className="w-3 h-3" />
           </button>
         </div>
@@ -303,7 +344,7 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full">
               <thead>
                 <tr className="border-b bg-secondary/20">
                   <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Book</th>
@@ -322,13 +363,13 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           {book.cover_url
-                            ? <img src={book.cover_url} alt={book.title} className="w-8 h-11 object-cover rounded shadow-sm shrink-0" />
-                            : <div className="w-8 h-11 bg-secondary rounded flex items-center justify-center shrink-0">
+                            ? <img src={book.cover_url} alt={book.title} className="w-8 h-11 object-cover rounded-md shadow-sm shrink-0" />
+                            : <div className="w-8 h-11 bg-secondary rounded-md flex items-center justify-center shrink-0">
                                 <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
                               </div>
                           }
                           <div className="min-w-0">
-                            <p className="font-medium truncate max-w-[160px]">{book.title}</p>
+                            <p className="text-sm font-semibold truncate max-w-[160px]">{book.title}</p>
                             <p className="text-xs text-muted-foreground">by {book.author_name}</p>
                           </div>
                         </div>
@@ -337,15 +378,15 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
                         <StatusBadge status={book.status} />
                       </td>
                       <td className="px-4 py-3.5 text-right hidden md:table-cell">
-                        <span className="text-sm font-medium">{book.list_price ? `$${book.list_price.toFixed(2)}` : '—'}</span>
+                        <span className="text-sm font-semibold">{book.list_price ? `$${book.list_price.toFixed(2)}` : '—'}</span>
                       </td>
                       <td className="px-4 py-3.5 text-right hidden lg:table-cell">
-                        <span className={`text-sm font-semibold ${perSale ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                        <span className={`text-sm font-bold ${perSale ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                           {perSale ? `$${perSale.toFixed(2)}` : '—'}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-right">
-                        <Link to={`/book/${book.id}`} className="text-xs text-primary font-medium hover:underline flex items-center justify-end gap-0.5">
+                        <Link to={`/book/${book.id}`} className="text-xs text-primary font-semibold hover:underline flex items-center justify-end gap-0.5">
                           {book.status === 'draft' ? 'Continue' : 'View'} <ChevronRight className="w-3 h-3" />
                         </Link>
                       </td>

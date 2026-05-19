@@ -131,7 +131,7 @@ export default function BooksTab({ books, isLoading }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold font-serif">My Books</h2>
+          <h2 className="text-xl font-bold">My Books</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Manage your eBook catalog and publishing pipeline.</p>
         </div>
         <Link to="/publish">

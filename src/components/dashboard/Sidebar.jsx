@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   BookOpen, CreditCard, User, LayoutDashboard, Plus,
-  TrendingUp, FileText, HelpCircle, Settings, Star, BarChart3, LogOut
+  TrendingUp, FileText, HelpCircle, Star, LogOut, Bell
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
@@ -42,8 +42,17 @@ const NAV_SECTIONS = [
   },
 ];
 
-export default function Sidebar({ activeTab, onTabChange, authorProfile }) {
+function getNotificationCount(authorProfile, books = []) {
+  let count = 0;
+  if (!authorProfile?.payment_method) count++;
+  if (authorProfile?.us_person === undefined || !authorProfile?.tax_id) count++;
+  if (books.filter(b => b.status === 'draft').length > 0) count++;
+  return count;
+}
+
+export default function Sidebar({ activeTab, onTabChange, authorProfile, books = [] }) {
   const firstName = authorProfile?.full_name?.split(' ')[0] || 'Author';
+  const notifCount = getNotificationCount(authorProfile, books);
 
   return (
     <aside className="w-60 shrink-0 hidden md:flex flex-col border-r bg-card min-h-screen sticky top-0">
@@ -88,7 +97,12 @@ export default function Sidebar({ activeTab, onTabChange, authorProfile }) {
                     )}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
-                    {label}
+                    <span className="flex-1">{label}</span>
+                    {id === 'overview' && notifCount > 0 && (
+                      <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center shrink-0">
+                        {notifCount}
+                      </span>
+                    )}
                   </button>
                 )
               )}
