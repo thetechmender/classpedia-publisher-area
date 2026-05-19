@@ -68,19 +68,6 @@ export default function TaxTab({ authorProfile }) {
         )}
       </div>
 
-      {/* Withholding info */}
-      <div className="bg-card border rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-muted-foreground" />
-          <h2 className="font-semibold">Withholding & Compliance</h2>
-        </div>
-        <div className="px-5 py-4 space-y-3 text-sm text-muted-foreground">
-          <p>• US authors with a valid W-9 on file have <strong className="text-foreground">0% withholding</strong>.</p>
-          <p>• Non-US authors may be subject to up to <strong className="text-foreground">30% withholding</strong> under IRS regulations unless a tax treaty applies.</p>
-          <p>• Completed tax forms must be updated every 3 years or when your information changes.</p>
-          <p>• Classpedia will issue a <strong className="text-foreground">1099 or equivalent</strong> form at year-end for earnings above $600.</p>
-        </div>
-      </div>
     </div>
   );
 }
