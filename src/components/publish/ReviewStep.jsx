@@ -78,8 +78,14 @@ function BookPreviewCard({ data }) {
             </div>
           )}
 
-          {data.description && (
+          {data.description ? (
             <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{data.description}</p>
+          ) : (
+            <div className="space-y-1.5">
+              <div className="h-2.5 bg-muted/60 rounded-full w-full" />
+              <div className="h-2.5 bg-muted/60 rounded-full w-5/6" />
+              <div className="h-2.5 bg-muted/60 rounded-full w-4/6" />
+            </div>
           )}
 
           <div className="flex items-center gap-4 pt-1">

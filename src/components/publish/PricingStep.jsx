@@ -3,7 +3,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -169,41 +168,56 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
 
       {/* ── 1. Classpedia Select ── */}
       <Section title="Classpedia Select Enrollment">
-        <div className="flex items-start gap-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground">Reach more readers with Classpedia Select</p>
-            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-              A free {SELECT_ENROLLMENT_DAYS}-day exclusive program that lets you run promotions — including up to {SELECT_FREE_DAYS} free days per enrollment window.
-            </p>
-            <button
-              onClick={() => setSelectExpanded(!selectExpanded)}
-              className="text-xs text-primary hover:underline mt-2 flex items-center gap-1">
-              Rules and requirements {selectExpanded ? '▲' : '▼'}
-            </button>
-            {selectExpanded && (
-              <div className="mt-3 bg-secondary/40 rounded-lg px-4 py-3 text-xs text-muted-foreground space-y-1.5 border border-border">
-                <p>• Your eBook must be exclusive to Classpedia during the {SELECT_ENROLLMENT_DAYS}-day enrollment period.</p>
-                <p>• You may offer your eBook for free for up to <strong>{SELECT_FREE_DAYS} days</strong> per {SELECT_ENROLLMENT_DAYS}-day period.</p>
-                <p>• After a free promotion, the minimum list price is <strong>${SELECT_MIN_PRICE_FREE.toFixed(2)}</strong>.</p>
-                <p>• Enrollment auto-renews unless you opt out before the period ends.</p>
-                <p>• You retain copyright of your work at all times.</p>
-              </div>
-            )}
-          </div>
-          <div className="shrink-0 pt-0.5">
-            <label className={cn(
-              'flex items-center gap-2.5 rounded-xl border-2 px-4 py-2.5 cursor-pointer transition-all whitespace-nowrap',
-              data.classpedia_select ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:border-primary/40 text-foreground'
-            )}>
-              <Checkbox
-                checked={!!data.classpedia_select}
-                onCheckedChange={(v) => onChange({ classpedia_select: !!v })}
-              />
-              <span className="text-sm font-medium">Enroll</span>
-            </label>
-            <p className="text-[10px] text-muted-foreground mt-1.5 text-center">You can also do this later<br/>from your book's dashboard</p>
-          </div>
+        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+          A free {SELECT_ENROLLMENT_DAYS}-day exclusive program that lets you run promotions — including up to {SELECT_FREE_DAYS} free days per enrollment window.
+        </p>
+
+        {/* Yes / No toggle */}
+        <div className="flex gap-3 mb-3">
+          {[
+            { value: true, label: 'Yes, enroll me', desc: 'Exclusive to Classpedia for 60 days' },
+            { value: false, label: 'No, skip for now', desc: 'You can enroll later from your dashboard' },
+          ].map(opt => {
+            const selected = !!data.classpedia_select === opt.value;
+            return (
+              <button
+                key={String(opt.value)}
+                type="button"
+                onClick={() => onChange({ classpedia_select: opt.value })}
+                className={cn(
+                  'flex-1 flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all duration-150',
+                  selected ? 'border-primary bg-primary/5' : 'border-border bg-background hover:border-primary/30'
+                )}
+              >
+                <div className={cn(
+                  'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0',
+                  selected ? 'border-primary' : 'border-muted-foreground/30'
+                )}>
+                  {selected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{opt.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
+
+        <button
+          onClick={() => setSelectExpanded(!selectExpanded)}
+          className="text-xs text-primary hover:underline flex items-center gap-1">
+          Rules and requirements {selectExpanded ? '▲' : '▼'}
+        </button>
+        {selectExpanded && (
+          <div className="mt-3 bg-secondary/40 rounded-lg px-4 py-3 text-xs text-muted-foreground space-y-1.5 border border-border">
+            <p>• Your eBook must be exclusive to Classpedia during the {SELECT_ENROLLMENT_DAYS}-day enrollment period.</p>
+            <p>• You may offer your eBook for free for up to <strong>{SELECT_FREE_DAYS} days</strong> per {SELECT_ENROLLMENT_DAYS}-day period.</p>
+            <p>• After a free promotion, the minimum list price is <strong>${SELECT_MIN_PRICE_FREE.toFixed(2)}</strong>.</p>
+            <p>• Enrollment auto-renews unless you opt out before the period ends.</p>
+            <p>• You retain copyright of your work at all times.</p>
+          </div>
+        )}
 
         {data.classpedia_select && (
           <InfoBox>
@@ -305,6 +319,11 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
                       max={PRICE_MAX}
                       value={data.list_price || ''}
                       onChange={(e) => onChange({ list_price: e.target.value ? parseFloat(e.target.value) : '' })}
+                      onBlur={(e) => {
+                        const v = parseFloat(e.target.value);
+                        if (!isNaN(v) && v < PRICE_MIN) onChange({ list_price: PRICE_MIN });
+                        if (!isNaN(v) && v > PRICE_MAX) onChange({ list_price: PRICE_MAX });
+                      }}
                       placeholder="0.00"
                       className={cn('w-24', errors.list_price ? 'border-destructive' : '')} />
                     
