@@ -206,15 +206,7 @@ export default function PaymentsTab({ books, authorProfile }) {
             )}
           </div>
 
-          <div className="bg-accent/40 border border-accent rounded-xl p-4 flex items-start gap-3">
-            <Info className="w-4 h-4 text-accent-foreground mt-0.5 shrink-0" />
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p className="font-semibold text-foreground">How royalties work</p>
-              <p>• <strong>70% plan</strong>: Books priced $2.99–$9.99, delivered to supported marketplaces.</p>
-              <p>• <strong>35% plan</strong>: All price ranges and all territories.</p>
-              <p>• Royalties are calculated at end of each month and paid 30 days later.</p>
-            </div>
-          </div>
+
         </div>
       )}
 
