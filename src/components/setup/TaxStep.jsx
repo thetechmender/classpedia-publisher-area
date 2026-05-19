@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, FileText, AlertCircle, Info, Shield, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, AlertCircle, Info, Shield, CheckCircle2, MapPin, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const FieldError = ({ msg }) => msg ? (
@@ -80,21 +80,21 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
           <h3 className="text-sm font-semibold">US Tax Status <span className="text-destructive">*</span></h3>
           <p className="text-xs text-muted-foreground mt-0.5">Select the option that best describes your tax residency</p>
         </div>
-        <div className="px-5 py-5 space-y-3">
+        <div className="px-5 py-5 space-y-2.5">
           {[
             {
               value: true,
-              label: 'I am a U.S. person',
-              description: 'U.S. citizen, resident alien, or U.S. entity',
+              label: 'U.S. person',
+              description: 'U.S. citizen, resident alien, or U.S.-incorporated entity',
               form: 'W-9',
-              flag: '🇺🇸',
+              Icon: MapPin,
             },
             {
               value: false,
-              label: 'I am not a U.S. person',
-              description: 'Non-U.S. individual or entity (international)',
+              label: 'Non-U.S. person',
+              description: 'Individual or entity outside the United States',
               form: 'W-8BEN',
-              flag: '🌍',
+              Icon: Globe,
             },
           ].map(opt => {
             const selected = data.us_person === opt.value;
@@ -104,29 +104,38 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
                 type="button"
                 onClick={() => onChange({ us_person: opt.value, tax_id_type: undefined, tax_id: '', tax_country: '' })}
                 className={cn(
-                  'w-full flex items-center gap-4 rounded-xl border-2 px-4 py-4 text-left transition-all duration-150',
+                  'w-full flex items-center gap-4 rounded-lg border px-4 py-3.5 text-left transition-all duration-150',
                   selected
                     ? 'border-primary bg-primary/5 shadow-sm'
-                    : 'border-border bg-background hover:border-primary/40 hover:bg-secondary/20'
+                    : 'border-border bg-background hover:border-primary/30 hover:bg-muted/30'
                 )}
               >
-                {/* Radio dot */}
+                {/* Radio indicator */}
                 <div className={cn(
-                  'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
-                  selected ? 'border-primary' : 'border-muted-foreground/40'
+                  'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
+                  selected ? 'border-primary' : 'border-muted-foreground/30'
                 )}>
-                  {selected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                  {selected && <div className="w-2 h-2 rounded-full bg-primary" />}
                 </div>
-                <span className="text-xl shrink-0">{opt.flag}</span>
+
+                {/* Icon */}
+                <div className={cn(
+                  'w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-colors',
+                  selected ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                )}>
+                  <opt.Icon className="w-4 h-4" />
+                </div>
+
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold">{opt.label}</p>
+                  <p className="text-sm font-medium text-foreground">{opt.label}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
                 </div>
+
                 <span className={cn(
-                  'shrink-0 text-xs font-medium px-2.5 py-1 rounded-full border',
+                  'shrink-0 text-[11px] font-semibold tracking-wide px-2 py-0.5 rounded border font-mono',
                   selected
                     ? 'bg-primary/10 text-primary border-primary/20'
-                    : 'bg-secondary text-muted-foreground border-border'
+                    : 'bg-muted/60 text-muted-foreground border-border'
                 )}>
                   {opt.form}
                 </span>
