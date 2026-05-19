@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { X, Plus, ChevronRight, BookOpen, Info, Users, Tag, Clock, AlertCircle, CheckCircle2, Search } from 'lucide-react';
+import { X, Plus, ChevronRight, BookOpen, Info, Users, Tag, Clock, AlertCircle, CheckCircle2, Search, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -103,99 +103,113 @@ function SeriesDetails({ data, onChange }) {
 
 // ── Category Picker Component ─────────────────────────────────────────────────
 function CategoryPicker({ selected, onChange, error }) {
-  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const containerRef = useRef(null);
+  const atMax = selected.length >= 3;
 
-  const filtered = search.trim()
-    ? CATEGORIES.filter(c => c.toLowerCase().includes(search.toLowerCase()))
-    : CATEGORIES;
+  const filtered = query.trim()
+    ? CATEGORIES.filter(c => c.toLowerCase().includes(query.toLowerCase()) && !selected.includes(c))
+    : CATEGORIES.filter(c => !selected.includes(c));
 
-  const toggle = (cat) => {
-    if (selected.includes(cat)) {
-      onChange(selected.filter(c => c !== cat));
-    } else if (selected.length < 3) {
-      onChange([...selected, cat]);
+  const showAddCustom = query.trim() &&
+    !CATEGORIES.some(c => c.toLowerCase() === query.toLowerCase()) &&
+    !selected.some(c => c.toLowerCase() === query.toLowerCase());
+
+  const add = (cat) => {
+    if (!atMax && !selected.includes(cat)) {
+      const next = [...selected, cat];
+      onChange(next);
+      setQuery('');
+      if (next.length >= 3) setOpen(false);
     }
   };
 
-  return (
-    <div>
-      {/* Selected tags */}
-      <div className="flex flex-wrap gap-2 mb-3 min-h-[32px]">
-        {selected.length === 0 ? (
-          <p className="text-xs text-muted-foreground italic">No categories selected yet</p>
-        ) : (
-          selected.map(cat => (
-            <Badge key={cat} className="gap-1.5 py-1 px-2.5 bg-primary/10 text-primary border border-primary/20 font-medium">
-              {cat}
-              <button onClick={() => toggle(cat)} className="hover:text-destructive transition-colors ml-0.5">
-                <X className="w-3 h-3" />
-              </button>
-            </Badge>
-          ))
-        )}
-      </div>
+  const remove = (cat) => onChange(selected.filter(c => c !== cat));
 
+  useEffect(() => {
+    const handler = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="space-y-2">
       {error && <ErrorMsg msg={error} />}
 
-      {/* Counter + search row */}
-      <div className="flex items-center gap-2 mb-2">
-        <div className="relative flex-1">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search categories…"
-            className="pl-8 h-8 text-sm bg-background"
-          />
-        </div>
-        <span className={cn(
-          'text-xs font-medium shrink-0',
-          selected.length === 3 ? 'text-primary' : 'text-muted-foreground'
-        )}>
-          {selected.length}/3
-          {selected.length === 3 && <span className="ml-1">✓</span>}
-        </span>
-      </div>
-
-      {/* Dropdown list */}
-      <div className="border border-border rounded-lg overflow-hidden bg-background max-h-48 overflow-y-auto">
-        {filtered.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">No results for "{search}"</p>
-        ) : (
-          filtered.map((cat) => {
-            const isSelected = selected.includes(cat);
-            const isDisabled = !isSelected && selected.length >= 3;
-            return (
-              <button
-                key={cat}
-                type="button"
-                disabled={isDisabled}
-                onClick={() => toggle(cat)}
-                className={cn(
-                  'w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors border-b border-border/50 last:border-0',
-                  isSelected ? 'bg-primary/8 text-primary' : isDisabled
-                    ? 'text-muted-foreground opacity-40 cursor-not-allowed'
-                    : 'hover:bg-secondary/60 text-foreground'
-                )}
-              >
-                <div className={cn(
-                  'w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0',
-                  isSelected ? 'bg-primary border-primary' : 'border-border'
-                )}>
-                  {isSelected && (
-                    <svg className="w-2 h-2 text-white" viewBox="0 0 10 10" fill="none">
-                      <path d="M1.5 5L4 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </div>
-                {cat}
+      {/* Selected chips */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map(cat => (
+            <span key={cat} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/25">
+              {cat}
+              <button type="button" onClick={() => remove(cat)} className="hover:text-destructive transition-colors">
+                <X className="w-3 h-3" />
               </button>
-            );
-          })
-        )}
-      </div>
-      {selected.length < 3 && (
-        <p className="text-xs text-muted-foreground mt-1.5">Select up to {3 - selected.length} more categor{3 - selected.length === 1 ? 'y' : 'ies'}</p>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Trigger / search input */}
+      {!atMax ? (
+        <div className="relative">
+          <div
+            className={cn(
+              'flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 cursor-text',
+              open && 'ring-1 ring-ring border-ring'
+            )}
+            onClick={() => setOpen(true)}
+          >
+            <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <input
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+              placeholder="Search or type a custom category…"
+              value={query}
+              onChange={e => { setQuery(e.target.value); setOpen(true); }}
+              onFocus={() => setOpen(true)}
+            />
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          </div>
+
+          {open && (
+            <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
+              {!query.trim() && (
+                <p className="px-3 pt-2 pb-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                  All Categories
+                </p>
+              )}
+              <div className="max-h-52 overflow-y-auto py-1">
+                {filtered.length === 0 && !showAddCustom && (
+                  <p className="px-3 py-2 text-xs text-muted-foreground">No categories found.</p>
+                )}
+                {filtered.map(cat => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onMouseDown={e => { e.preventDefault(); add(cat); }}
+                    className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                  >
+                    {cat}
+                  </button>
+                ))}
+                {showAddCustom && (
+                  <button
+                    type="button"
+                    onMouseDown={e => { e.preventDefault(); add(query.trim()); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-primary/5 transition-colors border-t border-border"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add "{query.trim()}"
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 border border-border">
+          Maximum 3 categories selected — remove one to change.
+        </p>
       )}
     </div>
   );
