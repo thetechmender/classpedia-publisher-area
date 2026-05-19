@@ -159,95 +159,44 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
     <div className="space-y-6">
 
       {/* ── Welcome Hero ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 p-8 text-white shadow-xl shadow-blue-500/20">
-        {/* Background decoration - premium grid */}
-        <div className="absolute inset-0 opacity-[0.08]" style={{
-          backgroundImage: 'radial-gradient(circle at 80% 20%, white 1px, transparent 1px), radial-gradient(circle at 20% 80%, white 1px, transparent 1px)',
-          backgroundSize: '50px 50px'
-        }} />
-        {/* Gradient orbs */}
-        <div className="absolute top-0 right-0 w-72 h-72 bg-white/8 rounded-full -translate-y-1/3 translate-x-1/3 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/8 rounded-full translate-y-1/3 -translate-x-1/3 blur-3xl" />
-
-        <div className="relative flex flex-col lg:flex-row lg:items-start gap-8 lg:justify-between">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500/10 via-blue-600/10 to-purple-500/10 backdrop-blur-xl border border-white/20 p-6 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex-1">
-            {/* Date */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1 h-1 rounded-full bg-white/50" />
-              <p className="text-xs text-white/70 font-medium">{getFormattedDate()}</p>
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <p className="text-xs text-muted-foreground font-medium">{getFormattedDate()}</p>
             </div>
-
-            {/* Greeting */}
-            <p className="text-sm font-medium text-white/80 mb-0.5">{getGreeting()},</p>
-
-            {/* Name */}
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-4 flex items-center gap-2">
-              {firstName}
-              <Sparkles className="w-8 h-8 text-yellow-200 animate-pulse" />
+            <h1 className="text-2xl font-bold tracking-tight">
+              {getGreeting()}, <span className="text-primary">{firstName}</span>
+              <Sparkles className="w-4 h-4 inline-block ml-1.5 text-amber-500" />
             </h1>
-
-            {/* Status line */}
-            <p className="text-sm text-white/80 leading-relaxed max-w-2xl font-medium">
+            <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed max-w-xl">
               {stats.total === 0
-                ? '8 books currently under review · 1 live on platform.'
+                ? 'Your publishing workspace is ready. Start by submitting your first eBook.'
                 : stats.in_review > 0
-                  ? `${stats.in_review} book${stats.in_review > 1 ? 's' : ''} currently under review · ${stats.published} live on platform.`
+                  ? `${stats.in_review} book${stats.in_review > 1 ? 's' : ''} under review · ${stats.published} live`
                   : stats.published > 0
-                    ? `${stats.published} title${stats.published !== 1 ? 's' : ''} live on the platform. Keep publishing to grow your catalog.`
-                    : 'You have drafts in progress. Complete them to start earning royalties.'}
+                    ? `${stats.published} title${stats.published !== 1 ? 's' : ''} live. Keep publishing to grow your catalog.`
+                    : 'Drafts in progress. Complete them to start earning royalties.'}
             </p>
-
-            {/* CTAs */}
-            <div className="flex flex-wrap gap-3 mt-6">
-              <Link to="/publish">
-                <Button size="sm" className="gap-2 bg-white text-blue-600 hover:bg-white/95 font-semibold shadow-md px-4">
-                  <Plus className="w-4 h-4" /> Publish New Book
-                </Button>
-              </Link>
-              {stats.total > 0 && (
-                <Button
-                  size="sm"
-                  onClick={() => onTabChange('books')}
-                  className="gap-2 bg-white/15 text-white hover:bg-white/25 border border-white/30 font-medium px-4"
-                >
-                  <BookOpen className="w-4 h-4" /> My Books
-                </Button>
-              )}
-            </div>
           </div>
-
-          {/* Account Setup Card - Premium Right Side */}
-          {readinessPct < 100 && (
-            <div className="lg:w-56 bg-white/12 backdrop-blur-xl rounded-2xl border border-white/25 p-6 shrink-0 shadow-lg">
-              <div className="flex items-baseline justify-between gap-2 mb-4">
-                <p className="text-xs font-bold text-white/90 uppercase tracking-widest">Account Setup</p>
-                <p className="text-2xl font-bold text-white">{readinessPct}%</p>
-              </div>
-              
-              {/* Progress bar */}
-              <div className="w-full bg-white/15 rounded-full h-2 mb-5 overflow-hidden">
-                <div
-                  className="bg-white h-full rounded-full transition-all duration-500"
-                  style={{ width: `${readinessPct}%` }}
-                />
-              </div>
-
-              {/* Checklist */}
-              <div className="space-y-2.5">
-                {readinessItems.map(r => (
-                  <div key={r.label} className="flex items-center gap-2.5 text-xs">
-                    {r.done
-                      ? <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
-                      : <div className="w-4 h-4 rounded-full border-1.5 border-white/50 shrink-0" />
-                    }
-                    <span className={`${r.done ? 'text-white font-medium' : 'text-white/60'}`}>
-                      {r.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="flex flex-wrap gap-2 sm:shrink-0">
+            <Link to="/publish">
+              <Button size="sm" className="gap-1.5 shadow-md">
+                <Plus className="w-3.5 h-3.5" /> Publish New Book
+              </Button>
+            </Link>
+            {stats.total > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onTabChange('books')}
+                className="gap-1.5"
+              >
+                <BookOpen className="w-3.5 h-3.5" /> My Books
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
