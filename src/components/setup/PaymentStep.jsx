@@ -2,8 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ChevronLeft, ChevronRight, CreditCard, AlertCircle, Info } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CreditCard, AlertCircle, Info, Building2, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const FieldError = ({ msg }) => msg ? (
@@ -35,7 +34,7 @@ export default function PaymentStep({ data, onChange, errors, onNext, onBack }) 
       </div>
 
       {/* How royalties work */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
           <h3 className="text-sm font-semibold">How Royalties Work</h3>
         </div>
@@ -62,38 +61,42 @@ export default function PaymentStep({ data, onChange, errors, onNext, onBack }) 
       </div>
 
       {/* Payment Method */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
           <h3 className="text-sm font-semibold">Payment Method <span className="text-destructive">*</span></h3>
           <p className="text-xs text-muted-foreground mt-0.5">Choose how you'd like to receive payments</p>
         </div>
         <div className="px-5 py-5 space-y-4">
-          <RadioGroup
-            value={method}
-            onValueChange={v => onChange({ payment_method: v })}
-            className="space-y-3"
-          >
-            <label className={cn(
-              'flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 cursor-pointer transition-all',
-              method === 'bank_transfer' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
-            )}>
-              <RadioGroupItem value="bank_transfer" />
-              <div>
-                <p className="text-sm font-medium">Electronic Funds Transfer (EFT)</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Direct deposit to your bank account. Available for most countries.</p>
-              </div>
-            </label>
-            <label className={cn(
-              'flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 cursor-pointer transition-all',
-              method === 'paypal' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
-            )}>
-              <RadioGroupItem value="paypal" />
-              <div>
-                <p className="text-sm font-medium">PayPal</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Receive payments directly to your PayPal account.</p>
-              </div>
-            </label>
-          </RadioGroup>
+          <div className="space-y-2.5">
+            {[
+              { value: 'bank_transfer', label: 'Electronic Funds Transfer (EFT)', description: 'Direct deposit to your bank account. Available for most countries.', Icon: Building2 },
+              { value: 'paypal', label: 'PayPal', description: 'Receive payments directly to your PayPal account.', Icon: Wallet },
+            ].map(opt => {
+              const selected = method === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => onChange({ payment_method: opt.value })}
+                  className={cn(
+                    'w-full flex items-center gap-4 rounded-lg border px-4 py-3.5 text-left transition-all duration-150',
+                    selected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-background hover:border-primary/30 hover:bg-muted/30'
+                  )}
+                >
+                  <div className={cn('w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors', selected ? 'border-primary' : 'border-muted-foreground/30')}>
+                    {selected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                  </div>
+                  <div className={cn('w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-colors', selected ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground')}>
+                    <opt.Icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{opt.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
           {method === 'bank_transfer' && (
             <div className="mt-4 space-y-4 pt-4 border-t border-border">

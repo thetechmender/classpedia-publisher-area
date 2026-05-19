@@ -83,7 +83,7 @@ export default function AccountInfoStep({ data, onChange, errors, onNext, onBack
       </div>
 
       {/* Legal Name */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
           <h3 className="text-sm font-semibold">Legal Name</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Enter your name exactly as it appears on your government-issued ID</p>
@@ -113,7 +113,7 @@ export default function AccountInfoStep({ data, onChange, errors, onNext, onBack
       </div>
 
       {/* Address */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
           <h3 className="text-sm font-semibold">Address</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Used for royalty payments and tax purposes</p>

@@ -154,7 +154,7 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
       </div>
 
       {/* Bio */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
           <h3 className="text-sm font-semibold">Author Biography</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Write in third person. This helps readers connect with you.</p>
@@ -204,7 +204,7 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
       </div>
 
       {/* Online Presence */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
           <h3 className="text-sm font-semibold">Online Presence <span className="text-muted-foreground font-normal text-xs ml-1">(Optional)</span></h3>
           <p className="text-xs text-muted-foreground mt-0.5">Help readers find you across the web</p>

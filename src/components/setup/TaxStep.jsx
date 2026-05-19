@@ -58,7 +58,7 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
       </div>
 
       {/* Why we collect this */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm ">
         <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
           <h3 className="text-sm font-semibold">Why We Collect This</h3>
         </div>
@@ -75,7 +75,7 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
       </div>
 
       {/* US Person Status */}
-      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm ">
         <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
           <h3 className="text-sm font-semibold">US Tax Status <span className="text-destructive">*</span></h3>
           <p className="text-xs text-muted-foreground mt-0.5">Select the option that best describes your tax residency</p>
@@ -148,7 +148,7 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
 
       {/* Tax ID fields */}
       {data.us_person !== undefined && (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-card shadow-sm ">
           <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
             <h3 className="text-sm font-semibold">{isUS ? 'U.S. Tax Identification' : 'Foreign Tax Information'}</h3>
           </div>
@@ -241,7 +241,7 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
 
       {/* Preview & Sign — shown once required fields are complete */}
       {canShowPreview && (
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-border bg-card shadow-sm ">
           <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
             <h3 className="text-sm font-semibold">Preview and Sign</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -269,7 +269,7 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
             {data.esign_consent && (
               <>
                 {/* Form document preview */}
-                <div className="border border-border rounded-lg overflow-hidden text-xs">
+                <div className="border border-border rounded-lg  text-xs">
                   <div className="bg-muted/50 px-4 py-2 border-b border-border text-center text-muted-foreground font-mono text-[11px]">
                     Reference ID: {FORM_REF_ID}
                   </div>

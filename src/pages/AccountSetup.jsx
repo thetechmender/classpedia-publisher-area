@@ -153,7 +153,7 @@ export default function AccountSetup() {
 
         <SetupStepIndicator currentStep={currentStep} completedSteps={completedSteps} />
 
-        <div className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm">
+        <div className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm overflow-visible">
           {currentStep === 1 && (
             <CreateAccountStep
               data={formData}
