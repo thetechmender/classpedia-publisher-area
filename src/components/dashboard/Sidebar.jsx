@@ -25,15 +25,13 @@ const NAV_SECTIONS = [
     label: 'Earnings',
     items: [
       { id: 'royalties', label: 'Sales & Royalties', icon: TrendingUp },
-      { id: 'payments',  label: 'Payments',          icon: CreditCard },
-
+      { id: 'payments',  label: 'Payments & Tax',    icon: CreditCard },
     ]
   },
   {
     label: 'Account',
     items: [
       { id: 'profile',   label: 'Author Profile',   icon: User },
-      { id: 'tax',       label: 'Tax Info',          icon: FileText },
     ]
   },
   {

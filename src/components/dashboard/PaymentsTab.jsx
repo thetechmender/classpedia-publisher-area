@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
   DollarSign, CreditCard, AlertCircle, CheckCircle2, Clock,
-  TrendingUp, Download, Info, Banknote, Wallet,
+  TrendingUp, Download, Info, Banknote, Wallet, FileText,
   ArrowDownToLine, BarChart3, CalendarDays, ChevronRight
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -38,8 +39,8 @@ function StatCard({ icon: Icon, label, value, sub, color = 'text-foreground', ac
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'royalties', label: 'By Book' },
-
   { id: 'method', label: 'Payment Method' },
+  { id: 'tax', label: 'Tax Info' },
 ];
 
 export default function PaymentsTab({ books, authorProfile }) {
@@ -330,9 +331,16 @@ export default function PaymentsTab({ books, authorProfile }) {
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* TAX INFO */}
+      {tab === 'tax' && (
+        <div className="space-y-4">
           <div className="bg-card border rounded-xl overflow-hidden">
             <div className="px-5 py-4 border-b bg-secondary/30">
-              <h3 className="font-semibold text-sm">Tax Information</h3>
+              <h3 className="font-semibold text-sm">Tax Profile</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Your tax information as submitted during account setup.</p>
             </div>
             <div className="divide-y">
               {[
@@ -347,8 +355,27 @@ export default function PaymentsTab({ books, authorProfile }) {
                 </div>
               ))}
             </div>
+            {authorProfile?.us_person !== undefined && (
+              <div className="px-5 py-4 border-t flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">IRS Form {authorProfile.us_person ? 'W-9' : 'W-8BEN'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Signed during account setup{authorProfile.esignature ? ` · Signed by ${authorProfile.esignature}` : ' · On file'}
+                    </p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0" onClick={() => toast.info('Document download is available via Classpedia support.')}>
+                  <Download className="w-3.5 h-3.5" /> Download Form
+                </Button>
+              </div>
+            )}
             <div className="px-5 py-3 border-t bg-secondary/10">
-              <p className="text-xs text-muted-foreground">Classpedia may withhold taxes based on your country's treaty with the US. Review your tax form annually.</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                Tax information is legally sensitive. Contact support to make any changes.
+              </p>
             </div>
           </div>
         </div>
