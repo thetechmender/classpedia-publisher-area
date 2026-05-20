@@ -69,7 +69,26 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated }) {
   const [editData, setEditData] = useState({});
 
   if (!authorProfile) return (
-    <div className="text-center py-16 text-muted-foreground text-sm">No profile found.</div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold font-serif">Author Profile</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">Your public identity, contact details, and account information.</p>
+      </div>
+      <Link to="/account-setup">
+        <div className="flex items-center justify-between gap-4 bg-primary/5 border-2 border-primary/20 border-dashed rounded-2xl px-6 py-8 hover:bg-primary/10 transition-colors cursor-pointer text-center flex-col">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+            <User className="w-7 h-7 text-primary" />
+          </div>
+          <div>
+            <p className="text-base font-bold">Complete your account setup</p>
+            <p className="text-sm text-muted-foreground mt-1">Set up your payment details, tax info, and author bio to start publishing and earning royalties.</p>
+          </div>
+          <Button className="gap-2 mt-2">
+            <ArrowRight className="w-4 h-4" /> Start Account Setup
+          </Button>
+        </div>
+      </Link>
+    </div>
   );
 
   const startEdit = (section) => {

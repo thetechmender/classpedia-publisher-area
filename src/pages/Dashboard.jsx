@@ -42,6 +42,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (isProfileFetched && authorProfiles && authorProfiles.length === 0) {
+      // Only redirect if they have truly never set up (no profile record at all)
       navigate('/account-setup');
     }
   }, [isProfileFetched, authorProfiles, navigate]);
