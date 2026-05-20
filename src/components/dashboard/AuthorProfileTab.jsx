@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   User, Mail, Phone, MapPin, Globe, CreditCard, FileText,
   Pencil, Check, X, AlertCircle, Shield, Twitter,
-  Instagram, Facebook, Linkedin, Youtube, CheckCircle2, Clock, BookOpen
+  Instagram, Facebook, Linkedin, Youtube, CheckCircle2, Clock, BookOpen, ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -110,6 +111,24 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated }) {
         <h2 className="text-xl font-bold font-serif">Author Profile</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Your public identity, contact details, and account information.</p>
       </div>
+
+      {/* Account Setup CTA — shown when setup is incomplete */}
+      {!authorProfile.setup_complete && (
+        <Link to="/account-setup">
+          <div className="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 hover:bg-amber-100 transition-colors cursor-pointer">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
+                <Clock className="w-4 h-4 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-amber-900">Complete your account setup</p>
+                <p className="text-xs text-amber-700 mt-0.5">Add your payment details, tax info, and author bio to start earning royalties.</p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-amber-600 shrink-0" />
+          </div>
+        </Link>
+      )}
 
       {/* Identity Hero */}
       <div className="bg-card border rounded-2xl overflow-hidden">
