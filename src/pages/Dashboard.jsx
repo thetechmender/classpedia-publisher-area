@@ -36,7 +36,7 @@ export default function Dashboard() {
 
   const { data: authorProfiles, isFetched: isProfileFetched } = useQuery({
     queryKey: ['author-profile'],
-    queryFn: () => base44.entities.AuthorProfile.filter({ setup_complete: true }),
+    queryFn: () => base44.entities.AuthorProfile.list('-created_date', 1),
     staleTime: 30_000,
   });
 
