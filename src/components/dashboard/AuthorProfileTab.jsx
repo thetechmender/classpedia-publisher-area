@@ -131,23 +131,40 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated }) {
         <p className="text-sm text-muted-foreground mt-0.5">Your public identity, contact details, and account information.</p>
       </div>
 
-      {/* Account Setup CTA — shown when setup is incomplete */}
-      {!authorProfile.setup_complete && (
-        <Link to="/account-setup">
-          <div className="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 hover:bg-amber-100 transition-colors cursor-pointer">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
-                <Clock className="w-4 h-4 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-amber-900">Complete your account setup</p>
-                <p className="text-xs text-amber-700 mt-0.5">Add your payment details, tax info, and author bio to start earning royalties.</p>
-              </div>
+      {/* Account Setup CTA — always visible */}
+      <Link to="/account-setup">
+        <div className={cn(
+          "flex items-center justify-between gap-4 rounded-xl px-5 py-4 transition-colors cursor-pointer border",
+          authorProfile.setup_complete
+            ? "bg-secondary/40 border-border hover:bg-secondary/70"
+            : "bg-amber-50 border-amber-200 hover:bg-amber-100"
+        )}>
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border",
+              authorProfile.setup_complete
+                ? "bg-secondary border-border"
+                : "bg-amber-100 border-amber-200"
+            )}>
+              {authorProfile.setup_complete
+                ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                : <Clock className="w-4 h-4 text-amber-600" />
+              }
             </div>
-            <ArrowRight className="w-4 h-4 text-amber-600 shrink-0" />
+            <div>
+              <p className={cn("text-sm font-semibold", authorProfile.setup_complete ? "text-foreground" : "text-amber-900")}>
+                {authorProfile.setup_complete ? "Review / update account setup" : "Complete your account setup"}
+              </p>
+              <p className={cn("text-xs mt-0.5", authorProfile.setup_complete ? "text-muted-foreground" : "text-amber-700")}>
+                {authorProfile.setup_complete
+                  ? "Payment, tax info, and author bio settings."
+                  : "Add your payment details, tax info, and author bio to start earning royalties."}
+              </p>
+            </div>
           </div>
-        </Link>
-      )}
+          <ArrowRight className={cn("w-4 h-4 shrink-0", authorProfile.setup_complete ? "text-muted-foreground" : "text-amber-600")} />
+        </div>
+      </Link>
 
       {/* Identity Hero */}
       <div className="bg-card border rounded-2xl overflow-hidden">
