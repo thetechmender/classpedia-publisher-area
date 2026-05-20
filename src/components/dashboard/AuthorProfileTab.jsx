@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   User, Mail, Phone, MapPin, Globe, CreditCard, FileText,
   Pencil, Check, X, AlertCircle, Shield, Twitter,
-  Instagram, Facebook, Linkedin, Youtube, CheckCircle2, Clock, BookOpen, ArrowRight
+  Instagram, Facebook, Linkedin, Youtube, CheckCircle2, Clock, BookOpen, ArrowRight, Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,7 +63,7 @@ const ReadOnly = () => (
   </span>
 );
 
-export default function AuthorProfileTab({ authorProfile, onProfileUpdated }) {
+export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onShowNotifications }) {
   const [editing, setEditing] = useState(null); // which section is editing: 'bio' | 'contact' | 'social'
   const [saving, setSaving] = useState(false);
   const [editData, setEditData] = useState({});
@@ -126,9 +126,19 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-xl font-bold font-serif">Author Profile</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Your public identity, contact details, and account information.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold font-serif">Author Profile</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">Your public identity, contact details, and account information.</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 gap-2"
+          onClick={onShowNotifications}
+        >
+          <Bell className="w-4 h-4" /> Notifications
+        </Button>
       </div>
 
       {/* Account Setup CTA — always visible */}

@@ -29,7 +29,8 @@ const NAV_SECTIONS = [
   {
     label: 'Account',
     items: [
-      { id: 'profile',   label: 'Author Profile',   icon: User },
+      { id: 'profile',        label: 'Author Profile',   icon: User },
+      { id: 'notifications',  label: 'Notifications',    icon: Bell },
     ]
   },
   {
@@ -88,7 +89,7 @@ export default function Sidebar({ activeTab, onTabChange, authorProfile, books =
                 >
                   <Icon className="w-4 h-4 shrink-0" />
                   <span className="flex-1">{label}</span>
-                  {id === 'overview' && notifCount > 0 && (
+                  {(id === 'overview' || id === 'notifications') && notifCount > 0 && (
                     <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center shrink-0">
                       {notifCount}
                     </span>

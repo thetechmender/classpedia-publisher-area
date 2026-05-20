@@ -17,6 +17,7 @@ import ReviewsTab from '@/components/dashboard/ReviewsTab';
 import RoyaltiesTab from '@/components/dashboard/RoyaltiesTab';
 
 import SupportTab from '@/components/dashboard/SupportTab';
+import NotificationsTab from '@/components/dashboard/NotificationsTab';
 
 const TAB_ALIAS = {};
 
@@ -132,7 +133,8 @@ export default function Dashboard() {
           {resolvedTab === 'royalties' && <RoyaltiesTab books={books} />}
           {resolvedTab === 'payments'  && <PaymentsTab books={books} authorProfile={authorProfile} />}
 
-          {resolvedTab === 'profile'   && <AuthorProfileTab authorProfile={authorProfile} onProfileUpdated={() => queryClient.invalidateQueries({ queryKey: ['author-profile'] })} />}
+          {resolvedTab === 'profile'   && <AuthorProfileTab authorProfile={authorProfile} onProfileUpdated={() => queryClient.invalidateQueries({ queryKey: ['author-profile'] })} onShowNotifications={() => handleTabChange('notifications')} />}
+          {resolvedTab === 'notifications' && <NotificationsTab books={books} authorProfile={authorProfile} onTabChange={handleTabChange} />}
           {resolvedTab === 'support'   && <SupportTab />}
         </main>
 
