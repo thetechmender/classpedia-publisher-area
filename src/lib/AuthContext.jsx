@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-import { appParams } from '@/lib/app-params';
-import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
+import { isTokenExpired, clearAuthAndRedirect } from '@/services/api';
+import { CredentialService } from '@/services/credential.service';
 
 const AuthContext = createContext();
 
@@ -9,10 +8,10 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(true);
+  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
+  const [isProfileCompleted, setIsProfileCompleted] = useState(false);
 
   useEffect(() => {
     checkAppState();
@@ -20,116 +19,115 @@ export const AuthProvider = ({ children }) => {
 
   const checkAppState = async () => {
     try {
-      setIsLoadingPublicSettings(true);
+      setIsLoadingAuth(true);
       setAuthError(null);
       
-      // First, check app public settings (with token if available)
-      // This will tell us if auth is required, user not registered, etc.
-      const appClient = createAxiosClient({
-        baseURL: `/api/apps/public`,
-        headers: {
-          'X-App-Id': appParams.appId
-        },
-        token: appParams.token, // Include token if available
-        interceptResponses: true
-      });
+      const token = localStorage.getItem('access_token');
       
-      try {
-        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
-        setAppPublicSettings(publicSettings);
-        
-        // If we got the app public settings successfully, check if user is authenticated
-        if (appParams.token) {
-          await checkUserAuth();
-        } else {
-          setIsLoadingAuth(false);
-          setIsAuthenticated(false);
-          setAuthChecked(true);
-        }
-        setIsLoadingPublicSettings(false);
-      } catch (appError) {
-        console.error('App state check failed:', appError);
-        
-        // Handle app-level errors
-        if (appError.status === 403 && appError.data?.extra_data?.reason) {
-          const reason = appError.data.extra_data.reason;
-          if (reason === 'auth_required') {
-            setAuthError({
-              type: 'auth_required',
-              message: 'Authentication required'
-            });
-          } else if (reason === 'user_not_registered') {
-            setAuthError({
-              type: 'user_not_registered',
-              message: 'User not registered for this app'
-            });
-          } else {
-            setAuthError({
-              type: reason,
-              message: appError.message
-            });
-          }
-        } else {
-          setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
-          });
-        }
-        setIsLoadingPublicSettings(false);
+      if (!token) {
         setIsLoadingAuth(false);
+        setIsAuthenticated(false);
+        setAuthChecked(true);
+        return;
       }
+
+      // Check if token is expired
+      if (isTokenExpired()) {
+        clearAuthAndRedirect();
+        return;
+      }
+
+      // Token exists and is valid, set authenticated
+      setIsAuthenticated(true);
+      
+      // Load user data from localStorage
+      const publisherId = localStorage.getItem('publisher_id');
+      const publisherFullName = localStorage.getItem('publisher_full_name');
+      const publisherEmail = localStorage.getItem('publisher_email');
+      const profileCompleted = localStorage.getItem('is_profile_completed') === 'true';
+      
+      setUser({
+        publisherId: publisherId ? parseInt(publisherId) : null,
+        publisherFullName,
+        publisherEmail,
+      });
+      setIsProfileCompleted(profileCompleted);
+      setIsLoadingAuth(false);
+      setAuthChecked(true);
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error('Auth check failed:', error);
       setAuthError({
         type: 'unknown',
         message: error.message || 'An unexpected error occurred'
       });
-      setIsLoadingPublicSettings(false);
       setIsLoadingAuth(false);
+      setAuthChecked(true);
     }
   };
 
-  const checkUserAuth = async () => {
+  const login = async (usernameOrEmail, password) => {
     try {
-      // Now check if the user is authenticated
-      setIsLoadingAuth(true);
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      const response = await CredentialService.login({ usernameOrEmail, password });
+      
+      if (!response.isSuccess) {
+        throw new Error(response.errorMessage || 'Login failed');
+      }
+
+      const { token, publisherId, tokenExpirationTime, publisherFullName, publisherEmail, isProfileCompleted: profileCompleted } = response.data;
+      
+      // Save to localStorage
+      localStorage.setItem('access_token', token);
+      localStorage.setItem('publisher_id', publisherId.toString());
+      localStorage.setItem('token_expiration_time', tokenExpirationTime);
+      localStorage.setItem('publisher_full_name', publisherFullName);
+      localStorage.setItem('publisher_email', publisherEmail);
+      localStorage.setItem('is_profile_completed', profileCompleted.toString());
+      
+      // Update state
+      setUser({
+        publisherId,
+        publisherFullName,
+        publisherEmail,
+      });
       setIsAuthenticated(true);
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
-    } catch (error) {
-      console.error('User auth check failed:', error);
-      setIsLoadingAuth(false);
-      setIsAuthenticated(false);
+      setIsProfileCompleted(profileCompleted);
       setAuthChecked(true);
       
-      // If user auth fails, it might be an expired token
-      if (error.status === 401 || error.status === 403) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
-      }
+      return { success: true, isProfileCompleted: profileCompleted };
+    } catch (error) {
+      console.error('Login failed:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.errorMessage || error.message || 'Login failed' 
+      };
     }
   };
 
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
+    setIsProfileCompleted(false);
+    
+    // Clear localStorage
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('publisher_id');
+    localStorage.removeItem('token_expiration_time');
+    localStorage.removeItem('publisher_full_name');
+    localStorage.removeItem('publisher_email');
+    localStorage.removeItem('is_profile_completed');
     
     if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
-    } else {
-      // Just remove the token without redirect
-      base44.auth.logout();
+      window.location.href = '/login';
     }
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    window.location.href = '/login';
+  };
+
+  const updateProfileCompleted = (completed) => {
+    setIsProfileCompleted(completed);
+    localStorage.setItem('is_profile_completed', completed.toString());
   };
 
   return (
@@ -139,12 +137,13 @@ export const AuthProvider = ({ children }) => {
       isLoadingAuth,
       isLoadingPublicSettings,
       authError,
-      appPublicSettings,
       authChecked,
+      isProfileCompleted,
+      login,
       logout,
       navigateToLogin,
-      checkUserAuth,
-      checkAppState
+      checkAppState,
+      updateProfileCompleted
     }}>
       {children}
     </AuthContext.Provider>

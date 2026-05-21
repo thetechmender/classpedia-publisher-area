@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, FileText, AlertCircle, Info, Shield, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, AlertCircle, Info, Shield, CheckCircle2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const FieldError = ({ msg }) => msg ? (
@@ -34,15 +34,15 @@ const generateRefId = () => {
 
 const FORM_REF_ID = generateRefId();
 
-export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
-  const isUS = data.us_person === true;
+export default function TaxStep({ data, onChange, errors, onNext, onBack, saving = false }) {
+  const isUS = data.usPerson === true;
   const formName = isUS ? 'W-9' : 'W-8BEN';
 
   // Show preview+sign block once required fields are filled
-  const canShowPreview = data.us_person !== undefined && (
+  const canShowPreview = data.usPerson !== undefined && (
     isUS
-      ? (data.tax_id_type && data.tax_id?.trim())
-      : (data.tax_country)
+      ? (data.taxIdType && data.taxId?.trim())
+      : (data.taxCountry)
   );
 
   return (
@@ -95,12 +95,12 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
               form: 'W-8BEN',
             },
           ].map(opt => {
-            const selected = data.us_person === opt.value;
+            const selected = data.usPerson === opt.value;
             return (
               <button
                 key={String(opt.value)}
                 type="button"
-                onClick={() => onChange({ us_person: opt.value, tax_id_type: undefined, tax_id: '', tax_country: '' })}
+                onClick={() => onChange({ usPerson: opt.value, taxIdType: undefined, taxId: '', taxCountry: '' })}
                 className={cn(
                   'w-full flex items-center gap-4 rounded-lg border px-4 py-3.5 text-left transition-all duration-150',
                   selected
@@ -132,12 +132,12 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
               </button>
             );
           })}
-          <FieldError msg={errors.us_person} />
+          <FieldError msg={errors.usPerson} />
         </div>
       </div>
 
       {/* Tax ID fields */}
-      {data.us_person !== undefined && (
+      {data.usPerson !== undefined && (
         <div className="rounded-xl border border-border bg-card shadow-sm ">
           <div className="px-5 py-3.5 bg-secondary/40 border-b border-border">
             <h3 className="text-sm font-semibold">{isUS ? 'U.S. Tax Identification' : 'Foreign Tax Information'}</h3>
@@ -152,12 +152,12 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
                       { value: 'ssn', label: 'SSN', description: 'Social Security Number' },
                       { value: 'ein', label: 'EIN', description: 'Employer Identification Number' },
                     ].map(opt => {
-                      const sel = data.tax_id_type === opt.value;
+                      const sel = data.taxIdType === opt.value;
                       return (
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => onChange({ tax_id_type: opt.value })}
+                          onClick={() => onChange({ taxIdType: opt.value })}
                           className={cn(
                             'flex-1 flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all duration-150',
                             sel ? 'border-primary bg-primary/5' : 'border-border bg-background hover:border-primary/40'
@@ -177,20 +177,20 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
                       );
                     })}
                   </div>
-                  <FieldError msg={errors.tax_id_type} />
+                  <FieldError msg={errors.taxIdType} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>
-                    {data.tax_id_type === 'ein' ? 'Employer Identification Number (EIN)' : 'Social Security Number (SSN)'}
+                    {data.taxIdType === 'ein' ? 'Employer Identification Number (EIN)' : 'Social Security Number (SSN)'}
                     {' '}<span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    value={data.tax_id || ''}
-                    onChange={e => onChange({ tax_id: e.target.value })}
-                    placeholder={data.tax_id_type === 'ein' ? 'XX-XXXXXXX' : 'XXX-XX-XXXX'}
-                    className={errors.tax_id ? 'border-destructive' : ''}
+                    value={data.taxId || ''}
+                    onChange={e => onChange({ taxId: e.target.value })}
+                    placeholder={data.taxIdType === 'ein' ? 'XX-XXXXXXX' : 'XXX-XX-XXXX'}
+                    className={errors.taxId ? 'border-destructive' : ''}
                   />
-                  <FieldError msg={errors.tax_id} />
+                  <FieldError msg={errors.taxId} />
                 </div>
                 <InfoBox>
                   Your SSN/EIN is encrypted using bank-level security. It is used solely for IRS reporting and will never be shared.
@@ -200,21 +200,21 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
               <>
                 <div className="space-y-1.5">
                   <Label>Country of Tax Residence <span className="text-destructive">*</span></Label>
-                  <Select value={data.tax_country || ''} onValueChange={v => onChange({ tax_country: v })}>
-                    <SelectTrigger className={errors.tax_country ? 'border-destructive' : ''}>
+                  <Select value={data.taxCountry || ''} onValueChange={v => onChange({ taxCountry: v })}>
+                    <SelectTrigger className={errors.taxCountry ? 'border-destructive' : ''}>
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent>
                       {TAX_COUNTRIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <FieldError msg={errors.tax_country} />
+                  <FieldError msg={errors.taxCountry} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Foreign Tax ID (if applicable)</Label>
                   <Input
-                    value={data.tax_id || ''}
-                    onChange={e => onChange({ tax_id: e.target.value })}
+                    value={data.taxId || ''}
+                    onChange={e => onChange({ taxId: e.target.value })}
                     placeholder="Your country's tax ID"
                   />
                   <p className="text-xs text-muted-foreground mt-1">Leave blank if you don't have a foreign tax ID.</p>
@@ -244,19 +244,19 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
             <div className="space-y-1">
               <label className="flex items-start gap-3 cursor-pointer">
                 <Checkbox
-                  checked={!!data.esign_consent}
-                  onCheckedChange={v => onChange({ esign_consent: !!v, ...(!v && { esignature: '', tax_certified: false }) })}
+                  checked={!!data.esignConsent}
+                  onCheckedChange={v => onChange({ esignConsent: !!v, ...(!v && { esignature: '', taxCertified: false }) })}
                   className="mt-0.5 shrink-0"
                 />
                 <p className="text-sm leading-relaxed">
                   I consent to provide an electronic signature for the information provided as per IRS Form <strong>{formName}</strong>
                 </p>
               </label>
-              <FieldError msg={errors.esign_consent} />
+              <FieldError msg={errors.esignConsent} />
             </div>
 
             {/* Step 2: Form preview + signature — only after consent */}
-            {data.esign_consent && (
+            {data.esignConsent && (
               <>
                 {/* Form document preview */}
                 <div className="border border-border rounded-lg  text-xs">
@@ -286,8 +286,8 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
                 <div className="pt-2 border-t border-border space-y-1">
                   <label className="flex items-start gap-3 cursor-pointer">
                     <Checkbox
-                      checked={!!data.tax_certified}
-                      onCheckedChange={v => onChange({ tax_certified: !!v })}
+                      checked={!!data.taxCertified}
+                      onCheckedChange={v => onChange({ taxCertified: !!v })}
                       className="mt-0.5 shrink-0"
                     />
                     <p className="text-xs text-muted-foreground leading-relaxed">
@@ -295,10 +295,10 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
                       I understand that any false statement may subject me to penalties.
                     </p>
                   </label>
-                  <FieldError msg={errors.tax_certified} />
+                  <FieldError msg={errors.taxCertified} />
                 </div>
 
-                {data.tax_certified && data.esignature?.trim() && (
+                {data.taxCertified && data.esignature?.trim() && (
                   <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
                     <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
                     <p className="text-xs text-green-700 font-medium">Your tax form is signed and ready to submit.</p>
@@ -314,8 +314,12 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack }) {
         <Button variant="outline" onClick={onBack} className="gap-2">
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
-        <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20">
-          Complete Setup <ChevronRight className="w-4 h-4" />
+        <Button onClick={onNext} disabled={saving} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20">
+          {saving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+          ) : (
+            <>Complete Setup <ChevronRight className="w-4 h-4" /></>
+          )}
         </Button>
       </div>
     </div>

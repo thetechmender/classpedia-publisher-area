@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Mail, Phone, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ShieldCheck } from 'lucide-react';
+import { User, Mail, Phone, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, ShieldCheck, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -99,7 +99,7 @@ function EmailVerifyScreen({ email, onVerified, onChangeEmail }) {
 }
 
 // ── Sub-screen: Phone verification ───────────────────────────────────────────
-function PhoneVerifyScreen({ phone, onVerified, onChangeNumber }) {
+function PhoneVerifyScreen({ phone, onVerified, onChangeNumber, saving = false }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [resendSeconds, setResendSeconds] = useState(28);
@@ -140,8 +140,16 @@ function PhoneVerifyScreen({ phone, onVerified, onChangeNumber }) {
         {error && <p className="flex items-center justify-center gap-1 text-xs text-destructive mt-2"><AlertCircle className="w-3 h-3" />{error}</p>}
       </div>
 
-      <Button onClick={handleVerify} className="w-full h-11 gap-2 text-sm font-medium">
-        <ShieldCheck className="w-4 h-4" /> Create your account
+      <Button onClick={handleVerify} disabled={saving} className="w-full h-11 gap-2 text-sm font-medium">
+        {saving ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" /> Creating account...
+          </>
+        ) : (
+          <>
+            <ShieldCheck className="w-4 h-4" /> Create your account
+          </>
+        )}
       </Button>
       <p className="text-sm text-muted-foreground">
         {resendSeconds > 0
@@ -159,30 +167,46 @@ function PhoneVerifyScreen({ phone, onVerified, onChangeNumber }) {
 }
 
 // ── Main Create Account form ──────────────────────────────────────────────────
-export default function CreateAccountStep({ data, onChange, onNext }) {
+export default function CreateAccountStep({ data, onChange, onNext, saving = false, isExistingUser = false }) {
   const [screen, setScreen] = useState('form'); // 'form' | 'email_verify' | 'phone_verify'
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({
+    publisherFullName: '',
+    publisherEmail: '',
+    publisherPhone: '',
+    publisherPassword: '',
+    publisherConfirmPassword: ''
+  });
 
   const validate = () => {
     const e = {};
-    if (!data.full_name?.trim()) e.full_name = 'Your name is required';
-    if (!data.email?.trim()) e.email = 'Email address is required';
-    else if (!/\S+@\S+\.\S+/.test(data.email)) e.email = 'Enter a valid email address';
-    if (!data.phone?.trim()) e.phone = 'Mobile number is required';
-    if (!data.password?.trim()) e.password = 'Password is required';
-    else if (data.password.length < 8) e.password = 'Password must be at least 8 characters';
-    if (!data.confirm_password?.trim()) e.confirm_password = 'Please re-enter your password';
-    else if (data.password !== data.confirm_password) e.confirm_password = 'Passwords do not match';
+    if (!data.publisherFullName?.trim()) e.publisherFullName = 'Your name is required';
+    if (!data.publisherEmail?.trim()) e.publisherEmail = 'Email address is required';
+    else if (!/\S+@\S+\.\S+/.test(data.publisherEmail)) e.publisherEmail = 'Enter a valid email address';
+    if (!data.publisherPhone?.trim()) e.publisherPhone = 'Mobile number is required';
+    // Password is only required for new users (not existing users)
+    if (!isExistingUser) {
+      if (!data.publisherPassword?.trim()) e.publisherPassword = 'Password is required';
+      else if (data.publisherPassword.length < 8) e.publisherPassword = 'Password must be at least 8 characters';
+      if (!data.publisherConfirmPassword?.trim()) e.publisherConfirmPassword = 'Please re-enter your password';
+      else if (data.publisherPassword !== data.publisherConfirmPassword) e.publisherConfirmPassword = 'Passwords do not match';
+    } else if (data.publisherPassword) {
+      // If existing user provides a new password, validate it
+      if (data.publisherPassword.length < 8) e.publisherPassword = 'Password must be at least 8 characters';
+      if (data.publisherPassword !== data.publisherConfirmPassword) e.publisherConfirmPassword = 'Passwords do not match';
+    }
     return e;
   };
-
   const handleContinue = () => {
     const e = validate();
     if (Object.keys(e).length > 0) { setErrors(e); return; }
-    setErrors({});
-    setScreen('email_verify');
+    // Skip verification if user already has account data (existing user)
+    if (isExistingUser) {
+      onNext();
+    } else {
+      setScreen('email_verify');
+    }
   };
 
   const handleEmailVerified = () => setScreen('phone_verify');
@@ -191,7 +215,7 @@ export default function CreateAccountStep({ data, onChange, onNext }) {
   if (screen === 'email_verify') {
     return (
       <EmailVerifyScreen
-        email={data.email}
+        email={data.publisherEmail}
         onVerified={handleEmailVerified}
         onChangeEmail={() => setScreen('form')}
       />
@@ -201,9 +225,10 @@ export default function CreateAccountStep({ data, onChange, onNext }) {
   if (screen === 'phone_verify') {
     return (
       <PhoneVerifyScreen
-        phone={data.phone}
+        phone={data.publisherPhone}
         onVerified={handlePhoneVerified}
         onChangeNumber={() => setScreen('form')}
+        saving={saving}
       />
     );
   }
@@ -221,12 +246,12 @@ export default function CreateAccountStep({ data, onChange, onNext }) {
           <User className="w-3.5 h-3.5 text-muted-foreground" /> Your name <span className="text-destructive">*</span>
         </Label>
         <Input
-          value={data.full_name || ''}
-          onChange={e => { onChange({ full_name: e.target.value }); setErrors(p => ({ ...p, full_name: '' })); }}
+          value={data.publisherFullName || ''}
+          onChange={e => { onChange({ publisherFullName: e.target.value }); setErrors(p => ({ ...p, publisherFullName: '' })); }}
           placeholder="First and last name"
-          className={cn('bg-background', errors.full_name && 'border-destructive')}
+          className={cn('bg-background', errors.publisherFullName && 'border-destructive')}
         />
-        <FieldError msg={errors.full_name} />
+        <FieldError msg={errors.publisherFullName} />
       </div>
 
       {/* Email */}
@@ -236,12 +261,12 @@ export default function CreateAccountStep({ data, onChange, onNext }) {
         </Label>
         <Input
           type="email"
-          value={data.email || ''}
-          onChange={e => { onChange({ email: e.target.value }); setErrors(p => ({ ...p, email: '' })); }}
+          value={data.publisherEmail || ''}
+          onChange={e => { onChange({ publisherEmail: e.target.value }); setErrors(p => ({ ...p, publisherEmail: '' })); }}
           placeholder="you@example.com"
-          className={cn('bg-background', errors.email && 'border-destructive')}
+          className={cn('bg-background', errors.publisherEmail && 'border-destructive')}
         />
-        <FieldError msg={errors.email} />
+        <FieldError msg={errors.publisherEmail} />
       </div>
 
       {/* Phone */}
@@ -251,55 +276,58 @@ export default function CreateAccountStep({ data, onChange, onNext }) {
         </Label>
         <Input
           type="tel"
-          value={data.phone || ''}
-          onChange={e => { onChange({ phone: e.target.value }); setErrors(p => ({ ...p, phone: '' })); }}
+          value={data.publisherPhone || ''}
+          onChange={e => { onChange({ publisherPhone: e.target.value }); setErrors(p => ({ ...p, publisherPhone: '' })); }}
           placeholder="+1 (555) 000-0000"
-          className={cn('bg-background', errors.phone && 'border-destructive')}
+          className={cn('bg-background', errors.publisherPhone && 'border-destructive')}
         />
         <p className="text-xs text-muted-foreground mt-1">Used for account security and payment notifications.</p>
-        <FieldError msg={errors.phone} />
+        <FieldError msg={errors.publisherPhone} />
       </div>
 
       {/* Password */}
       <div>
         <Label className="text-sm font-medium mb-1.5 flex items-center gap-1.5">
-          <Lock className="w-3.5 h-3.5 text-muted-foreground" /> Password <span className="text-destructive">*</span>
+          <Lock className="w-3.5 h-3.5 text-muted-foreground" /> Password {!isExistingUser && <span className="text-destructive">*</span>}
         </Label>
         <div className="relative">
           <Input
             type={showPassword ? 'text' : 'password'}
-            value={data.password || ''}
-            onChange={e => { onChange({ password: e.target.value }); setErrors(p => ({ ...p, password: '' })); }}
-            placeholder="At least 8 characters"
-            className={cn('bg-background pr-10', errors.password && 'border-destructive')}
+            value={data.publisherPassword || ''}
+            onChange={e => { onChange({ publisherPassword: e.target.value }); setErrors(p => ({ ...p, publisherPassword: '' })); }}
+            placeholder={isExistingUser ? "Leave blank to keep current password" : "At least 8 characters"}
+            className={cn('bg-background pr-10', errors.publisherPassword && 'border-destructive')}
           />
           <button type="button" onClick={() => setShowPassword(v => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
-        <FieldError msg={errors.password} />
+        {isExistingUser && !data.publisherPassword && (
+          <p className="text-xs text-muted-foreground mt-1">Your password is already set. Enter a new password only if you want to change it.</p>
+        )}
+        <FieldError msg={errors.publisherPassword} />
       </div>
 
       {/* Confirm Password */}
       <div>
         <Label className="text-sm font-medium mb-1.5 flex items-center gap-1.5">
-          <Lock className="w-3.5 h-3.5 text-muted-foreground" /> Re-enter password <span className="text-destructive">*</span>
+          <Lock className="w-3.5 h-3.5 text-muted-foreground" /> Re-enter password {!isExistingUser && <span className="text-destructive">*</span>}
         </Label>
         <div className="relative">
           <Input
             type={showConfirm ? 'text' : 'password'}
-            value={data.confirm_password || ''}
-            onChange={e => { onChange({ confirm_password: e.target.value }); setErrors(p => ({ ...p, confirm_password: '' })); }}
-            placeholder="Repeat your password"
-            className={cn('bg-background pr-10', errors.confirm_password && 'border-destructive')}
+            value={data.publisherConfirmPassword || ''}
+            onChange={e => { onChange({ publisherConfirmPassword: e.target.value }); setErrors(p => ({ ...p, publisherConfirmPassword: '' })); }}
+            placeholder={isExistingUser ? "Leave blank to keep current password" : "Repeat your password"}
+            className={cn('bg-background pr-10', errors.publisherConfirmPassword && 'border-destructive')}
           />
           <button type="button" onClick={() => setShowConfirm(v => !v)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
             {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
-        <FieldError msg={errors.confirm_password} />
+        <FieldError msg={errors.publisherConfirmPassword} />
       </div>
 
       <p className="text-xs text-muted-foreground">

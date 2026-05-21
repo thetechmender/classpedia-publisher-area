@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronLeft, ChevronRight, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube, Tag, Search, X, Plus, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube, Tag, Search, X, Plus, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BOOK_CATEGORIES = [
@@ -138,8 +138,8 @@ function CategoryPicker({ selected, onChange }) {
   );
 }
 
-export default function AuthorProfileStep({ data, onChange, errors, onSubmit, onNext, onBack, saving }) {
-  const bioLen = (data.author_bio || '').length;
+export default function AuthorProfileStep({ data, onChange, errors, onSubmit = undefined, onNext, onBack, saving = false }) {
+  const bioLen = (data.authorBio || '').length;
 
   return (
     <div className="space-y-6">
@@ -161,14 +161,14 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
         </div>
         <div className="px-5 py-5 space-y-3">
           <Textarea
-            value={data.author_bio || ''}
-            onChange={e => onChange({ author_bio: e.target.value })}
+            value={data.authorBio || ''}
+            onChange={e => onChange({ authorBio: e.target.value })}
             placeholder="e.g., Jane Smith is an award-winning author of mystery novels. She lives in Portland, Oregon with her two cats and a very old typewriter..."
-            className={cn('min-h-[140px] resize-none', errors.author_bio ? 'border-destructive' : '')}
+            className={cn('min-h-[140px] resize-none', errors.authorBio ? 'border-destructive' : '')}
             maxLength={2000}
           />
           <div className="flex justify-between">
-            <FieldError msg={errors.author_bio} />
+            <FieldError msg={errors.authorBio} />
             <p className={cn('text-xs ml-auto', bioLen > 1800 ? 'text-destructive' : 'text-muted-foreground')}>
               {bioLen} / 2000
             </p>
@@ -190,15 +190,15 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {[0, 1, 2].map(i => (
-              <div key={i} className={cn('w-2 h-2 rounded-full transition-all duration-200', i < (data.preferred_categories || []).length ? 'bg-primary' : 'bg-border')} />
+              <div key={i} className={cn('w-2 h-2 rounded-full transition-all duration-200', i < (data.preferredCategories || []).length ? 'bg-primary' : 'bg-border')} />
             ))}
-            <span className="text-xs text-muted-foreground ml-1">{(data.preferred_categories || []).length}/3</span>
+            <span className="text-xs text-muted-foreground ml-1">{(data.preferredCategories || []).length}/3</span>
           </div>
         </div>
         <div className="px-5 py-4">
           <CategoryPicker
-            selected={data.preferred_categories || []}
-            onChange={cats => onChange({ preferred_categories: cats })}
+            selected={data.preferredCategories || []}
+            onChange={cats => onChange({ preferredCategories: cats })}
           />
         </div>
       </div>
@@ -230,8 +230,8 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
               <Twitter className="w-4 h-4 text-[#1DA1F2] shrink-0" />
               <span className="text-xs text-muted-foreground shrink-0">x.com/</span>
               <Input
-                value={data.twitter_handle || ''}
-                onChange={e => onChange({ twitter_handle: e.target.value.replace(/^@/, '') })}
+                value={data.twitterHandle || ''}
+                onChange={e => onChange({ twitterHandle: e.target.value.replace(/^@/, '') })}
                 placeholder="username"
                 className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 shadow-none"
               />
@@ -241,8 +241,8 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
               <Instagram className="w-4 h-4 text-[#E1306C] shrink-0" />
               <span className="text-xs text-muted-foreground shrink-0">instagram.com/</span>
               <Input
-                value={data.instagram_handle || ''}
-                onChange={e => onChange({ instagram_handle: e.target.value.replace(/^@/, '') })}
+                value={data.instagramHandle || ''}
+                onChange={e => onChange({ instagramHandle: e.target.value.replace(/^@/, '') })}
                 placeholder="username"
                 className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 shadow-none"
               />
@@ -252,8 +252,8 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
               <Facebook className="w-4 h-4 text-[#1877F2] shrink-0" />
               <Input
                 type="url"
-                value={data.facebook_url || ''}
-                onChange={e => onChange({ facebook_url: e.target.value })}
+                value={data.facebookUrl || ''}
+                onChange={e => onChange({ facebookUrl: e.target.value })}
                 placeholder="facebook.com/yourpage"
                 className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 shadow-none"
               />
@@ -263,8 +263,8 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
               <Linkedin className="w-4 h-4 text-[#0A66C2] shrink-0" />
               <Input
                 type="url"
-                value={data.linkedin_url || ''}
-                onChange={e => onChange({ linkedin_url: e.target.value })}
+                value={data.linkedinUrl || ''}
+                onChange={e => onChange({ linkedinUrl: e.target.value })}
                 placeholder="linkedin.com/in/yourprofile"
                 className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 shadow-none"
               />
@@ -274,8 +274,8 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
               <Youtube className="w-4 h-4 text-[#FF0000] shrink-0" />
               <Input
                 type="url"
-                value={data.youtube_url || ''}
-                onChange={e => onChange({ youtube_url: e.target.value })}
+                value={data.youtubeUrl || ''}
+                onChange={e => onChange({ youtubeUrl: e.target.value })}
                 placeholder="youtube.com/@yourchannel"
                 className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 shadow-none"
               />
@@ -290,8 +290,12 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit, on
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
         {onNext ? (
-          <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20">
-            Save & Continue <ChevronRight className="w-4 h-4" />
+          <Button onClick={onNext} disabled={saving} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20">
+            {saving ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+            ) : (
+              <>Save & Continue <ChevronRight className="w-4 h-4" /></>
+            )}
           </Button>
         ) : (
           <Button

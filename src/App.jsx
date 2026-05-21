@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import PublishBook from './pages/PublishBook';
 import BookDetail from './pages/BookDetail';
 import AccountSetup from './pages/AccountSetup';
+import Login from './pages/Login';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -36,8 +37,10 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      <Route path="/" element={<Dashboard />} />
+      <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/publish" element={<PublishBook />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/book/:id" element={<BookDetail />} />
       <Route path="/account-setup" element={<AccountSetup />} />
       <Route path="*" element={<PageNotFound />} />

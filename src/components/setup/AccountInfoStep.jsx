@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, User, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, User, AlertCircle, Loader2 } from 'lucide-react';
 
 const COUNTRIES = [
 'Argentina', 'Australia', 'Austria', 'Bangladesh', 'Belgium', 'Brazil',
@@ -23,7 +23,7 @@ const FieldError = ({ msg }) => msg ?
   </p> :
 null;
 
-export default function AccountInfoStep({ data, onChange, errors, onNext, onBack }) {
+export default function AccountInfoStep({ data, onChange, errors, onNext, onBack, saving = false }) {
   const autocompleteRef = useRef(null);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function AccountInfoStep({ data, onChange, errors, onNext, onBack
       ) || countryFull;
 
       onChange({
-        address_line1: streetLine || data.address_line1,
+        addressLine1: streetLine || data.addressLine1,
         city,
         state,
         zip,
@@ -93,20 +93,20 @@ export default function AccountInfoStep({ data, onChange, errors, onNext, onBack
             <div className="space-y-1.5">
               <Label>First Name <span className="text-destructive">*</span></Label>
               <Input
-                value={data.first_name || ''}
-                onChange={(e) => onChange({ first_name: e.target.value })}
+                value={data.legalFirstName || ''}
+                onChange={(e) => onChange({ legalFirstName: e.target.value })}
                 placeholder="John"
-                className={errors.first_name ? 'border-destructive' : ''} />
-              <FieldError msg={errors.first_name} />
+                className={errors.legalFirstName ? 'border-destructive' : ''} />
+              <FieldError msg={errors.legalFirstName} />
             </div>
             <div className="space-y-1.5">
               <Label>Last Name <span className="text-destructive">*</span></Label>
               <Input
-                value={data.last_name || ''}
-                onChange={(e) => onChange({ last_name: e.target.value })}
+                value={data.legalLastName || ''}
+                onChange={(e) => onChange({ legalLastName: e.target.value })}
                 placeholder="Doe"
-                className={errors.last_name ? 'border-destructive' : ''} />
-              <FieldError msg={errors.last_name} />
+                className={errors.legalLastName ? 'border-destructive' : ''} />
+              <FieldError msg={errors.legalLastName} />
             </div>
           </div>
         </div>
@@ -123,8 +123,8 @@ export default function AccountInfoStep({ data, onChange, errors, onNext, onBack
             <Label>Address Line</Label>
             <Input
               ref={autocompleteRef}
-              value={data.address_line1 || ''}
-              onChange={(e) => onChange({ address_line1: e.target.value })}
+              value={data.addressLine1 || ''}
+              onChange={(e) => onChange({ addressLine1: e.target.value })}
               placeholder="Start typing your street address…" />
             <p className="text-[10px] text-muted-foreground">City, state, ZIP and country will auto-fill when you select an address.</p>
           </div>
@@ -172,8 +172,12 @@ export default function AccountInfoStep({ data, onChange, errors, onNext, onBack
             <ChevronLeft className="w-4 h-4" /> Back
           </Button>
         )}
-        <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 ml-auto">
-          Save & Continue <ChevronRight className="w-4 h-4" />
+        <Button onClick={onNext} disabled={saving} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 ml-auto">
+          {saving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+          ) : (
+            <>Save & Continue <ChevronRight className="w-4 h-4" /></>
+          )}
         </Button>
       </div>
     </div>);

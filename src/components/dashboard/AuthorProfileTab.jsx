@@ -74,7 +74,7 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
         <h2 className="text-xl font-bold font-serif">Author Profile</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Your public identity, contact details, and account information.</p>
       </div>
-      <Link to="/account-setup">
+      {/* <Link to="/account-setup"> */}
         <div className="flex items-center justify-between gap-4 bg-primary/5 border-2 border-primary/20 border-dashed rounded-2xl px-6 py-8 hover:bg-primary/10 transition-colors cursor-pointer text-center flex-col">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
             <User className="w-7 h-7 text-primary" />
@@ -87,7 +87,7 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
             <ArrowRight className="w-4 h-4" /> Start Account Setup
           </Button>
         </div>
-      </Link>
+      {/* </Link> */}
     </div>
   );
 

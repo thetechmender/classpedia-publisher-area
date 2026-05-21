@@ -2,7 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, CreditCard, AlertCircle, Info, Building2, Wallet } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CreditCard, AlertCircle, Info, Building2, Wallet, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const FieldError = ({ msg }) => msg ? (
@@ -18,8 +18,8 @@ const InfoBox = ({ children }) => (
   </div>
 );
 
-export default function PaymentStep({ data, onChange, errors, onNext, onBack }) {
-  const method = data.payment_method || 'bank_transfer';
+export default function PaymentStep({ data, onChange, errors, onNext, onBack, saving = false }) {
+  const method = data.paymentMethod || 'bank_transfer';
 
   return (
     <div className="space-y-6">
@@ -77,7 +77,7 @@ export default function PaymentStep({ data, onChange, errors, onNext, onBack }) 
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => onChange({ payment_method: opt.value })}
+                  onClick={() => onChange({ paymentMethod: opt.value })}
                   className={cn(
                     'w-full flex items-center gap-4 rounded-lg border px-4 py-3.5 text-left transition-all duration-150',
                     selected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-background hover:border-primary/30 hover:bg-muted/30'
@@ -103,32 +103,32 @@ export default function PaymentStep({ data, onChange, errors, onNext, onBack }) 
               <div className="space-y-1.5">
                 <Label>Account Holder Name <span className="text-destructive">*</span></Label>
                 <Input
-                  value={data.bank_account_name || ''}
-                  onChange={e => onChange({ bank_account_name: e.target.value })}
+                  value={data.bankAccountName || ''}
+                  onChange={e => onChange({ bankAccountName: e.target.value })}
                   placeholder="John Doe"
-                  className={errors.bank_account_name ? 'border-destructive' : ''}
+                  className={errors.bankAccountName ? 'border-destructive' : ''}
                 />
-                <FieldError msg={errors.bank_account_name} />
+                <FieldError msg={errors.bankAccountName} />
               </div>
               <div className="space-y-1.5">
                 <Label>Account Number <span className="text-destructive">*</span></Label>
                 <Input
-                  value={data.bank_account_number || ''}
-                  onChange={e => onChange({ bank_account_number: e.target.value })}
+                  value={data.bankAccountNumber || ''}
+                  onChange={e => onChange({ bankAccountNumber: e.target.value })}
                   placeholder="000123456789"
-                  className={errors.bank_account_number ? 'border-destructive' : ''}
+                  className={errors.bankAccountNumber ? 'border-destructive' : ''}
                 />
-                <FieldError msg={errors.bank_account_number} />
+                <FieldError msg={errors.bankAccountNumber} />
               </div>
               <div className="space-y-1.5">
                 <Label>Routing Number / IBAN <span className="text-destructive">*</span></Label>
                 <Input
-                  value={data.bank_routing_number || ''}
-                  onChange={e => onChange({ bank_routing_number: e.target.value })}
+                  value={data.bankRoutingNumber || ''}
+                  onChange={e => onChange({ bankRoutingNumber: e.target.value })}
                   placeholder="021000021 or IBAN"
-                  className={errors.bank_routing_number ? 'border-destructive' : ''}
+                  className={errors.bankRoutingNumber ? 'border-destructive' : ''}
                 />
-                <FieldError msg={errors.bank_routing_number} />
+                <FieldError msg={errors.bankRoutingNumber} />
               </div>
               <InfoBox>
                 Your banking information is encrypted and stored securely. It is only used to send your royalty payments.
@@ -142,12 +142,12 @@ export default function PaymentStep({ data, onChange, errors, onNext, onBack }) 
                 <Label>PayPal Email Address <span className="text-destructive">*</span></Label>
                 <Input
                   type="email"
-                  value={data.paypal_email || ''}
-                  onChange={e => onChange({ paypal_email: e.target.value })}
+                  value={data.paypalEmail || ''}
+                  onChange={e => onChange({ paypalEmail: e.target.value })}
                   placeholder="you@paypal.com"
-                  className={errors.paypal_email ? 'border-destructive' : ''}
+                  className={errors.paypalEmail ? 'border-destructive' : ''}
                 />
-                <FieldError msg={errors.paypal_email} />
+                <FieldError msg={errors.paypalEmail} />
               </div>
               <InfoBox>
                 Make sure this is the email associated with your active PayPal account. Payments sent to an incorrect address cannot be recovered.
@@ -161,8 +161,12 @@ export default function PaymentStep({ data, onChange, errors, onNext, onBack }) 
         <Button variant="outline" onClick={onBack} className="gap-2">
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
-        <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20">
-          Save & Continue <ChevronRight className="w-4 h-4" />
+        <Button onClick={onNext} disabled={saving} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20">
+          {saving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+          ) : (
+            <>Save & Continue <ChevronRight className="w-4 h-4" /></>
+          )}
         </Button>
       </div>
     </div>

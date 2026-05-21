@@ -1,14 +1,15 @@
-import { createClient } from '@base44/sdk';
 import { appParams } from '@/lib/app-params';
 
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
-
-//Create a client with authentication required
-export const base44 = createClient({
-  appId,
-  token,
-  functionsVersion,
-  serverUrl: '',
-  requiresAuth: false,
-  appBaseUrl
-});
+// Mock base44 client to prevent automatic API calls
+export const base44 = {
+  get: async () => ({}),
+  post: async () => ({}),
+  put: async () => ({}),
+  delete: async () => ({}),
+  query: async () => ({}),
+  entities: {
+    User: {
+      me: async () => ({})
+    }
+  }
+};

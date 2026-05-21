@@ -1,7 +1,6 @@
-import React, { useState, useCallback } from 'react';
+// @ts-ignore
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import SetupStepIndicator from '@/components/setup/SetupStepIndicator';
@@ -10,11 +9,18 @@ import AccountInfoStep from '@/components/setup/AccountInfoStep';
 import PaymentStep from '@/components/setup/PaymentStep';
 import TaxStep from '@/components/setup/TaxStep';
 import AuthorProfileStep from '@/components/setup/AuthorProfileStep';
+import { CredentialService } from '@/services/credential.service';
+import { PublisherService } from '@/services/publisher.service';
+import { useAuth } from '@/lib/AuthContext';
+
+const formDataInitial = {
+  paymentMethod: 'bank_transfer',
+};
 
 const validateStep2 = (data) => {
   const errors = {};
-  if (!data.first_name?.trim()) errors.first_name = 'First name is required';
-  if (!data.last_name?.trim()) errors.last_name = 'Last name is required';
+  if (!data.legalFirstName?.trim()) errors.legalFirstName = 'First name is required';
+  if (!data.legalLastName?.trim()) errors.legalLastName = 'Last name is required';
   if (!data.country) errors.country = 'Please select your country';
   return errors;
 };
@@ -24,44 +30,156 @@ const validateStep3 = (_data) => ({});
 
 const validateStep4 = (data) => {
   const errors = {};
-  if (!data.payment_method) { errors.payment_method = 'Please select a payment method'; return errors; }
-  if (data.payment_method === 'bank_transfer') {
-    if (!data.bank_account_name?.trim()) errors.bank_account_name = 'Account holder name is required';
-    if (!data.bank_account_number?.trim()) errors.bank_account_number = 'Account number is required';
-    if (!data.bank_routing_number?.trim()) errors.bank_routing_number = 'Routing/IBAN is required';
+  if (!data.paymentMethod) { errors.paymentMethod = 'Please select a payment method'; return errors; }
+  if (data.paymentMethod === 'bank_transfer') {
+    if (!data.bankAccountName?.trim()) errors.bankAccountName = 'Account holder name is required';
+    if (!data.bankAccountNumber?.trim()) errors.bankAccountNumber = 'Account number is required';
+    if (!data.bankRoutingNumber?.trim()) errors.bankRoutingNumber = 'Routing/IBAN is required';
   }
-  if (data.payment_method === 'paypal') {
-    if (!data.paypal_email?.trim()) errors.paypal_email = 'PayPal email is required';
-    else if (!/\S+@\S+\.\S+/.test(data.paypal_email)) errors.paypal_email = 'Enter a valid email address';
+  if (data.paymentMethod === 'paypal') {
+    if (!data.paypalEmail?.trim()) errors.paypalEmail = 'PayPal email is required';
+    else if (!/\S+@\S+\.\S+/.test(data.paypalEmail)) errors.paypalEmail = 'Enter a valid email address';
   }
   return errors;
 };
 
 const validateStep5 = (data) => {
   const errors = {};
-  if (data.us_person === undefined) { errors.us_person = 'Please select your US tax status'; return errors; }
-  if (data.us_person) {
-    if (!data.tax_id_type) errors.tax_id_type = 'Please select SSN or EIN';
-    if (!data.tax_id?.trim()) errors.tax_id = 'Tax ID is required';
+  if (data.usPerson === undefined) { errors.usPerson = 'Please select your US tax status'; return errors; }
+  if (data.usPerson) {
+    if (!data.taxIdType) errors.taxIdType = 'Please select SSN or EIN';
+    if (!data.taxId?.trim()) errors.taxId = 'Tax ID is required';
   } else {
-    if (!data.tax_country) errors.tax_country = 'Please select your country of tax residence';
+    if (!data.taxCountry) errors.taxCountry = 'Please select your country of tax residence';
   }
-  if (!data.tax_certified) errors.tax_certified = 'You must certify this information is correct';
-  if (!data.esign_consent) errors.esign_consent = 'You must consent to provide an electronic signature';
+  if (!data.taxCertified) errors.taxCertified = 'You must certify this information is correct';
+  if (!data.esignConsent) errors.esignConsent = 'You must consent to provide an electronic signature';
   if (!data.esignature?.trim()) errors.esignature = 'Please type your full name as your electronic signature';
   return errors;
 };
 
 export default function AccountSetup() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const { updateProfileCompleted, isAuthenticated } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    payment_method: 'bank_transfer',
-  });
+  const [loading, setLoading] = useState(true);
+  const [publisherId, setPublisherId] = useState(null);
+  const [formData, setFormData] = useState(/** @type {{ paymentMethod: string; publisherFullName?: string; publisherEmail?: string; publisherPhone?: string; publisherPassword?: string; publisherConfirmPassword?: string; legalFirstName?: string; legalLastName?: string; addressLine1?: string; city?: string; state?: string; zip?: string; country?: string; authorBio?: string; preferredCategories?: string[]; website?: string; twitterHandle?: string; instagramHandle?: string; facebookUrl?: string; linkedinUrl?: string; youtubeUrl?: string; bankAccountName?: string; bankAccountNumber?: string; bankRoutingNumber?: string; paypalEmail?: string; usPerson?: boolean; taxIdType?: string; taxId?: string; taxCountry?: string; taxCertified?: boolean; esignConsent?: boolean; esignature?: string; }} */({
+    paymentMethod: 'bank_transfer',
+  }));
+
+  // Fetch account data on mount if user is authenticated
+  useEffect(() => {
+    const fetchAccountData = async () => {
+      if (!isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await CredentialService.getAccount();
+        if (response.isSuccess && response.data) {
+          const account = response.data;
+          setPublisherId(account.publisherId);
+
+          // Map API data to form data
+          const mappedData = {
+            paymentMethod: account.paymentInfo?.paymentMethod || 'bank_transfer',
+            // Step 1: Create Account data
+            publisherFullName: account.publisherFullName || '',
+            publisherEmail: account.publisherEmail || '',
+            publisherPhone: account.publisherPhone || '',
+            // Step 2: Personal Info
+            legalFirstName: account.personalInfo?.legalFirstName || '',
+            legalLastName: account.personalInfo?.legalLastName || '',
+            addressLine1: account.personalInfo?.addressLine1 || '',
+            city: account.personalInfo?.city || '',
+            state: account.personalInfo?.state || '',
+            zip: account.personalInfo?.zip || '',
+            country: account.personalInfo?.country || '',
+            // Step 3: Author Info
+            authorBio: account.authInfo?.authorBio || '',
+            preferredCategories: account.authInfo?.preferredCategories || [],
+            website: account.authInfo?.website || '',
+            twitterHandle: account.authInfo?.twitterHandle || '',
+            instagramHandle: account.authInfo?.instagramHandle || '',
+            facebookUrl: account.authInfo?.facebookUrl || '',
+            linkedinUrl: account.authInfo?.linkedinUrl || '',
+            youtubeUrl: account.authInfo?.youtubeUrl || '',
+            // Step 4: Payment Info
+            bankAccountName: account.paymentInfo?.bankAccountName || '',
+            bankAccountNumber: account.paymentInfo?.bankAccountNumber || '',
+            bankRoutingNumber: account.paymentInfo?.bankRoutingNumber || '',
+            paypalEmail: account.paymentInfo?.paypalEmail || '',
+            // Step 5: Tax Info
+            usPerson: account.taxInfo?.usPerson,
+            taxIdType: account.taxInfo?.taxIdType || '',
+            taxId: account.taxInfo?.taxId || '',
+            taxCountry: account.taxInfo?.taxCountry || '',
+            esignConsent: account.taxInfo?.esignConsent || false,
+            esignature: account.taxInfo?.esignature || '',
+            taxCertified: account.taxInfo?.taxCertified || false,
+          };
+
+          setFormData(mappedData);
+
+          // Determine which step to start on based on completed data
+          const completed = [];
+          let startStep = 1;
+
+          // Check Step 1: Create Account (basic info)
+          if (account.publisherFullName && account.publisherEmail && account.publisherPhone) {
+            completed.push(1);
+            startStep = 2;
+          }
+
+          // Check Step 2: Personal Info
+          if (account.personalInfo?.legalFirstName && account.personalInfo?.legalLastName && account.personalInfo?.country) {
+            completed.push(2);
+            startStep = 3;
+          }
+
+          // Check Step 3: Author Info (optional, so just check if any data exists)
+          if (account.authInfo?.authorBio || (account.authInfo?.preferredCategories && account.authInfo.preferredCategories.length > 0)) {
+            completed.push(3);
+            startStep = 4;
+          } else if (completed.includes(2)) {
+            // Author info is optional, so if step 2 is done, we can move to step 3
+            startStep = 3;
+          }
+
+          // Check Step 4: Payment Info
+          if (account.paymentInfo?.paymentMethod) {
+            const hasBank = account.paymentInfo.paymentMethod === 'bank_transfer' &&
+              account.paymentInfo.bankAccountName && account.paymentInfo.bankAccountNumber;
+            const hasPaypal = account.paymentInfo.paymentMethod === 'paypal' && account.paymentInfo.paypalEmail;
+            if (hasBank || hasPaypal) {
+              completed.push(4);
+              startStep = 5;
+            }
+          }
+
+          // Check Step 5: Tax Info
+          if (account.taxInfo?.taxCertified && account.taxInfo?.esignConsent && account.taxInfo?.esignature) {
+            completed.push(5);
+          }
+
+          setCompletedSteps(completed);
+          setCurrentStep(startStep);
+        }
+      } catch (error) {
+        console.error('Failed to fetch account data:', error);
+        toast.error('Failed to load account data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAccountData();
+  }, [isAuthenticated]);
 
   const updateData = useCallback((updates) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -87,6 +205,93 @@ export default function AccountSetup() {
     goToStep(nextStep);
   };
 
+  // Helper to save current step data via API - sends current step + all previous steps data
+  const saveStepData = async (stepNumber) => {
+    const currentPublisherId = publisherId || parseInt(localStorage.getItem('publisher_id') || '0');
+
+    // Build payload - include current step and all previous steps data
+    const payload = { publisherId: currentPublisherId };
+
+    // Always include createAccount data (step 1)
+    payload.createAccount = {
+      publisherFullName: formData.publisherFullName || '',
+      publisherEmail: formData.publisherEmail || '',
+      publisherPhone: formData.publisherPhone || '',
+      publisherPassword: formData.publisherPassword || '',
+      publisherConfirmPassword: formData.publisherConfirmPassword || '',
+    };
+
+    // Include personalInfo (step 2) if step >= 2
+    if (stepNumber >= 2) {
+      payload.personalInfo = {
+        legalFirstName: formData.legalFirstName || '',
+        legalLastName: formData.legalLastName || '',
+        addressLine1: formData.addressLine1 || '',
+        city: formData.city || '',
+        state: formData.state || '',
+        zip: formData.zip || '',
+        country: formData.country || '',
+      };
+    }
+
+    // Include authInfo (step 3) if step >= 3
+    if (stepNumber >= 3) {
+      payload.authInfo = {
+        authorBio: formData.authorBio || '',
+        preferredCategories: formData.preferredCategories || [],
+        website: formData.website || '',
+        twitterHandle: formData.twitterHandle || '',
+        instagramHandle: formData.instagramHandle || '',
+        facebookUrl: formData.facebookUrl || '',
+        linkedinUrl: formData.linkedinUrl || '',
+        youtubeUrl: formData.youtubeUrl || '',
+      };
+    }
+
+    // Include paymentInfo (step 4) if step >= 4
+    if (stepNumber >= 4) {
+      payload.paymentInfo = {
+        paymentMethod: formData.paymentMethod || 'bank_transfer',
+        bankAccountName: formData.bankAccountName || '',
+        bankAccountNumber: formData.bankAccountNumber || '',
+        bankRoutingNumber: formData.bankRoutingNumber || '',
+        paypalEmail: formData.paypalEmail || '',
+      };
+    }
+
+    // Include taxInfo (step 5) if step >= 5
+    if (stepNumber >= 5) {
+      payload.taxInfo = {
+        usPerson: formData.usPerson || false,
+        taxIdType: formData.taxIdType || '',
+        taxId: formData.taxId || '',
+        taxCountry: formData.taxCountry || '',
+        esignConsent: formData.esignConsent || false,
+        esignature: formData.esignature || '',
+        taxCertified: formData.taxCertified || false,
+      };
+    }
+
+    try {
+      const response = await PublisherService.createAccount(payload);
+      if (response.isSuccess) {
+        // If this is step 1 and we got a new publisherId, save it
+        if (stepNumber === 1 && response.data?.publisherId) {
+          setPublisherId(response.data.publisherId);
+          localStorage.setItem('publisher_id', response.data.publisherId.toString());
+        }
+        return true;
+      } else {
+        toast.error(response.errorMessage || 'Failed to save data');
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to save step data:', error);
+      toast.error(error.response?.data?.errorMessage || 'Failed to save data');
+      return false;
+    }
+  };
+
   const handleSubmit = async () => {
     const stepErrors = validateStep5(formData);
     if (Object.keys(stepErrors).length > 0) {
@@ -96,45 +301,47 @@ export default function AccountSetup() {
     }
 
     setSaving(true);
-    const fullName = [formData.first_name, formData.last_name].filter(Boolean).join(' ');
-    const profile = await base44.entities.AuthorProfile.create({
-      ...formData,
-      full_name: fullName,
-      setup_complete: true,
-    });
-    // Pre-populate the cache so Dashboard doesn't redirect back to setup
-    queryClient.setQueryData(['author-profile'], [profile]);
-    await base44.auth.updateMe({ author_setup_complete: true });
+    const success = await saveStepData(5);
     setSaving(false);
-    toast.success('Account created! Welcome to Classpedia.');
-    navigate('/');
+
+    if (success) {
+      updateProfileCompleted(true);
+      toast.success('Account setup complete! Welcome to Classpedia.');
+      navigate('/dashboard');
+    }
   };
+
+  // Show loading spinner while fetching account data
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
       <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-30">
         <div className="w-full px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold">Classpedia Publishing</h1>
-              <p className="text-xs text-muted-foreground">Author Account Setup</p>
+          <div className="flex items-center gap-4">
+
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <BookOpen className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold">Classpedia Publishing</h1>
+                <p className="text-xs text-muted-foreground">Author Account Setup</p>
+              </div>
             </div>
           </div>
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors text-sm font-medium"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </button>
         </div>
       </div>
 
       <div className="w-full max-w-4xl mx-auto px-6 py-8">
+
         {/* Welcome banner — only on step 1 */}
         {currentStep === 1 && false && (
           <div className="mb-8 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/40 border border-primary/20 p-6 flex flex-col sm:flex-row sm:items-center gap-4">
@@ -152,16 +359,31 @@ export default function AccountSetup() {
         )}
 
         <SetupStepIndicator currentStep={currentStep} completedSteps={completedSteps} />
-
+        {currentStep > 1 && (
+          <button
+            onClick={() => goToStep(currentStep - 1)}
+            className="flex items-center mb-1 border border-secondary/50 gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors text-sm font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+        )}
         <div className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm overflow-visible">
           {currentStep === 1 && (
             <CreateAccountStep
               data={formData}
               onChange={updateData}
-              onNext={() => {
-                setCompletedSteps(prev => [...new Set([...prev, 1])]);
-                goToStep(2);
+              onNext={async () => {
+                setSaving(true);
+                const success = await saveStepData(1);
+                setSaving(false);
+                if (success) {
+                  setCompletedSteps(prev => [...new Set([...prev, 1])]);
+                  goToStep(2);
+                }
               }}
+              saving={saving}
+              isExistingUser={completedSteps.includes(1)}
             />
           )}
           {currentStep === 2 && (
@@ -169,8 +391,24 @@ export default function AccountSetup() {
               data={formData}
               onChange={updateData}
               errors={errors}
-              onNext={() => handleNext(validateStep2, 3)}
+              onNext={async () => {
+                const stepErrors = validateStep2(formData);
+                if (Object.keys(stepErrors).length > 0) {
+                  setErrors(stepErrors);
+                  toast.error('Please fix the errors before continuing');
+                  return;
+                }
+                setErrors({});
+                setSaving(true);
+                const success = await saveStepData(2);
+                setSaving(false);
+                if (success) {
+                  setCompletedSteps(prev => [...new Set([...prev, 2])]);
+                  goToStep(3);
+                }
+              }}
               onBack={() => goToStep(1)}
+              saving={saving}
             />
           )}
           {currentStep === 3 && (
@@ -178,8 +416,25 @@ export default function AccountSetup() {
               data={formData}
               onChange={updateData}
               errors={errors}
-              onNext={() => handleNext(validateStep3, 4)}
+              onSubmit={undefined}
+              onNext={async () => {
+                const stepErrors = validateStep3(formData);
+                if (Object.keys(stepErrors).length > 0) {
+                  setErrors(stepErrors);
+                  toast.error('Please fix the errors before continuing');
+                  return;
+                }
+                setErrors({});
+                setSaving(true);
+                const success = await saveStepData(3);
+                setSaving(false);
+                if (success) {
+                  setCompletedSteps(prev => [...new Set([...prev, 3])]);
+                  goToStep(4);
+                }
+              }}
               onBack={() => goToStep(2)}
+              saving={saving}
             />
           )}
           {currentStep === 4 && (
@@ -187,8 +442,24 @@ export default function AccountSetup() {
               data={formData}
               onChange={updateData}
               errors={errors}
-              onNext={() => handleNext(validateStep4, 5)}
+              onNext={async () => {
+                const stepErrors = validateStep4(formData);
+                if (Object.keys(stepErrors).length > 0) {
+                  setErrors(stepErrors);
+                  toast.error('Please fix the errors before continuing');
+                  return;
+                }
+                setErrors({});
+                setSaving(true);
+                const success = await saveStepData(4);
+                setSaving(false);
+                if (success) {
+                  setCompletedSteps(prev => [...new Set([...prev, 4])]);
+                  goToStep(5);
+                }
+              }}
               onBack={() => goToStep(3)}
+              saving={saving}
             />
           )}
           {currentStep === 5 && (
@@ -198,6 +469,7 @@ export default function AccountSetup() {
               errors={errors}
               onNext={handleSubmit}
               onBack={() => goToStep(4)}
+              saving={saving}
             />
           )}
         </div>
