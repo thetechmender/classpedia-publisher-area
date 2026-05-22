@@ -148,10 +148,10 @@ export default function ReviewStep({ data, onBack, onPublish, onEdit, publishing
           <DetailRow label="Subtitle" value={data.subtitle} />
           <DetailRow label="Author" value={data.author_name} />
           <DetailRow label="Language" value={data.language} />
-          <DetailRow label="Series" value={data.series_name ? `${data.series_name}${data.series_number ? ` #${data.series_number}` : ''}` : null} />
+          <DetailRow label="Series" value={data.seriesName ? `${data.seriesName}${data.seriesNumber ? ` #${data.seriesNumber}` : ''}` : null} />
           <DetailRow label="Edition" value={data.edition_number} />
           <DetailRow label="Publication Date" value={data.publication_date} />
-          <DetailRow label="Age Range" value={AGE_LABELS[data.age_range]} />
+          <DetailRow label="Age Range" value={AGE_LABELS[data.ageRange]} />
           {(data.keywords || []).length > 0 && (
             <div className="py-2">
               <p className="text-sm text-muted-foreground mb-2">Keywords</p>

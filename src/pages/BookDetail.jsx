@@ -80,7 +80,7 @@ export default function BookDetail() {
         <div className="text-center">
           <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-lg font-semibold mb-2">Book not found</h2>
-          <Button variant="outline" onClick={() => navigate('/')}>Back to Dashboard</Button>
+          <Button variant="outline" onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
         </div>
       </div>
     );
@@ -145,10 +145,10 @@ export default function BookDetail() {
               <h2 className="text-2xl md:text-3xl font-serif font-semibold leading-tight">{book.title}</h2>
               {book.subtitle && <p className="text-base text-muted-foreground mt-1">{book.subtitle}</p>}
               <p className="text-sm mt-2">by <span className="font-semibold">{book.author_name}</span></p>
-              {book.series_name && (
+              {book.seriesName && (
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <Tag className="w-3 h-3" />
-                  {book.series_name}{book.series_number ? ` · Vol. ${book.series_number}` : ''}
+                  {book.seriesName}{book.seriesNumber ? ` · Vol. ${book.seriesNumber}` : ''}
                 </p>
               )}
               <div className="mt-5 flex flex-wrap items-end gap-5">
@@ -280,8 +280,8 @@ export default function BookDetail() {
             <div className="px-5">
               <DetailRow label="Language"      value={book.language} />
               <DetailRow label="Edition"       value={book.edition_number} />
-              <DetailRow label="Series"        value={book.series_name ? `${book.series_name}${book.series_number ? ` #${book.series_number}` : ''}` : null} />
-              <DetailRow label="Reading Age"   value={book.reading_age_min ? `${book.reading_age_min}${book.reading_age_max ? ` – ${book.reading_age_max}` : ''}` : null} />
+              <DetailRow label="Series"        value={book.seriesName ? `${book.seriesName}${book.seriesNumber ? ` #${book.seriesNumber}` : ''}` : null} />
+              <DetailRow label="Reading Age"   value={book.readingAgeMin ? `${book.readingAgeMin}${book.readingAgeMax ? ` – ${book.readingAgeMax}` : ''}` : null} />
               <DetailRow label="ISBN"          value={book.isbn || 'To be assigned'} />
               <DetailRow label="AI Generated"  value={book.ai_generated ? 'Yes — AI tools used' : 'No'} />
             </div>
@@ -299,8 +299,8 @@ export default function BookDetail() {
               <DetailRow label="Territories"   value={book.territories === 'specific' ? 'Specific Countries' : 'Worldwide'} />
               <DetailRow label="DRM"           value={book.drm ? 'Enabled' : 'Disabled'} />
               <DetailRow label="Select Program" value={book.classpedia_select ? 'Enrolled' : 'Not enrolled'} />
-              {book.preorder_type === 'preorder' && (
-                <DetailRow label="Pre-order Date" value={book.preorder_date} />
+              {book.preorderType === 'preorder' && (
+                <DetailRow label="Pre-order Date" value={book.preorderDate} />
               )}
             </div>
           </div>

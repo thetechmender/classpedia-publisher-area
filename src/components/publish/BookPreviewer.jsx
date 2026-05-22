@@ -106,8 +106,8 @@ function TitlePage({ book }) {
         {book.edition_number && (
           <p className="text-[10px] text-slate-400 mt-4 uppercase tracking-widest">{book.edition_number} Edition</p>
         )}
-        {book.series_name && (
-          <p className="text-[10px] text-slate-400 mt-1 italic">{book.series_name}</p>
+        {book.seriesName && (
+          <p className="text-[10px] text-slate-400 mt-1 italic">{book.seriesName}</p>
         )}
       </div>
       <p className="text-[8px] text-slate-300 text-center mt-auto leading-relaxed">

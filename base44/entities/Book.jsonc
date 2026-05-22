@@ -10,11 +10,11 @@
       "type": "string",
       "description": "Book subtitle"
     },
-    "series_name": {
+    "seriesName": {
       "type": "string",
       "description": "Series name if part of a series"
     },
-    "series_number": {
+    "seriesNumber": {
       "type": "number",
       "description": "Volume number in the series"
     },
@@ -22,11 +22,11 @@
       "type": "string",
       "description": "Edition number"
     },
-    "author_first_name": {
+    "authorFirstName": {
       "type": "string",
       "description": "Author first name"
     },
-    "author_last_name": {
+    "authorLastName": {
       "type": "string",
       "description": "Author last name"
     },
@@ -75,11 +75,11 @@
       "type": "boolean",
       "description": "Contains sexually explicit content"
     },
-    "reading_age_min": {
+    "readingAgeMin": {
       "type": "string",
       "description": "Minimum reading age"
     },
-    "reading_age_max": {
+    "readingAgeMax": {
       "type": "string",
       "description": "Maximum reading age"
     },
@@ -88,7 +88,7 @@
       "description": "Primary marketplace for sales",
       "default": "classpedia.ai"
     },
-    "preorder_type": {
+    "preorderType": {
       "type": "string",
       "enum": [
         "release_now",
@@ -97,7 +97,7 @@
       "default": "release_now",
       "description": "Release now or make available for pre-order"
     },
-    "preorder_date": {
+    "preorderDate": {
       "type": "string",
       "format": "date",
       "description": "Pre-order release date"

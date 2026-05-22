@@ -15,6 +15,7 @@ import {
   // @ts-ignore
   FileText, Image, Tag, Clock, Save
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const validateStep1 = (data) => {
   const errors = {};
@@ -24,8 +25,8 @@ const validateStep1 = (data) => {
   else if (data.description.trim().length < 50) errors.description = 'Description must be at least 50 characters';
   else if (data.description.trim().length > 4000) errors.description = 'Description cannot exceed 4,000 characters';
   if (!data.language) errors.language = 'Please select a language';
-  if (data.preorder_type === 'preorder' && !data.preorder_date) {
-    errors.preorder_date = 'Please set a pre-order release date';
+  if (data.preorderType === 'preorder' && !data.preorderDate) {
+    errors.preorderDate = 'Please set a pre-order release date';
   }
   return errors;
 };
@@ -68,15 +69,15 @@ const validateAll = (data) => {
 
 const STEP_INFO = [
   { step: 1, label: 'Book Details', icon: Tag, desc: 'Title, author, description, categories' },
-  { step: 2, label: 'Content',      icon: Upload, desc: 'Manuscript, cover, sample chapter' },
-  { step: 3, label: 'Pricing',      icon: DollarSign, desc: 'Price, royalties, territories' },
-  { step: 4, label: 'Review',       icon: Eye, desc: 'Final check before submission' },
+  { step: 2, label: 'Content', icon: Upload, desc: 'Manuscript, cover, sample chapter' },
+  { step: 3, label: 'Pricing', icon: DollarSign, desc: 'Price, royalties, territories' },
+  { step: 4, label: 'Review', icon: Eye, desc: 'Final check before submission' },
 ];
 
 export default function PublishBook() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(2);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [errors, setErrors] = useState({});
   const [publishing, setPublishing] = useState(false);
@@ -85,7 +86,7 @@ export default function PublishBook() {
     territories: 'worldwide',
     currency: 'USD',
     drm: false,
-    age_range: 'not_specified',
+    ageRange: 'not_specified',
     keywords: [],
     categories: [],
     contributors: [],
@@ -165,12 +166,12 @@ export default function PublishBook() {
     setPublishing(true);
     const payload = { ...bookData, status };
     // @ts-ignore
-    if (payload.series_number === '' || payload.series_number === null || isNaN(payload.series_number)) {
+    if (payload.seriesNumber === '' || payload.seriesNumber === null || isNaN(payload.seriesNumber)) {
       // @ts-ignore
-      delete payload.series_number;
+      delete payload.seriesNumber;
     } else {
       // @ts-ignore
-      payload.series_number = Number(payload.series_number);
+      payload.seriesNumber = Number(payload.seriesNumber);
     }
     await base44.entities.Book.create(payload);
     setPublishing(false);
@@ -241,19 +242,17 @@ export default function PublishBook() {
                   key={step}
                   onClick={() => isReachable && goToStep(step)}
                   disabled={!isReachable}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${
-                    isCurrent
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${isCurrent
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : isCompleted
                         ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                         : isReachable
                           ? 'hover:bg-secondary text-muted-foreground hover:text-foreground'
                           : 'opacity-40 cursor-not-allowed text-muted-foreground'
-                  }`}
+                    }`}
                 >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                    isCurrent ? 'bg-primary-foreground/20' : isCompleted ? 'bg-emerald-100' : 'bg-secondary'
-                  }`}>
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isCurrent ? 'bg-primary-foreground/20' : isCompleted ? 'bg-emerald-100' : 'bg-secondary'
+                    }`}>
                     {isCompleted
                       ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       : <Icon className={`w-4 h-4 ${isCurrent ? 'text-primary-foreground' : ''}`} />
@@ -291,20 +290,20 @@ export default function PublishBook() {
                 </div>
               </div>
               <Link
-                to="/"
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors text-sm font-medium"
+                to="/dashboard"
               >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Dashboard
+                <Button size="sm" className="gap-1.5 h-8 text-xs px-3">
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Dashboard
+                </Button>
               </Link>
             </div>
             {/* Mobile step progress */}
             <div className="lg:hidden px-4 sm:px-6 lg:px-8 pb-3">
               <div className="flex gap-2">
                 {STEP_INFO.map(({ step }) => (
-                  <div key={step} className={`flex-1 h-1 rounded-full transition-all ${
-                    step < currentStep ? 'bg-emerald-500' : step === currentStep ? 'bg-primary' : 'bg-secondary'
-                  }`} />
+                  <div key={step} className={`flex-1 h-1 rounded-full transition-all ${step < currentStep ? 'bg-emerald-500' : step === currentStep ? 'bg-primary' : 'bg-secondary'
+                    }`} />
                 ))}
               </div>
             </div>
@@ -313,18 +312,18 @@ export default function PublishBook() {
           <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <div className="max-w-3xl mx-auto w-full">
               <div className="bg-card border rounded-2xl p-5 sm:p-6 lg:p-8 shadow-sm">
-              {currentStep === 1 && (
-                <BookDetailsStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep1, 2)} />
-              )}
-              {currentStep === 2 && (
-                <ContentStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep2, 3)} onBack={() => goToStep(1)} />
-              )}
-              {currentStep === 3 && (
-                <PricingStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep3, 4)} onBack={() => goToStep(2)} />
-              )}
-              {currentStep === 4 && (
-                <ReviewStep data={bookData} onBack={() => goToStep(3)} onPublish={handlePublish} onEdit={goToStep} publishing={publishing} validationErrors={validateAll(bookData)} />
-              )}
+                {currentStep === 1 && (
+                  <BookDetailsStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep1, 2)} />
+                )}
+                {currentStep === 2 && (
+                  <ContentStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep2, 3)} onBack={() => goToStep(1)} />
+                )}
+                {currentStep === 3 && (
+                  <PricingStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep3, 4)} onBack={() => goToStep(2)} />
+                )}
+                {currentStep === 4 && (
+                  <ReviewStep data={bookData} onBack={() => goToStep(3)} onPublish={handlePublish} onEdit={goToStep} publishing={publishing} validationErrors={validateAll(bookData)} />
+                )}
               </div>
             </div>
           </div>

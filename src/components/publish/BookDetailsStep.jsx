@@ -86,11 +86,11 @@ function SeriesDetails({ data, onChange }) {
         <Input
           type="number"
           min="1"
-          value={data.series_number ?? ''}
+          value={data.seriesNumber ?? ''}
           onChange={(e) => {
             const val = e.target.value;
             const n = parseInt(val);
-            onChange({ series_number: !val || isNaN(n) ? null : n });
+            onChange({ seriesNumber: !val || isNaN(n) ? null : n });
           }}
           placeholder="e.g. 3"
           className="bg-background max-w-[120px]"
@@ -306,15 +306,15 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
           <div>
             <FieldLabel label="Series Name" tooltip="If this book is part of a series, enter the series name" />
             <Input
-              value={data.series_name || ''}
+              value={data.seriesName || ''}
               onChange={(e) => {
                 const val = e.target.value;
-                onChange({ series_name: val, ...(val === '' ? { series_number: '', series_books: [] } : {}) });
+                onChange({ seriesName: val, ...(val === '' ? { seriesNumber: '', series_books: [] } : {}) });
               }}
               placeholder="Series name (optional)"
               className="bg-background"
             />
-            {data.series_name && (
+            {data.seriesName && (
               <SeriesDetails data={data} onChange={onChange} />
             )}
           </div>
@@ -335,11 +335,11 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Input
-                value={data.author_first_name || ''}
+                value={data.authorFirstName || ''}
                 onChange={(e) => {
                   const first = e.target.value;
-                  const last = data.author_last_name || '';
-                  onChange({ author_first_name: first, author_name: `${first} ${last}`.trim() });
+                  const last = data.authorLastName || '';
+                  onChange({ authorFirstName: first, author_name: `${first} ${last}`.trim() });
                 }}
                 placeholder="First name"
                 className={cn('bg-background', errors.author_name && 'border-destructive')}
@@ -347,11 +347,11 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             </div>
             <div>
               <Input
-                value={data.author_last_name || ''}
+                value={data.authorLastName || ''}
                 onChange={(e) => {
                   const last = e.target.value;
-                  const first = data.author_first_name || '';
-                  onChange({ author_last_name: last, author_name: `${first} ${last}`.trim() });
+                  const first = data.authorFirstName || '';
+                  onChange({ authorLastName: last, author_name: `${first} ${last}`.trim() });
                 }}
                 placeholder="Last name"
                 className={cn('bg-background', errors.author_name && 'border-destructive')}
@@ -520,7 +520,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <FieldLabel label="Minimum Age" />
-              <Select value={data.reading_age_min || ''} onValueChange={(v) => onChange({ reading_age_min: v })}>
+              <Select value={data.readingAgeMin || ''} onValueChange={(v) => onChange({ readingAgeMin: v })}>
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -531,7 +531,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             </div>
             <div>
               <FieldLabel label="Maximum Age" />
-              <Select value={data.reading_age_max || ''} onValueChange={(v) => onChange({ reading_age_max: v })}>
+              <Select value={data.readingAgeMax || ''} onValueChange={(v) => onChange({ readingAgeMax: v })}>
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -547,19 +547,19 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
       {/* ── 5. PRE-ORDER ── */}
       <Section icon={Clock} title="Release & Pre-order" subtitle="Choose when your book becomes available to readers">
         <RadioGroup
-          value={data.preorder_type || 'release_now'}
-          onValueChange={(v) => onChange({ preorder_type: v, preorder_date: v === 'release_now' ? '' : data.preorder_date })}
+          value={data.preorderType || 'release_now'}
+          onValueChange={(v) => onChange({ preorderType: v, preorderDate: v === 'release_now' ? '' : data.preorderDate })}
           className="space-y-3"
         >
           <label className={cn(
             'flex items-start gap-3 rounded-xl border-2 px-4 py-4 cursor-pointer transition-all',
-            (data.preorder_type || 'release_now') === 'release_now'
+            (data.preorderType || 'release_now') === 'release_now'
               ? 'border-primary bg-primary/5 shadow-sm'
               : 'border-border hover:border-primary/40'
           )}>
             <RadioGroupItem value="release_now" className="mt-0.5 text-primary" />
             <div>
-              <p className={cn('text-sm font-medium', (data.preorder_type || 'release_now') === 'release_now' ? 'text-primary' : 'text-foreground')}>
+              <p className={cn('text-sm font-medium', (data.preorderType || 'release_now') === 'release_now' ? 'text-primary' : 'text-foreground')}>
                 I am ready to release my book now
               </p>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
@@ -570,25 +570,25 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
 
           <label className={cn(
             'flex items-start gap-3 rounded-xl border-2 px-4 py-4 cursor-pointer transition-all',
-            data.preorder_type === 'preorder'
+            data.preorderType === 'preorder'
               ? 'border-primary bg-primary/5 shadow-sm'
               : 'border-border hover:border-primary/40'
           )}>
             <RadioGroupItem value="preorder" className="mt-0.5 text-primary" />
             <div className="flex-1">
-              <p className={cn('text-sm font-medium', data.preorder_type === 'preorder' ? 'text-primary' : 'text-foreground')}>
+              <p className={cn('text-sm font-medium', data.preorderType === 'preorder' ? 'text-primary' : 'text-foreground')}>
                 Make my eBook available for Pre-order
               </p>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 Allow readers to purchase before the release date. Pre-orders count toward your launch-day sales rank.
               </p>
-              {data.preorder_type === 'preorder' && (
+              {data.preorderType === 'preorder' && (
                 <div className="mt-4 pt-3 border-t border-primary/15">
                   <FieldLabel label="Pre-order Release Date" required tooltip="The date your book will be delivered to pre-order customers. Must be at least 10 days from today." />
                   <Input
                     type="date"
-                    value={data.preorder_date || ''}
-                    onChange={(e) => onChange({ preorder_date: e.target.value })}
+                    value={data.preorderDate || ''}
+                    onChange={(e) => onChange({ preorderDate: e.target.value })}
                     min={new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                     className="bg-background max-w-xs"
                   />
@@ -598,10 +598,10 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
                       Pre-order date must be <span className="font-medium text-foreground">at least 10 days from today</span>. The first 10 days from today are unavailable to allow Classpedia time to set up your pre-order listing.
                     </p>
                   </div>
-                  {data.preorder_date && (
+                  {data.preorderDate && (
                     <p className="text-xs text-primary mt-1.5 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
-                      Release scheduled for {new Date(data.preorder_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      Release scheduled for {new Date(data.preorderDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   )}
                 </div>
@@ -613,7 +613,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
 
       {/* Next Button */}
       <div className="flex justify-end pt-2">
-        <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
+        <Button onClick={() => {onNext(); console.log(data)}} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
           Save & Continue <ChevronRight className="w-4 h-4" />
         </Button>
       </div>

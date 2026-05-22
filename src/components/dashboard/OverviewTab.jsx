@@ -181,11 +181,11 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:shrink-0">
-            <Link to="/publish">
+            {/* <Link to="/publish">
               <Button size="sm" className="gap-1.5 shadow-md">
                 <Plus className="w-3.5 h-3.5" /> Publish New Book
               </Button>
-            </Link>
+            </Link> */}
             {stats.total > 0 && (
               <Button
                 size="sm"

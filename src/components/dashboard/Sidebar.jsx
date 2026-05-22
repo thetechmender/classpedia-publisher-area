@@ -4,39 +4,39 @@ import {
   TrendingUp, HelpCircle, Star, LogOut, Bell
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 
 const NAV_SECTIONS = [
   {
     items: [
-      { id: 'overview',  label: 'Overview',        icon: LayoutDashboard },
+      { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     ]
   },
   {
     label: 'Publishing',
     items: [
-      { id: 'books',     label: 'My Books',         icon: BookOpen },
-      { id: 'reviews',   label: 'Reviews & Issues', icon: Star },
+      { id: 'books', label: 'My Books', icon: BookOpen },
+      { id: 'reviews', label: 'Reviews & Issues', icon: Star },
     ]
   },
   {
     label: 'Earnings',
     items: [
       { id: 'royalties', label: 'Sales & Royalties', icon: TrendingUp },
-      { id: 'payments',  label: 'Payments & Tax',    icon: CreditCard },
+      { id: 'payments', label: 'Payments & Tax', icon: CreditCard },
     ]
   },
   {
     label: 'Account',
     items: [
-      { id: 'profile',        label: 'Author Profile',   icon: User },
-      { id: 'notifications',  label: 'Notifications',    icon: Bell },
+      { id: 'profile', label: 'Author Profile', icon: User },
+      { id: 'notifications', label: 'Notifications', icon: Bell },
     ]
   },
   {
     label: 'Help',
     items: [
-      { id: 'support',   label: 'Support',           icon: HelpCircle },
+      { id: 'support', label: 'Support', icon: HelpCircle },
     ]
   },
 ];
@@ -50,11 +50,12 @@ function getNotificationCount(authorProfile, books = []) {
 }
 
 export default function Sidebar({ activeTab, onTabChange, authorProfile, books = [] }) {
-  const firstName = authorProfile?.full_name?.split(' ')[0] || 'Author';
+  const { logout, user } = useAuth();
+  const firstName = authorProfile?.full_name?.split(' ')[0] || user?.publisherFullName?.split(' ')[0] || 'Author';
   const notifCount = getNotificationCount(authorProfile, books);
 
   return (
-    <aside className="w-60 shrink-0 hidden md:flex flex-col border-r bg-card min-h-screen sticky top-0">
+    <aside className="w-60 shrink-0 hidden md:flex flex-col border-r bg-card h-screen sticky top-0">
       {/* Brand */}
       <div className="px-5 py-5 border-b flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
@@ -112,11 +113,12 @@ export default function Sidebar({ activeTab, onTabChange, authorProfile, books =
             <p className="text-[10px] text-muted-foreground truncate">{authorProfile?.email || ''}</p>
           </div>
           <button
-            onClick={() => base44.auth.logout()}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => logout()}
+            className="text-muted-foreground hover:text-foreground transition-colors flex items-center"
             title="Sign out"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            <LogOut className="w-3.5 h-3.5 font-bold" />
+            <span className="text-xs px-1 font-bold">Logout</span>
           </button>
         </div>
       </div>

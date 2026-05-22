@@ -12,7 +12,7 @@ import AccountSetup from './pages/AccountSetup';
 import Login from './pages/Login';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, isAuthenticated } = useAuth();
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -39,9 +39,9 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/publish" element={<PublishBook />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/book/:id" element={<BookDetail />} />
+      <Route path="/publish" element={isAuthenticated ? <PublishBook /> : <Login />} />
+      <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Login />} />
+      <Route path="/book/:id" element={isAuthenticated ? <BookDetail /> : <Login />} />
       <Route path="/account-setup" element={<AccountSetup />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
@@ -52,14 +52,15 @@ const AuthenticatedApp = () => {
 function App() {
 
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </AuthProvider>
+
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </AuthProvider>
   )
 }
 

@@ -3,7 +3,7 @@ import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const steps = [
-  { id: 1, label: 'Book Details' },
+  // { id: 1, label: 'Book Details' },
   { id: 2, label: 'Content' },
   { id: 3, label: 'Pricing' },
   { id: 4, label: 'Review & Publish' },

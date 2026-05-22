@@ -1,10 +1,12 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { isTokenExpired, clearAuthAndRedirect } from '@/services/api';
 import { CredentialService } from '@/services/credential.service';
+import { useToast } from "@/components/ui/use-toast";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  const { toast } = useToast();
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -68,13 +70,17 @@ export const AuthProvider = ({ children }) => {
   const login = async (usernameOrEmail, password) => {
     try {
       const response = await CredentialService.login({ usernameOrEmail, password });
-      
       if (!response.isSuccess) {
+        toast({
+          title: "Login failed",
+          description: response.errorMessage || 'Invalid credentials',
+          variant: "destructive",
+        });
         throw new Error(response.errorMessage || 'Login failed');
       }
 
       const { token, publisherId, tokenExpirationTime, publisherFullName, publisherEmail, isProfileCompleted: profileCompleted } = response.data;
-      
+
       // Save to localStorage
       localStorage.setItem('access_token', token);
       localStorage.setItem('publisher_id', publisherId.toString());
@@ -82,7 +88,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('publisher_full_name', publisherFullName);
       localStorage.setItem('publisher_email', publisherEmail);
       localStorage.setItem('is_profile_completed', profileCompleted.toString());
-      
+
       // Update state
       setUser({
         publisherId,
@@ -92,13 +98,17 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       setIsProfileCompleted(profileCompleted);
       setAuthChecked(true);
-      
+      toast({
+        title: "Logged in",
+        description: "You have been logged in successfully.",
+      });
       return { success: true, isProfileCompleted: profileCompleted };
+
     } catch (error) {
       console.error('Login failed:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.errorMessage || error.message || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.errorMessage || error.message || 'Login failed'
       };
     }
   };
@@ -107,7 +117,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     setIsProfileCompleted(false);
-    
+
     // Clear localStorage
     localStorage.removeItem('access_token');
     localStorage.removeItem('publisher_id');
@@ -115,7 +125,13 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('publisher_full_name');
     localStorage.removeItem('publisher_email');
     localStorage.removeItem('is_profile_completed');
-    
+
+    // Show logout success message
+    // toast.success('Logout successfully');
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully.",
+    });
     if (shouldRedirect) {
       window.location.href = '/login';
     }
