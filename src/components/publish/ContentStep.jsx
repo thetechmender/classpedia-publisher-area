@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import ePub from 'epubjs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -47,7 +48,17 @@ const FieldLabel = ({ label, required, tooltip }) => (
   </div>
 );
 
-const SUPPORTED_FORMATS = ['EPUB', 'MOBI', 'KPF', 'DOC', 'DOCX', 'PDF'];
+// const SUPPORTED_FORMATS = ['EPUB', 'MOBI', 'KPF', 'DOC', 'DOCX', 'PDF'];
+const SUPPORTED_FORMATS = ['EPUB'];
+
+const escapeHtml = (str) =>
+  str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
 
 // Sample chapter page-range selector
 function SampleChapterSection({ data, onChange }) {
@@ -319,15 +330,99 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
   const coverRef = useRef(null);
   const [uploading, setUploading] = useState({ manuscript: false, cover: false, back_cover: false, spine: false });
   const [showPreviewer, setShowPreviewer] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
+
+  const startTimer = () => {
+    setElapsedSeconds(0);
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds((s) => s + 1);
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const formatTime = (totalSeconds) => {
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
 
   const handleFileUpload = async (type, file) => {
     if (!file) return;
     setUploading((prev) => ({ ...prev, [type]: true }));
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    if (type === 'manuscript') {
-      onChange({ manuscript_url: file_url, manuscript_filename: file.name });
+    startTimer();
+
+    try {
+      if (type === 'manuscript' && file.name.toLowerCase().endsWith('.epub')) {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const book = ePub(arrayBuffer);
+          await book.opened;
+
+          const chapterHtmlParts = [];
+          /** @type {any} */
+          const spine = book.spine;
+
+          for (let i = 0; i < spine.length; i++) {
+            const section = spine.get(i);
+            if (!section) continue;
+
+            await section.load(book.load.bind(book));
+            const doc = section.document;
+            if (!doc) continue;
+
+            let title = '';
+            const h1 = doc.querySelector('h1');
+            const h2 = doc.querySelector('h2');
+            const titleEl = doc.querySelector('title');
+            if (h1) title = h1.textContent.trim();
+            else if (h2) title = h2.textContent.trim();
+            else if (titleEl) title = titleEl.textContent.trim();
+            else title = `Chapter ${i + 1}`;
+
+            let chapterHtml = `<h1>${escapeHtml(title)}</h1>`;
+
+            const paragraphs = doc.querySelectorAll('p');
+            paragraphs.forEach((p) => {
+              const text = p.textContent.trim();
+              if (text) {
+                chapterHtml += `<p>${escapeHtml(text)}</p>`;
+              }
+            });
+
+            chapterHtmlParts.push(chapterHtml);
+          }
+
+          const finalHtml = chapterHtmlParts.join('\n');
+          console.log(finalHtml);
+        } catch (err) {
+          console.error('EPUB parsing error:', err);
+        }
+      }
+
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      if (type === 'manuscript') {
+        onChange({ manuscript_url: file_url, manuscript_filename: file.name });
+      }
+    } finally {
+      stopTimer();
+      setUploading((prev) => ({ ...prev, [type]: false }));
     }
-    setUploading((prev) => ({ ...prev, [type]: false }));
   };
 
   return (
@@ -352,7 +447,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
         <input
           ref={manuscriptRef}
           type="file"
-          accept=".epub,.mobi,.doc,.docx,.pdf,.kpf"
+          accept=".epub"
           className="hidden"
           onChange={(e) => handleFileUpload('manuscript', e.target.files[0])}
         />
@@ -396,9 +491,15 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
               <p className="text-sm font-semibold text-foreground">
                 {uploading.manuscript ? 'Uploading manuscript…' : 'Upload Manuscript'}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Supported file types: {SUPPORTED_FORMATS.join(', ')}
-              </p>
+              {uploading.manuscript ? (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Elapsed: {formatTime(elapsedSeconds)}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Supported file types: {SUPPORTED_FORMATS.join(', ')}
+                </p>
+              )}
             </div>
           </button>
         )}
@@ -537,7 +638,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
         <Button variant="outline" onClick={onBack} className="gap-2">
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
-        <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
+        <Button onClick={onNext} disabled={uploading.manuscript} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
           Save & Continue <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
