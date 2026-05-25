@@ -11,5 +11,16 @@ export const base44 = {
     User: {
       me: async () => ({})
     }
+  },
+  integrations: {
+    Core: {
+      // Mock file upload: returns a local blob URL for demo purposes
+      UploadFile: async ({ file }) => {
+        // Simulate small network delay
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        const file_url = URL.createObjectURL(file);
+        return { file_url };
+      }
+    }
   }
 };

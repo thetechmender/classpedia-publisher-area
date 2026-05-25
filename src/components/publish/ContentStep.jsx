@@ -227,60 +227,109 @@ function SampleChapterSection({ data, onChange }) {
 }
 
 // ── Cover Section with Front, Spine, Back ─────────────────────────────────────
-function CoverSection({ data, onChange, errors, uploading, setUploading, coverRef }) {
+function CoverSection({ data, onChange, errors, uploading, setUploading, coverRef, localPreviews, setLocalPreviews }) {
   const backCoverRef = useRef(null);
   const spineRef = useRef(null);
 
   const handleUpload = async (type, file) => {
     if (!file) return;
+
+    // Create local preview URL immediately for instant feedback
+    const localUrl = URL.createObjectURL(file);
+    setLocalPreviews(prev => ({ ...prev, [type]: localUrl }));
+
     setUploading(prev => ({ ...prev, [type]: true }));
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    if (type === 'cover') onChange({ cover_url: file_url });
-    else if (type === 'back_cover') onChange({ back_cover_url: file_url });
-    else if (type === 'spine') onChange({ spine_url: file_url });
-    setUploading(prev => ({ ...prev, [type]: false }));
+    try {
+      let file_url = '';
+      try {
+        const res = await base44.integrations.Core.UploadFile({ file });
+        file_url = res?.file_url || '';
+      } catch (err) {
+        console.error('Cover upload error:', err);
+        // Fallback so the demo still works
+        file_url = localUrl;
+      }
+      if (type === 'cover') onChange({ cover_url: file_url });
+      else if (type === 'back_cover') onChange({ back_cover_url: file_url });
+      else if (type === 'spine') onChange({ spine_url: file_url });
+    } finally {
+      setUploading(prev => ({ ...prev, [type]: false }));
+    }
   };
 
-  const CoverUploadSlot = ({ label, required, hint, uploadKey, url, inputRef, onRemove }) => (
-    <div className="flex-1 min-w-0">
-      <p className="text-xs font-semibold text-foreground mb-1">
-        {label} {required && <span className="text-destructive">*</span>}
-      </p>
-      {hint && <p className="text-[10px] text-muted-foreground mb-2 leading-snug">{hint}</p>}
-      <input ref={inputRef} type="file" accept="image/*" className="hidden"
-        onChange={(e) => handleUpload(uploadKey, e.target.files[0])} />
-      {url ? (
-        <div className="relative group border border-primary/20 rounded-lg overflow-hidden bg-primary/5">
-          <img src={url} alt={label}
-            className={cn('w-full object-cover rounded-lg', uploadKey === 'spine' ? 'h-28' : 'h-40')} />
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
-            <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => inputRef.current?.click()}>Replace</Button>
-            <Button variant="ghost" size="sm" className="h-7 text-xs text-white hover:text-white" onClick={onRemove}><X className="w-3.5 h-3.5" /></Button>
-          </div>
-          <div className="absolute bottom-1 left-1 right-1 flex items-center justify-center">
-            <span className="text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1">
-              <CheckCircle2 className="w-2.5 h-2.5 text-green-400" /> Uploaded
-            </span>
-          </div>
-        </div>
-      ) : (
-        <button onClick={() => inputRef.current?.click()} disabled={uploading[uploadKey]}
-          className={cn(
-            'w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 transition-colors',
-            uploadKey === 'spine' ? 'py-6' : 'py-8',
-            'hover:border-primary hover:bg-primary/5',
-            errors[`${uploadKey}_url`] ? 'border-destructive' : 'border-border'
+  const handleRemove = (type, onRemove) => {
+    // Clear local preview
+    if (localPreviews[type]) {
+      URL.revokeObjectURL(localPreviews[type]);
+      setLocalPreviews(prev => ({ ...prev, [type]: null }));
+    }
+    onRemove();
+  };
+
+  const CoverUploadSlot = ({ label, required, hint, uploadKey, url, inputRef, onRemove }) => {
+    // Use local preview if available, otherwise use uploaded URL
+    const displayUrl = localPreviews[uploadKey] || url;
+    const isUploading = uploading[uploadKey];
+    const hasPreview = !!displayUrl;
+    const isFullyUploaded = !!url; // Has server URL
+    
+    return (
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-foreground mb-1">
+          {label} {required && <span className="text-destructive">*</span>}
+        </p>
+        {hint && <p className="text-[10px] text-muted-foreground mb-2 leading-snug">{hint}</p>}
+        <input ref={inputRef} type="file" accept="image/*" className="hidden"
+          onChange={(e) => handleUpload(uploadKey, e.target.files[0])} />
+        {hasPreview ? (
+          <div className={cn(
+            "relative group rounded-lg overflow-hidden",
+            isFullyUploaded 
+              ? "border border-primary/20 bg-primary/5" 
+              : "border-2 border-dashed border-amber-400 bg-amber-50"
           )}>
-          {uploading[uploadKey]
-            ? <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            : <ImageIcon className="w-5 h-5 text-muted-foreground" />}
-          <p className="text-xs text-muted-foreground font-medium">
-            {uploading[uploadKey] ? 'Uploading…' : 'Upload'}
-          </p>
-        </button>
-      )}
-    </div>
-  );
+            <img src={displayUrl} alt={label}
+              className={cn('w-full object-cover rounded-lg', uploadKey === 'spine' ? 'h-28' : 'h-40')} />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
+              <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => inputRef.current?.click()}>Replace</Button>
+              <Button variant="ghost" size="sm" className="h-7 text-xs text-white hover:text-white" onClick={onRemove}><X className="w-3.5 h-3.5" /></Button>
+            </div>
+            <div className="absolute bottom-1 left-1 right-1 flex items-center justify-center">
+              {isUploading ? (
+                <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />
+                  Uploading...
+                </span>
+              ) : isFullyUploaded ? (
+                <span className="text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                  <CheckCircle2 className="w-2.5 h-2.5 text-green-400" /> Uploaded
+                </span>
+              ) : (
+                <span className="text-[10px] bg-amber-500 text-white px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                  <AlertCircle className="w-2.5 h-2.5" /> Preview Only
+                </span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => inputRef.current?.click()} disabled={isUploading}
+            className={cn(
+              'w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 transition-colors',
+              uploadKey === 'spine' ? 'py-6' : 'py-8',
+              'hover:border-primary hover:bg-primary/5',
+              errors[`${uploadKey}_url`] ? 'border-destructive' : 'border-border'
+            )}>
+            {isUploading
+              ? <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              : <ImageIcon className="w-5 h-5 text-muted-foreground" />}
+            <p className="text-xs text-muted-foreground font-medium">
+              {isUploading ? 'Uploading…' : 'Upload'}
+            </p>
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Section icon={ImageIcon} title="Book Cover" subtitle="Upload front cover (required), plus optional spine and back cover">
@@ -296,7 +345,7 @@ function CoverSection({ data, onChange, errors, uploading, setUploading, coverRe
           uploadKey="cover"
           url={data.cover_url}
           inputRef={coverRef}
-          onRemove={() => onChange({ cover_url: '' })}
+          onRemove={() => handleRemove('cover', () => onChange({ cover_url: '' }))}
         />
         <CoverUploadSlot
           label="Spine"
@@ -304,7 +353,7 @@ function CoverSection({ data, onChange, errors, uploading, setUploading, coverRe
           uploadKey="spine"
           url={data.spine_url}
           inputRef={spineRef}
-          onRemove={() => onChange({ spine_url: '' })}
+          onRemove={() => handleRemove('spine', () => onChange({ spine_url: '' }))}
         />
         <CoverUploadSlot
           label="Back Cover"
@@ -312,7 +361,7 @@ function CoverSection({ data, onChange, errors, uploading, setUploading, coverRe
           uploadKey="back_cover"
           url={data.back_cover_url}
           inputRef={backCoverRef}
-          onRemove={() => onChange({ back_cover_url: '' })}
+          onRemove={() => handleRemove('back_cover', () => onChange({ back_cover_url: '' }))}
         />
       </div>
 
@@ -332,6 +381,8 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
   const [showPreviewer, setShowPreviewer] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerRef = useRef(null);
+  // Local preview URLs for immediate display before upload completes
+  const [localPreviews, setLocalPreviews] = useState({ cover: null, back_cover: null, spine: null, manuscript: null });
 
   useEffect(() => {
     return () => {
@@ -362,62 +413,130 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  const parseEpubToStructure = async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const book = ePub(arrayBuffer);
+    await book.opened;
+
+    /** @type {any} */
+    const spine = book.spine;
+    const chapters = [];
+
+    // Allowed element types we want to capture
+    const allowedTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'blockquote', 'li'];
+
+    for (let i = 0; i < spine.length; i++) {
+      const section = spine.get(i);
+      if (!section) continue;
+
+      try {
+        await section.load(book.load.bind(book));
+      } catch (e) {
+        continue;
+      }
+      const doc = section.document;
+      if (!doc) continue;
+
+      // Determine chapter title
+      let chapterTitle = '';
+      const h1 = doc.querySelector('h1');
+      const h2 = doc.querySelector('h2');
+      const titleEl = doc.querySelector('title');
+      if (h1) chapterTitle = h1.textContent.trim();
+      else if (h2) chapterTitle = h2.textContent.trim();
+      else if (titleEl) chapterTitle = titleEl.textContent.trim();
+      else chapterTitle = `Chapter ${i + 1}`;
+
+      // Walk the body and pick up known elements in order
+      const elements = [];
+      const body = doc.body || doc.documentElement;
+      if (!body) continue;
+
+      const walker = doc.createTreeWalker(body, 1 /* NodeFilter.SHOW_ELEMENT */);
+      let node = walker.currentNode;
+      // Iterate elements in document order
+      while (node) {
+        const tag = (node.tagName || '').toLowerCase();
+        if (allowedTags.includes(tag)) {
+          const text = (node.textContent || '').trim();
+          if (text) {
+            elements.push({ type: tag, content: text });
+          }
+        }
+        node = walker.nextNode();
+      }
+
+      // Skip empty chapters
+      if (elements.length === 0) continue;
+
+      chapters.push({
+        chapterIndex: chapters.length + 1,
+        title: chapterTitle,
+        elements,
+      });
+    }
+
+    // Best-effort book metadata
+    let metaTitle = '';
+    try {
+      const md = await book.loaded.metadata;
+      metaTitle = md?.title || '';
+    } catch (_) {}
+
+    return {
+      bookId: `local-${Date.now()}`,
+      title: metaTitle || file.name.replace(/\.epub$/i, ''),
+      chapters,
+    };
+  };
+
   const handleFileUpload = async (type, file) => {
     if (!file) return;
+
+    // For manuscript, store filename immediately for instant feedback
+    if (type === 'manuscript') {
+      setLocalPreviews((prev) => ({ ...prev, manuscript: file.name }));
+    }
+
     setUploading((prev) => ({ ...prev, [type]: true }));
     startTimer();
 
     try {
+      let parsedStructure = null;
+
       if (type === 'manuscript' && file.name.toLowerCase().endsWith('.epub')) {
         try {
-          const arrayBuffer = await file.arrayBuffer();
-          const book = ePub(arrayBuffer);
-          await book.opened;
-
-          const chapterHtmlParts = [];
-          /** @type {any} */
-          const spine = book.spine;
-
-          for (let i = 0; i < spine.length; i++) {
-            const section = spine.get(i);
-            if (!section) continue;
-
-            await section.load(book.load.bind(book));
-            const doc = section.document;
-            if (!doc) continue;
-
-            let title = '';
-            const h1 = doc.querySelector('h1');
-            const h2 = doc.querySelector('h2');
-            const titleEl = doc.querySelector('title');
-            if (h1) title = h1.textContent.trim();
-            else if (h2) title = h2.textContent.trim();
-            else if (titleEl) title = titleEl.textContent.trim();
-            else title = `Chapter ${i + 1}`;
-
-            let chapterHtml = `<h1>${escapeHtml(title)}</h1>`;
-
-            const paragraphs = doc.querySelectorAll('p');
-            paragraphs.forEach((p) => {
-              const text = p.textContent.trim();
-              if (text) {
-                chapterHtml += `<p>${escapeHtml(text)}</p>`;
-              }
-            });
-
-            chapterHtmlParts.push(chapterHtml);
-          }
-
-          const finalHtml = chapterHtmlParts.join('\n');
-          console.log(finalHtml);
+          parsedStructure = await parseEpubToStructure(file);
+          console.log('[EPUB parsed structure]', parsedStructure);
         } catch (err) {
           console.error('EPUB parsing error:', err);
         }
       }
 
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      let file_url = '';
+      try {
+        const res = await base44.integrations.Core.UploadFile({ file });
+        file_url = res?.file_url || '';
+      } catch (err) {
+        console.error('Upload error:', err);
+        // Fallback: use local blob URL so the demo can still proceed
+        file_url = URL.createObjectURL(file);
+      }
+
       if (type === 'manuscript') {
-        onChange({ manuscript_url: file_url, manuscript_filename: file.name });
+        onChange({
+          manuscript_url: file_url,
+          manuscript_filename: file.name,
+          manuscript_structure: parsedStructure,
+        });
+        // Clear local preview after successful upload
+        setLocalPreviews((prev) => ({ ...prev, manuscript: null }));
+      }
+    } catch (err) {
+      console.error('handleFileUpload fatal error:', err);
+      // On fatal error, also clear the local preview so user isn't stuck
+      if (type === 'manuscript') {
+        setLocalPreviews((prev) => ({ ...prev, manuscript: null }));
       }
     } finally {
       stopTimer();
@@ -452,57 +571,90 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           onChange={(e) => handleFileUpload('manuscript', e.target.files[0])}
         />
 
-        {data.manuscript_url ? (
-          <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <FileText className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{data.manuscript_filename || 'Manuscript uploaded'}</p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                <CheckCircle2 className="w-3 h-3 text-green-500" /> Uploaded successfully
-              </p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => manuscriptRef.current?.click()} className="shrink-0">
-              Replace
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => onChange({ manuscript_url: '', manuscript_filename: '' })}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        ) : (
-          <button
-            onClick={() => manuscriptRef.current?.click()}
-            disabled={uploading.manuscript}
-            className={cn(
-              'w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 transition-colors mb-4',
-              'hover:border-primary hover:bg-primary/5',
-              errors.manuscript_url ? 'border-destructive' : 'border-border'
-            )}
-          >
-            {uploading.manuscript ? (
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            ) : (
+        {(() => {
+          const isUploading = uploading.manuscript;
+          const isFullyUploaded = !!data.manuscript_url;
+          const hasLocalPreview = !!localPreviews.manuscript;
+          const displayFilename = data.manuscript_filename || localPreviews.manuscript || 'Manuscript';
+          
+          // Show uploaded state if fully uploaded OR if uploading with local preview
+          if (isFullyUploaded || hasLocalPreview) {
+            return (
+              <div className={cn(
+                "flex items-center gap-3 rounded-xl p-4 mb-4",
+                isFullyUploaded 
+                  ? "bg-primary/5 border border-primary/20" 
+                  : "bg-amber-50 border-2 border-dashed border-amber-400"
+              )}>
+                <div className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                  isFullyUploaded ? "bg-primary/10" : "bg-amber-100"
+                )}>
+                  {isUploading ? (
+                    <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FileText className={cn("w-5 h-5", isFullyUploaded ? "text-primary" : "text-amber-600")} />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{displayFilename}</p>
+                  <span className={cn("text-xs flex items-center gap-1 mt-0.5", isFullyUploaded ? "text-muted-foreground" : "text-amber-600")}>
+                    {isUploading ? (
+                      <>
+                        <span className="w-3 h-3 border border-amber-500 border-t-transparent rounded-full animate-spin inline-block" />
+                        Uploading... {formatTime(elapsedSeconds)}
+                      </>
+                    ) : isFullyUploaded ? (
+                      <>
+                        <CheckCircle2 className="w-3 h-3 text-green-500" /> Uploaded successfully
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-3 h-3" /> Processing...
+                      </>
+                    )}
+                  </span>
+                </div>
+                {!isUploading && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => manuscriptRef.current?.click()} className="shrink-0">
+                      Replace
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => {
+                      setLocalPreviews(prev => ({ ...prev, manuscript: null }));
+                      onChange({ manuscript_url: '', manuscript_filename: '' });
+                    }}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            );
+          }
+          
+          // Show upload button
+          return (
+            <button
+              onClick={() => manuscriptRef.current?.click()}
+              disabled={isUploading}
+              className={cn(
+                'w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 transition-colors mb-4',
+                'hover:border-primary hover:bg-primary/5',
+                errors.manuscript_url ? 'border-destructive' : 'border-border'
+              )}
+            >
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Upload className="w-6 h-6 text-primary" />
               </div>
-            )}
-            <div className="text-center">
-              <p className="text-sm font-semibold text-foreground">
-                {uploading.manuscript ? 'Uploading manuscript…' : 'Upload Manuscript'}
-              </p>
-              {uploading.manuscript ? (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Elapsed: {formatTime(elapsedSeconds)}
-                </p>
-              ) : (
+              <div className="text-center">
+                <p className="text-sm font-semibold text-foreground">Upload Manuscript</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Supported file types: {SUPPORTED_FORMATS.join(', ')}
                 </p>
-              )}
-            </div>
-          </button>
-        )}
+              </div>
+            </button>
+          );
+        })()}
         {errors.manuscript_url && (
           <p className="flex items-center gap-1 text-xs text-destructive mb-4">
             <AlertCircle className="w-3 h-3" /> {errors.manuscript_url}
@@ -553,7 +705,16 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
       <SampleChapterSection data={data} onChange={onChange} />
 
       {/* ── 3. BOOK COVER ── */}
-      <CoverSection data={data} onChange={onChange} errors={errors} uploading={uploading} setUploading={setUploading} coverRef={coverRef} />
+      <CoverSection 
+        data={data} 
+        onChange={onChange} 
+        errors={errors} 
+        uploading={uploading} 
+        setUploading={setUploading} 
+        coverRef={coverRef}
+        localPreviews={localPreviews}
+        setLocalPreviews={setLocalPreviews}
+      />
 
       {/* ── 4. AI-GENERATED CONTENT ── */}
       <Section icon={Cpu} title="AI-Generated Content" subtitle="Transparency about the use of AI tools in your book">
@@ -600,21 +761,30 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           Preview your book to check quality and see how it will appear to readers on Classpedia across devices.
           Make sure your formatting looks great before publishing.
         </p>
-        <Button
-          variant="outline"
-          onClick={() => setShowPreviewer(true)}
-          disabled={!data.manuscript_url && !data.cover_url}
-          className={cn(
-            'gap-2 border-primary/30 hover:bg-primary/10 hover:text-primary',
-            !data.manuscript_url && !data.cover_url && 'opacity-50 cursor-not-allowed'
-          )}
-        >
-          <Eye className="w-4 h-4" />
-          Launch Preview
-        </Button>
-        {!data.manuscript_url && !data.cover_url && (
-          <p className="text-xs text-muted-foreground mt-2">Upload a manuscript or cover to enable the preview.</p>
-        )}
+        {(() => {
+          const hasCover = !!(localPreviews.cover || data.cover_url);
+          const hasManuscript = !!data.manuscript_url;
+          const canPreview = hasCover || hasManuscript;
+          return (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setShowPreviewer(true)}
+                disabled={!canPreview}
+                className={cn(
+                  'gap-2 border-primary/30 hover:bg-primary/10 hover:text-primary',
+                  !canPreview && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                <Eye className="w-4 h-4" />
+                Launch Preview
+              </Button>
+              {!canPreview && (
+                <p className="text-xs text-muted-foreground mt-2">Upload a manuscript or cover to enable the preview.</p>
+              )}
+            </>
+          );
+        })()}
       </Section>
 
       {/* ── 6. ISBN ── */}
@@ -645,7 +815,16 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
 
       {/* Book Previewer Modal */}
       {showPreviewer && (
-        <BookPreviewer book={data} onClose={() => setShowPreviewer(false)} />
+        <BookPreviewer 
+          book={{
+            ...data,
+            // Use local previews if available, otherwise use uploaded URLs
+            cover_url: localPreviews.cover || data.cover_url,
+            back_cover_url: localPreviews.back_cover || data.back_cover_url,
+            spine_url: localPreviews.spine || data.spine_url,
+          }} 
+          onClose={() => setShowPreviewer(false)} 
+        />
       )}
 
     </div>

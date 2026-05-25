@@ -75,33 +75,35 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
         <p className="text-sm text-muted-foreground mt-0.5">Your public identity, contact details, and account information.</p>
       </div>
       {/* <Link to="/account-setup"> */}
-        <div className="flex items-center justify-between gap-4 bg-primary/5 border-2 border-primary/20 border-dashed rounded-2xl px-6 py-8 hover:bg-primary/10 transition-colors cursor-pointer text-center flex-col">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-            <User className="w-7 h-7 text-primary" />
-          </div>
-          <div>
-            <p className="text-base font-bold">Complete your account setup</p>
-            <p className="text-sm text-muted-foreground mt-1">Set up your payment details, tax info, and author bio to start publishing and earning royalties.</p>
-          </div>
+      <div className="flex items-center justify-between gap-4 bg-primary/5 border-2 border-primary/20 border-dashed rounded-2xl px-6 py-8 hover:bg-primary/10 transition-colors cursor-pointer text-center flex-col">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+          <User className="w-7 h-7 text-primary" />
+        </div>
+        <div>
+          <p className="text-base font-bold">Complete your account setup</p>
+          <p className="text-sm text-muted-foreground mt-1">Set up your payment details, tax info, and author bio to start publishing and earning royalties.</p>
+        </div>
+        <Link to='/account-setup'>
           <Button className="gap-2 mt-2">
             <ArrowRight className="w-4 h-4" /> Start Account Setup
           </Button>
-        </div>
+        </Link>
+      </div>
       {/* </Link> */}
     </div>
   );
 
   const startEdit = (section) => {
     setEditData({
-      author_bio:        authorProfile.author_bio || '',
-      email:             authorProfile.email || '',
-      phone:             authorProfile.phone || '',
-      website:           authorProfile.website || '',
-      twitter_handle:    authorProfile.twitter_handle || '',
-      instagram_handle:  authorProfile.instagram_handle || '',
-      facebook_url:      authorProfile.facebook_url || '',
-      linkedin_url:      authorProfile.linkedin_url || '',
-      youtube_url:       authorProfile.youtube_url || '',
+      author_bio: authorProfile.author_bio || '',
+      email: authorProfile.email || '',
+      phone: authorProfile.phone || '',
+      website: authorProfile.website || '',
+      twitter_handle: authorProfile.twitter_handle || '',
+      instagram_handle: authorProfile.instagram_handle || '',
+      facebook_url: authorProfile.facebook_url || '',
+      linkedin_url: authorProfile.linkedin_url || '',
+      youtube_url: authorProfile.youtube_url || '',
     });
     setEditing(section);
   };
@@ -271,12 +273,12 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
         {editing === 'social' ? (
           <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { key: 'website',           label: 'Website',     placeholder: 'https://yoursite.com' },
-              { key: 'twitter_handle',    label: 'X / Twitter', placeholder: 'username (no @)' },
-              { key: 'instagram_handle',  label: 'Instagram',   placeholder: 'username (no @)' },
-              { key: 'facebook_url',      label: 'Facebook',    placeholder: 'https://facebook.com/...' },
-              { key: 'linkedin_url',      label: 'LinkedIn',    placeholder: 'https://linkedin.com/in/...' },
-              { key: 'youtube_url',       label: 'YouTube',     placeholder: 'https://youtube.com/@...' },
+              { key: 'website', label: 'Website', placeholder: 'https://yoursite.com' },
+              { key: 'twitter_handle', label: 'X / Twitter', placeholder: 'username (no @)' },
+              { key: 'instagram_handle', label: 'Instagram', placeholder: 'username (no @)' },
+              { key: 'facebook_url', label: 'Facebook', placeholder: 'https://facebook.com/...' },
+              { key: 'linkedin_url', label: 'LinkedIn', placeholder: 'https://linkedin.com/in/...' },
+              { key: 'youtube_url', label: 'YouTube', placeholder: 'https://youtube.com/@...' },
             ].map(({ key, label, placeholder }) => (
               <div key={key}>
                 <label className="text-xs text-muted-foreground font-medium mb-1.5 block">{label}</label>
@@ -287,12 +289,12 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
         ) : (
           <div className="px-5 py-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
-              { icon: Globe,     label: 'Website',    value: authorProfile.website },
-              { icon: Twitter,   label: 'X/Twitter',  value: authorProfile.twitter_handle ? `@${authorProfile.twitter_handle}` : null },
-              { icon: Instagram, label: 'Instagram',  value: authorProfile.instagram_handle ? `@${authorProfile.instagram_handle}` : null },
-              { icon: Facebook,  label: 'Facebook',   value: authorProfile.facebook_url },
-              { icon: Linkedin,  label: 'LinkedIn',   value: authorProfile.linkedin_url },
-              { icon: Youtube,   label: 'YouTube',    value: authorProfile.youtube_url },
+              { icon: Globe, label: 'Website', value: authorProfile.website },
+              { icon: Twitter, label: 'X/Twitter', value: authorProfile.twitter_handle ? `@${authorProfile.twitter_handle}` : null },
+              { icon: Instagram, label: 'Instagram', value: authorProfile.instagram_handle ? `@${authorProfile.instagram_handle}` : null },
+              { icon: Facebook, label: 'Facebook', value: authorProfile.facebook_url },
+              { icon: Linkedin, label: 'LinkedIn', value: authorProfile.linkedin_url },
+              { icon: Youtube, label: 'YouTube', value: authorProfile.youtube_url },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className={cn(
                 'flex items-center gap-2 p-3 rounded-lg border transition-colors',
@@ -311,12 +313,12 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
 
       {/* Address — read-only */}
       <SectionCard icon={MapPin} title="Address & Location" badge={<ReadOnly />}>
-        <InfoRow label="Address"   value={authorProfile.address_line1} />
+        <InfoRow label="Address" value={authorProfile.address_line1} />
         {authorProfile.address_line2 && <InfoRow label="Line 2" value={authorProfile.address_line2} />}
-        <InfoRow label="City"      value={authorProfile.city} />
-        <InfoRow label="State"     value={authorProfile.state} />
-        <InfoRow label="ZIP"       value={authorProfile.zip} />
-        <InfoRow label="Country"   value={authorProfile.country} />
+        <InfoRow label="City" value={authorProfile.city} />
+        <InfoRow label="State" value={authorProfile.state} />
+        <InfoRow label="ZIP" value={authorProfile.zip} />
+        <InfoRow label="Country" value={authorProfile.country} />
         <div className="px-5 py-3 bg-secondary/10 border-t flex items-center gap-2">
           <AlertCircle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           <p className="text-xs text-muted-foreground">Address is used for legal and tax purposes. Contact support to update.</p>
@@ -325,12 +327,12 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
 
       {/* Payment — read-only */}
       <SectionCard icon={CreditCard} title="Payment Method" badge={<ReadOnly />}>
-        <InfoRow label="Method"        value={authorProfile.payment_method === 'paypal' ? 'PayPal' : authorProfile.payment_method === 'bank_transfer' ? 'Bank Transfer' : null} placeholder="Not configured" />
+        <InfoRow label="Method" value={authorProfile.payment_method === 'paypal' ? 'PayPal' : authorProfile.payment_method === 'bank_transfer' ? 'Bank Transfer' : null} placeholder="Not configured" />
         {authorProfile.payment_method === 'paypal' && <InfoRow label="PayPal Email" value={authorProfile.paypal_email} />}
         {authorProfile.payment_method === 'bank_transfer' && (
           <>
             <InfoRow label="Account Name" value={authorProfile.bank_account_name} />
-            <InfoRow label="Account No."  value={authorProfile.bank_account_number ? `****${authorProfile.bank_account_number.slice(-4)}` : null} />
+            <InfoRow label="Account No." value={authorProfile.bank_account_number ? `****${authorProfile.bank_account_number.slice(-4)}` : null} />
             <InfoRow label="Routing/IBAN" value={authorProfile.bank_routing_number ? `****${authorProfile.bank_routing_number.slice(-4)}` : null} />
           </>
         )}
@@ -342,10 +344,10 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
 
       {/* Tax — read-only */}
       <SectionCard icon={FileText} title="Tax Information" badge={<ReadOnly />}>
-        <InfoRow label="US Person"   value={authorProfile.us_person === true ? 'Yes — W-9' : authorProfile.us_person === false ? 'No — W-8BEN' : null} />
+        <InfoRow label="US Person" value={authorProfile.us_person === true ? 'Yes — W-9' : authorProfile.us_person === false ? 'No — W-8BEN' : null} />
         <InfoRow label="Tax Country" value={authorProfile.tax_country} />
         <InfoRow label="Tax ID Type" value={authorProfile.tax_id_type?.toUpperCase()} />
-        <InfoRow label="Tax ID"      value={authorProfile.tax_id ? `****${authorProfile.tax_id.slice(-4)}` : null} placeholder="Not provided" />
+        <InfoRow label="Tax ID" value={authorProfile.tax_id ? `****${authorProfile.tax_id.slice(-4)}` : null} placeholder="Not provided" />
         {authorProfile.us_person !== undefined && (
           <div className="px-5 py-4 border-t flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">

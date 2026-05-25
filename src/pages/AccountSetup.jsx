@@ -1,6 +1,6 @@
 // @ts-ignore
 import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { BookOpen, ArrowLeft } from 'lucide-react';
 import SetupStepIndicator from '@/components/setup/SetupStepIndicator';
@@ -12,6 +12,7 @@ import AuthorProfileStep from '@/components/setup/AuthorProfileStep';
 import { CredentialService } from '@/services/credential.service';
 import { PublisherService } from '@/services/publisher.service';
 import { useAuth } from '@/lib/AuthContext';
+import { Button } from '@/components/ui/button';
 
 const formDataInitial = {
   paymentMethod: 'bank_transfer',
@@ -325,18 +326,23 @@ export default function AccountSetup() {
       {/* Top Bar */}
       <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-30">
         <div className="w-full px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <BookOpen className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold">Classpedia Publishing</h1>
-                <p className="text-xs text-muted-foreground">Author Account Setup</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold">Classpedia Publishing</h1>
+              <p className="text-xs text-muted-foreground">Author Account Setup</p>
             </div>
           </div>
+          {isAuthenticated && (
+            <Link to="/dashboard">
+              <Button size="sm" className="gap-1.5 h-8 text-xs px-3">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 

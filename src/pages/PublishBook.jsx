@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/AuthContext';
 // @ts-ignore
 import StepIndicator from '@/components/publish/StepIndicator';
 import BookDetailsStep from '@/components/publish/BookDetailsStep';
@@ -77,7 +78,8 @@ const STEP_INFO = [
 export default function PublishBook() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState(2);
+  const { isAuthenticated } = useAuth();
+  const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [errors, setErrors] = useState({});
   const [publishing, setPublishing] = useState(false);
@@ -195,7 +197,7 @@ export default function PublishBook() {
         {/* Left sidebar panel */}
         <aside className="hidden lg:flex flex-col w-72 shrink-0 border-r bg-card/80 backdrop-blur-sm min-h-screen sticky top-0">
           {/* Brand */}
-          <div className="px-6 py-5 border-b flex items-center gap-3">
+          <div className="px-6 py-5 border-b flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <BookOpen className="w-4 h-4 text-primary-foreground" />
@@ -205,6 +207,14 @@ export default function PublishBook() {
                 <p className="text-[10px] text-muted-foreground mt-0.5">Publishing Platform</p>
               </div>
             </Link>
+            {isAuthenticated && (
+              <Link to="/dashboard">
+                <Button size="sm" className="gap-1.5 h-8 text-xs px-3">
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Dashboard
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Publish header */}

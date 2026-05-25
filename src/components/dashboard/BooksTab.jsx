@@ -16,20 +16,21 @@ import {
 import { formatDate } from '@/utils/date';
 
 const SORT_OPTIONS = [
-  { value: 'newest',     label: 'Newest first' },
-  { value: 'oldest',     label: 'Oldest first' },
-  { value: 'title',      label: 'Title A–Z' },
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'title', label: 'Title A–Z' },
   { value: 'price_desc', label: 'Price (high–low)' },
 ];
 
 const STATUS_CONFIG = {
-  draft:       { label: 'Draft',       icon: FileEdit,     bg: 'bg-slate-100',    text: 'text-slate-600',  dot: 'bg-slate-400' },
-  in_review:   { label: 'In Review',   icon: Clock,        bg: 'bg-amber-100',    text: 'text-amber-700',  dot: 'bg-amber-500' },
-  published:   { label: 'Published',   icon: CheckCircle2, bg: 'bg-emerald-100',  text: 'text-emerald-700',dot: 'bg-emerald-500' },
-  unpublished: { label: 'Unpublished', icon: XCircle,      bg: 'bg-red-100',      text: 'text-red-700',    dot: 'bg-red-500' },
+  draft: { label: 'Draft', icon: FileEdit, bg: 'bg-slate-100', text: 'text-slate-600', dot: 'bg-slate-400' },
+  in_review: { label: 'In Review', icon: Clock, bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' },
+  published: { label: 'Published', icon: CheckCircle2, bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  unpublished: { label: 'Unpublished', icon: XCircle, bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500' },
+  rejected: { label: 'Rejected', icon: XCircle, bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500' },
 };
 
-const STATUS_FILTERS = ['all', 'published', 'in_review', 'draft', 'unpublished'];
+const STATUS_FILTERS = ['all', 'published', 'in_review', 'draft', 'unpublished', 'rejected'];
 
 function StatusPill({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.draft;
@@ -50,11 +51,12 @@ export default function BooksTab({ books, isLoading }) {
   const [showBulkActions, setShowBulkActions] = useState(false);
 
   const stats = useMemo(() => ({
-    total:      books.length,
-    published:  books.filter(b => b.status === 'published').length,
-    in_review:  books.filter(b => b.status === 'in_review').length,
-    draft:      books.filter(b => b.status === 'draft').length,
+    total: books.length,
+    published: books.filter(b => b.status === 'published').length,
+    in_review: books.filter(b => b.status === 'in_review').length,
+    draft: books.filter(b => b.status === 'draft').length,
     unpublished: books.filter(b => b.status === 'unpublished').length,
+    rejected: books.filter(b => b.status === 'rejected').length,
   }), [books]);
 
   const filteredBooks = useMemo(() => {
@@ -66,10 +68,10 @@ export default function BooksTab({ books, isLoading }) {
       return matchesSearch && matchesStatus;
     });
     switch (sort) {
-      case 'oldest':     result = [...result].sort((a, b) => new Date(a.created_date) - new Date(b.created_date)); break;
-      case 'title':      result = [...result].sort((a, b) => (a.title || '').localeCompare(b.title || '')); break;
+      case 'oldest': result = [...result].sort((a, b) => new Date(a.created_date) - new Date(b.created_date)); break;
+      case 'title': result = [...result].sort((a, b) => (a.title || '').localeCompare(b.title || '')); break;
       case 'price_desc': result = [...result].sort((a, b) => (b.list_price || 0) - (a.list_price || 0)); break;
-      default:           result = [...result].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      default: result = [...result].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     }
     return result;
   }, [books, search, statusFilter, sort]);
@@ -144,10 +146,11 @@ export default function BooksTab({ books, isLoading }) {
       {/* Stat strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total',       value: stats.total,      color: 'text-foreground',    bg: 'bg-secondary/50' },
-          { label: 'Published',   value: stats.published,  color: 'text-emerald-600',   bg: 'bg-emerald-50' },
-          { label: 'In Review',   value: stats.in_review,  color: 'text-amber-600',     bg: 'bg-amber-50' },
-          { label: 'Drafts',      value: stats.draft,      color: 'text-slate-500',     bg: 'bg-slate-50' },
+          { label: 'Total', value: stats.total, color: 'text-foreground', bg: 'bg-secondary/50' },
+          { label: 'Published', value: stats.published, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'In Review', value: stats.in_review, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Drafts', value: stats.draft, color: 'text-slate-500', bg: 'bg-slate-50' },
+          { label: 'Rejected', value: stats.rejected, color: 'text-red-500', bg: 'bg-red-50' },
         ].map(s => (
           <button
             key={s.label}
@@ -180,10 +183,11 @@ export default function BooksTab({ books, isLoading }) {
                 )}
               >
                 {s === 'all' ? `All (${stats.total})` :
-                 s === 'published' ? `Published (${stats.published})` :
-                 s === 'in_review' ? `In Review (${stats.in_review})` :
-                 s === 'draft' ? `Drafts (${stats.draft})` :
-                 `Unpublished (${stats.unpublished})`}
+                  s === 'published' ? `Published (${stats.published})` :
+                    s === 'in_review' ? `In Review (${stats.in_review})` :
+                      s === 'draft' ? `Drafts (${stats.draft})` :
+                        s === 'unpublished' ? `Unpublished (${stats.unpublished})` :
+                          `Rejected (${stats.rejected})`}
               </button>
             ))}
           </div>
@@ -292,8 +296,8 @@ export default function BooksTab({ books, isLoading }) {
                     {book.cover_url
                       ? <img src={book.cover_url} alt={book.title} className="w-10 h-14 object-cover rounded-lg shadow-sm shrink-0" />
                       : <div className="w-10 h-14 bg-secondary rounded-lg flex items-center justify-center shrink-0">
-                          <BookOpen className="w-4 h-4 text-muted-foreground" />
-                        </div>
+                        <BookOpen className="w-4 h-4 text-muted-foreground" />
+                      </div>
                     }
                     <div className="min-w-0">
                       <p className="font-semibold text-sm truncate">{book.title}</p>

@@ -149,41 +149,63 @@ function TocPage({ book }) {
   );
 }
 
-function ContentPage({ book, num, side }) {
-  const paras = [
-    `This is a preview of how your content will appear to readers on Classpedia. Your uploaded manuscript will be rendered here with beautiful typography and generous leading.`,
-    `The reading experience is optimized for all screen sizes. Readers can adjust font size, line spacing, and background color to their preference.`,
-    `Chapter content, images, tables, and other elements from your manuscript display inline, maintaining the careful structure you've crafted for your readers.`,
-  ];
-  const pg = num * 14 + (side === 'right' ? 1 : 0);
+// Render a single element from the structured manuscript
+function renderElement(el, key) {
+  if (!el || !el.content) return null;
+  switch (el.type) {
+    case 'h1':
+      return <h1 key={key} className="text-base font-serif font-bold text-slate-800 mb-2 leading-snug">{el.content}</h1>;
+    case 'h2':
+      return <h2 key={key} className="text-sm font-serif font-bold text-slate-800 mb-1.5 leading-snug">{el.content}</h2>;
+    case 'h3':
+      return <h3 key={key} className="text-[13px] font-serif font-semibold text-slate-800 mb-1 leading-snug">{el.content}</h3>;
+    case 'h4':
+    case 'h5':
+    case 'h6':
+      return <h4 key={key} className="text-xs font-serif font-semibold text-slate-700 mb-1">{el.content}</h4>;
+    case 'blockquote':
+      return <blockquote key={key} className="text-[11px] text-slate-500 italic border-l-2 border-slate-300 pl-3 my-2">{el.content}</blockquote>;
+    case 'li':
+      return <li key={key} className="text-[11px] text-slate-600 leading-[1.85] ml-4 list-disc">{el.content}</li>;
+    case 'p':
+    default:
+      return <p key={key} className="text-[11px] text-slate-600 leading-[1.85] text-justify">{el.content}</p>;
+  }
+}
+
+// Approximate elements per page for pagination
+const ELEMENTS_PER_PAGE = 6;
+
+function ContentPage({ book, chapterIndex, pageWithinChapter, pageNumber }) {
+  const structure = book.manuscript_structure;
+  const chapter = structure?.chapters?.[chapterIndex];
+
+  const startIdx = pageWithinChapter * ELEMENTS_PER_PAGE;
+  const elements = chapter ? chapter.elements.slice(startIdx, startIdx + ELEMENTS_PER_PAGE) : [];
+  const isFirstPageOfChapter = pageWithinChapter === 0;
+
   return (
     <div className="w-full h-full bg-[#faf9f5] px-9 py-10 flex flex-col relative">
       <div className="flex items-center justify-between mb-5">
-        <p className="text-[8px] text-slate-300 uppercase tracking-widest truncate max-w-[60%] font-medium">{book.title}</p>
-        <p className="text-[8px] text-slate-300 font-mono">{pg}</p>
+        <p className="text-[8px] text-slate-300 uppercase tracking-widest truncate max-w-[60%] font-medium">
+          {chapter?.title || book.title}
+        </p>
+        <p className="text-[8px] text-slate-300 font-mono">{pageNumber}</p>
       </div>
-      {side === 'left' && (
-        <h2 className="text-base font-serif font-bold text-slate-800 mb-5 leading-snug">Chapter {num}</h2>
+      {isFirstPageOfChapter && chapter && (
+        <div className="mb-5">
+          <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-1">Chapter {chapter.chapterIndex}</p>
+          <h2 className="text-base font-serif font-bold text-slate-800 leading-snug">{chapter.title}</h2>
+          <div className="w-8 h-0.5 bg-slate-300 mt-2" />
+        </div>
       )}
-      <div className="flex-1 space-y-3.5 overflow-hidden">
-        {paras.map((p, i) => (
-          <p key={i} className="text-[11px] text-slate-600 leading-[1.85] text-justify">{p}</p>
-        ))}
-        {side === 'right' && book.description && (
-          <div className="mt-5 pt-4 border-t border-slate-100 border-l-2 border-l-slate-300 pl-3">
-            <p className="text-[10px] text-slate-500 italic leading-relaxed">
-              "{book.description.slice(0, 120)}…"
-            </p>
-          </div>
+      <div className="flex-1 space-y-3 overflow-hidden">
+        {elements.length > 0 ? (
+          elements.map((el, i) => renderElement(el, i))
+        ) : (
+          <p className="text-[11px] text-slate-400 italic">No content available on this page.</p>
         )}
       </div>
-      {/* Spine shadow */}
-      {side === 'left' && (
-        <div className="absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-black/[0.07] to-transparent pointer-events-none" />
-      )}
-      {side === 'right' && (
-        <div className="absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-black/[0.07] to-transparent pointer-events-none" />
-      )}
     </div>
   );
 }
@@ -267,20 +289,75 @@ function BackCoverPage({ book }) {
 // Each "spread" has a left and right component
 
 function buildSpreads(book) {
-  const hasMs = !!(book.manuscript_url && book.manuscript_filename);
+  const structure = book.manuscript_structure;
+  const chapters = structure?.chapters || [];
+
+  // Build a flat list of pages from chapter elements
+  const contentPages = [];
+  chapters.forEach((chapter, ci) => {
+    const totalPages = Math.max(1, Math.ceil(chapter.elements.length / ELEMENTS_PER_PAGE));
+    for (let p = 0; p < totalPages; p++) {
+      contentPages.push({ chapterIndex: ci, pageWithinChapter: p, chapterTitle: chapter.title });
+    }
+  });
+
   const spreads = [
     // Spread 0: cover + blank verso
     { left: (b) => <CoverPage book={b} />, right: () => <RightBlankPage />, leftLabel: 'Cover', rightLabel: '' },
     // Spread 1: title + toc
     { left: (b) => <TitlePage book={b} />, right: (b) => <TocPage book={b} />, leftLabel: 'Title Page', rightLabel: 'Contents' },
-    // Spread 2: maybe manuscript (full width if PDF, else left side)
-    ...(hasMs ? [{ left: (b) => <ManuscriptPage book={b} />, right: (b) => <ContentPage book={b} num={1} side="right" />, leftLabel: 'Manuscript', rightLabel: 'Chapter 1' }] : []),
-    // Chapters
-    { left: (b) => <ContentPage book={b} num={1} side="left" />, right: (b) => <ContentPage book={b} num={1} side="right" />, leftLabel: 'Chapter 1', rightLabel: '' },
-    { left: (b) => <ContentPage book={b} num={2} side="left" />, right: (b) => <ContentPage book={b} num={2} side="right" />, leftLabel: 'Chapter 2', rightLabel: '' },
-    // Back cover: blank + back cover (reversed)
-    { left: () => <RightBlankPage />, right: (b) => <BackCoverPage book={b} />, leftLabel: '', rightLabel: 'Back Cover' },
   ];
+
+  // If we have parsed manuscript content, generate content spreads
+  if (contentPages.length > 0) {
+    let pageNumber = 1;
+    for (let i = 0; i < contentPages.length; i += 2) {
+      const leftPage = contentPages[i];
+      const rightPage = contentPages[i + 1];
+      const leftPg = pageNumber++;
+      const rightPg = rightPage ? pageNumber++ : null;
+
+      spreads.push({
+        left: (b) => (
+          <ContentPage
+            book={b}
+            chapterIndex={leftPage.chapterIndex}
+            pageWithinChapter={leftPage.pageWithinChapter}
+            pageNumber={leftPg}
+          />
+        ),
+        right: rightPage
+          ? (b) => (
+              <ContentPage
+                book={b}
+                chapterIndex={rightPage.chapterIndex}
+                pageWithinChapter={rightPage.pageWithinChapter}
+                pageNumber={rightPg}
+              />
+            )
+          : () => <RightBlankPage />,
+        leftLabel: leftPage.chapterTitle,
+        rightLabel: rightPage ? rightPage.chapterTitle : '',
+      });
+    }
+  } else if (book.manuscript_url) {
+    // Fallback: show manuscript info if no parsed structure
+    spreads.push({
+      left: (b) => <ManuscriptPage book={b} />,
+      right: () => <RightBlankPage />,
+      leftLabel: 'Manuscript',
+      rightLabel: '',
+    });
+  }
+
+  // Back cover: blank + back cover (reversed)
+  spreads.push({
+    left: () => <RightBlankPage />,
+    right: (b) => <BackCoverPage book={b} />,
+    leftLabel: '',
+    rightLabel: 'Back Cover',
+  });
+
   return spreads;
 }
 
@@ -476,7 +553,7 @@ export default function BookPreviewer({ book, onClose }) {
         <div className="flex flex-1 overflow-hidden">
 
           {/* ── Center canvas ── */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-5 relative overflow-auto py-4">
+          <div className="flex-1 flex flex-col items-center justify-center gap-5 relative overflow-hidden py-4">
 
             {/* Ambient glow */}
             <div className="absolute inset-0 pointer-events-none"
