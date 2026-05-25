@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +13,7 @@ import {
   FileEdit, XCircle, ChevronRight, DollarSign, Calendar, Filter, Trash2, Archive, Eye, EyeOff
 } from 'lucide-react';
 import { formatDate } from '@/utils/date';
+import MOCK_BOOKS from '@/data/mockBooks.json';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest first' },
@@ -42,7 +42,9 @@ function StatusPill({ status }) {
   );
 }
 
-export default function BooksTab({ books, isLoading }) {
+export default function BooksTab({ books: propBooks, isLoading }) {
+  // Use mock data if no books provided or empty
+  const books = (propBooks && propBooks.length > 0) ? propBooks : MOCK_BOOKS;
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -151,10 +153,10 @@ export default function BooksTab({ books, isLoading }) {
           { label: 'In Review', value: stats.in_review, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'Drafts', value: stats.draft, color: 'text-slate-500', bg: 'bg-slate-50' },
           { label: 'Rejected', value: stats.rejected, color: 'text-red-500', bg: 'bg-red-50' },
-        ].map(s => (
+        ].map((s, idx) => (
           <button
-            key={s.label}
-            onClick={() => setStatusFilter(s.label === 'Total' ? 'all' : s.label.toLowerCase().replace(' ', '_'))}
+            key={`${s.label}-${idx}`}
+            // onClick={() => setStatusFilter(s.label === 'Total' ? 'all' : s.label.toLowerCase().replace(' ', '_'))}
             className={`${s.bg} border rounded-xl px-4 py-3 text-left hover:shadow-sm transition-all`}
           >
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>

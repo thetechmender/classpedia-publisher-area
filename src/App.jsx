@@ -41,7 +41,13 @@ const AuthenticatedApp = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/publish" element={isAuthenticated ? <PublishBook /> : <Login />} />
       <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Login />} />
+      <Route path="/books" element={isAuthenticated ? <Dashboard initialTab="books" /> : <Login />} />
       <Route path="/book/:id" element={isAuthenticated ? <BookDetail /> : <Login />} />
+      <Route path="/reviews" element={isAuthenticated ? <Dashboard initialTab="reviews" /> : <Login />} />
+      <Route path="/royalties" element={isAuthenticated ? <Dashboard initialTab="royalties" /> : <Login />} />
+      <Route path="/payments" element={isAuthenticated ? <Dashboard initialTab="payments" /> : <Login />} />
+      <Route path="/profile" element={isAuthenticated ? <Dashboard initialTab="profile" /> : <Login />} />
+      <Route path="/notifications" element={isAuthenticated ? <Dashboard initialTab="notifications" /> : <Login />} />
       <Route path="/account-setup" element={<AccountSetup />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

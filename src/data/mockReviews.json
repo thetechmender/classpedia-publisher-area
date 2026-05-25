@@ -1,0 +1,192 @@
+{
+  "reviews": [
+    {
+      "id": "r1",
+      "book_id": "1",
+      "book_title": "The Midnight Garden",
+      "reviewer_name": "Alice Johnson",
+      "rating": 5,
+      "comment": "Absolutely captivating! The imagery of the midnight garden was so vivid I felt like I was walking through it myself. A must-read for anyone who loves magical realism.",
+      "status": "published",
+      "verified_purchase": true,
+      "author_response": null,
+      "created_date": "2024-02-15T14:30:00Z"
+    },
+    {
+      "id": "r2",
+      "book_id": "1",
+      "book_title": "The Midnight Garden",
+      "reviewer_name": "Mark Stevens",
+      "rating": 4,
+      "comment": "Great storytelling and wonderful characters. The pacing was a bit slow in the middle, but the ending made up for it. Would recommend!",
+      "status": "published",
+      "verified_purchase": true,
+      "author_response": "Thank you for your thoughtful feedback, Mark! I appreciate you sticking with the story.",
+      "created_date": "2024-02-20T09:15:00Z"
+    },
+    {
+      "id": "r3",
+      "book_id": "4",
+      "book_title": "Culinary Adventures",
+      "reviewer_name": "Chef Maria",
+      "rating": 5,
+      "comment": "As a professional chef, I can say these recipes are authentic and well-explained. The cultural context adds so much depth. My new favorite cookbook!",
+      "status": "published",
+      "verified_purchase": true,
+      "author_response": null,
+      "created_date": "2024-03-25T16:45:00Z"
+    },
+    {
+      "id": "r4",
+      "book_id": "5",
+      "book_title": "The Lost Kingdom",
+      "reviewer_name": "Fantasy_Reader_99",
+      "rating": 5,
+      "comment": "Epic world-building! Can't wait for book 2. The magic system is unique and the characters are so well developed.",
+      "status": "published",
+      "verified_purchase": true,
+      "author_response": "Book 2 is coming soon! Thank you for your enthusiasm!",
+      "created_date": "2024-02-05T11:20:00Z"
+    },
+    {
+      "id": "r5",
+      "book_id": "5",
+      "book_title": "The Lost Kingdom",
+      "reviewer_name": "BookWorm2024",
+      "rating": 3,
+      "comment": "Decent fantasy novel but nothing groundbreaking. The plot felt predictable at times. Still an enjoyable read though.",
+      "status": "published",
+      "verified_purchase": false,
+      "author_response": null,
+      "created_date": "2024-02-10T08:00:00Z"
+    },
+    {
+      "id": "r6",
+      "book_id": "4",
+      "book_title": "Culinary Adventures",
+      "reviewer_name": "HomeChef_Dan",
+      "rating": 4,
+      "comment": "Love the variety of cuisines covered. Some ingredients are hard to find locally, but the substitution tips help. Beautiful photography too!",
+      "status": "published",
+      "verified_purchase": true,
+      "author_response": null,
+      "created_date": "2024-04-01T13:30:00Z"
+    },
+    {
+      "id": "r7",
+      "book_id": "1",
+      "book_title": "The Midnight Garden",
+      "reviewer_name": "Anonymous",
+      "rating": 2,
+      "comment": "Not my cup of tea. Too slow and the ending was confusing.",
+      "status": "hidden",
+      "verified_purchase": false,
+      "author_response": null,
+      "created_date": "2024-03-01T19:00:00Z"
+    },
+    {
+      "id": "r8",
+      "book_id": "5",
+      "book_title": "The Lost Kingdom",
+      "reviewer_name": "TrollUser123",
+      "rating": 1,
+      "comment": "This is spam content that should be flagged.",
+      "status": "flagged",
+      "verified_purchase": false,
+      "author_response": null,
+      "created_date": "2024-03-15T22:00:00Z"
+    },
+    {
+      "id": "r9",
+      "book_id": "4",
+      "book_title": "Culinary Adventures",
+      "reviewer_name": "Sarah K.",
+      "rating": 5,
+      "comment": "Made the Thai curry recipe last night - absolutely delicious! My family loved it. The step-by-step instructions are so clear.",
+      "status": "published",
+      "verified_purchase": true,
+      "author_response": "So happy to hear that, Sarah! Thai curry is one of my favorites too.",
+      "created_date": "2024-04-10T20:15:00Z"
+    },
+    {
+      "id": "r10",
+      "book_id": "1",
+      "book_title": "The Midnight Garden",
+      "reviewer_name": "Literary_Critic",
+      "rating": 4,
+      "comment": "A beautifully written debut novel. The prose is lyrical and the themes of friendship and courage resonate deeply. Looking forward to more from this author.",
+      "status": "published",
+      "verified_purchase": true,
+      "author_response": null,
+      "created_date": "2024-02-28T10:45:00Z"
+    }
+  ],
+  "issues": [
+    {
+      "id": "i1",
+      "book_id": "1",
+      "book_title": "The Midnight Garden",
+      "title": "Formatting error on page 127",
+      "description": "There's a paragraph that appears to be duplicated on page 127. The same text appears twice in a row.",
+      "severity": "medium",
+      "status": "open",
+      "reporter_name": "Alice Johnson",
+      "created_date": "2024-02-18T14:30:00Z"
+    },
+    {
+      "id": "i2",
+      "book_id": "4",
+      "book_title": "Culinary Adventures",
+      "title": "Missing ingredient in recipe",
+      "description": "The Pad Thai recipe on page 45 mentions 'tamarind paste' in the instructions but it's not listed in the ingredients section.",
+      "severity": "high",
+      "status": "open",
+      "reporter_name": "HomeChef_Dan",
+      "created_date": "2024-04-02T09:00:00Z"
+    },
+    {
+      "id": "i3",
+      "book_id": "5",
+      "book_title": "The Lost Kingdom",
+      "title": "Character name inconsistency",
+      "description": "The character 'Lord Aldric' is referred to as 'Lord Aldrick' (with a 'k') in chapters 12 and 15.",
+      "severity": "low",
+      "status": "resolved",
+      "reporter_name": "Fantasy_Reader_99",
+      "created_date": "2024-02-08T16:20:00Z"
+    },
+    {
+      "id": "i4",
+      "book_id": "4",
+      "book_title": "Culinary Adventures",
+      "title": "Image not loading in eBook",
+      "description": "The image for the Italian Pasta section (page 78) doesn't display on Kindle devices. Shows a broken image icon instead.",
+      "severity": "critical",
+      "status": "open",
+      "reporter_name": "Chef Maria",
+      "created_date": "2024-03-28T11:45:00Z"
+    },
+    {
+      "id": "i5",
+      "book_id": "1",
+      "book_title": "The Midnight Garden",
+      "title": "Typo in chapter 3",
+      "description": "On page 34, 'their' should be 'there' in the sentence about the garden gate.",
+      "severity": "low",
+      "status": "resolved",
+      "reporter_name": "Mark Stevens",
+      "created_date": "2024-02-22T08:30:00Z"
+    },
+    {
+      "id": "i6",
+      "book_id": "5",
+      "book_title": "The Lost Kingdom",
+      "title": "Table of contents links broken",
+      "description": "Clicking on chapter links in the table of contents doesn't navigate to the correct chapter. All links go to chapter 1.",
+      "severity": "high",
+      "status": "open",
+      "reporter_name": "BookWorm2024",
+      "created_date": "2024-02-12T15:00:00Z"
+    }
+  ]
+}

@@ -233,7 +233,7 @@ export default function ReviewStep({ data, onBack, onPublish, onEdit, publishing
             ) : (
               <Send className="w-4 h-4" />
             )}
-            Publish eBook
+            Submit for Review
           </Button>
         </div>
       </div>

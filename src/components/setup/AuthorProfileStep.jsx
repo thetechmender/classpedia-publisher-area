@@ -28,6 +28,9 @@ function CategoryPicker({ selected, onChange }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [customInput, setCustomInput] = useState('');
+
+  // Prevent duplicate categories
+  const uniqueSelected = [...new Set(selected)];
   const containerRef = useRef(null);
   const atMax = selected.length >= 3;
 
@@ -61,9 +64,9 @@ function CategoryPicker({ selected, onChange }) {
   return (
     <div ref={containerRef} className="space-y-2">
       {/* Selected chips */}
-      {selected.length > 0 && (
+      {uniqueSelected.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {selected.map(cat => (
+          {uniqueSelected.map(cat => (
             <span key={cat} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/25">
               {cat}
               <button type="button" onClick={() => remove(cat)} className="hover:text-destructive transition-colors">

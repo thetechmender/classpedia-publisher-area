@@ -9,12 +9,15 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import mockBooks from '@/data/mockBooks.json';
+import mockPaymentsData from '@/data/mockPayments.json';
+import mockReviewsData from '@/data/mockReviews.json';
 
-const MONTHLY_DATA = [
-  { month: 'Dec', royalties: 0 }, { month: 'Jan', royalties: 0 },
-  { month: 'Feb', royalties: 0 }, { month: 'Mar', royalties: 0 },
-  { month: 'Apr', royalties: 0 }, { month: 'May', royalties: 0 },
-];
+// Use mock data
+const MONTHLY_DATA = mockPaymentsData.monthlyData || [];
+const mockStats = mockPaymentsData.stats || {};
+const mockReviews = mockReviewsData.reviews || [];
+const mockIssues = mockReviewsData.issues || [];
 
 const STATUS_CONFIG = {
   published:   { label: 'Published',   bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
@@ -91,7 +94,9 @@ function getFormattedDate() {
   return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-export default function OverviewTab({ books, authorProfile, onTabChange }) {
+export default function OverviewTab({ books: propBooks, authorProfile, onTabChange }) {
+  // Use mock books if no books provided
+  const books = (propBooks && propBooks.length > 0) ? propBooks : mockBooks;
   const firstName = authorProfile?.full_name?.split(' ')[0] || 'there';
 
   const stats = {
@@ -99,11 +104,20 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
     published:  books.filter(b => b.status === 'published').length,
     in_review:  books.filter(b => b.status === 'in_review').length,
     draft:      books.filter(b => b.status === 'draft').length,
+    rejected:   books.filter(b => b.status === 'rejected').length,
   };
 
-  const estimatedRoyalties = books
-    .filter(b => b.status === 'published' && b.list_price)
-    .reduce((sum, b) => sum + b.list_price * (parseFloat(b.royalty_plan || 70) / 100), 0);
+  // Use mock payment stats for royalties
+  const lifetimeEarnings = mockStats.lifetimeEarnings || 0;
+  const pendingPayout = mockStats.pendingPayout || 0;
+  const nextPayoutDate = mockStats.nextPayoutDate || 'TBD';
+  
+  // Reviews stats
+  const totalReviews = mockReviews.length;
+  const avgRating = totalReviews > 0 
+    ? (mockReviews.reduce((s, r) => s + (r.rating || 0), 0) / totalReviews).toFixed(1) 
+    : '—';
+  const openIssues = mockIssues.filter(i => i.status === 'open').length;
 
   const actions = [];
   if (!authorProfile?.payment_method) {
@@ -209,7 +223,7 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
         <KpiCard
           icon={DollarSign}
           label="Est. Royalties"
-          value={`$${estimatedRoyalties.toFixed(2)}`}
+          value={`$${lifetimeEarnings.toFixed(2)}`}
           color="text-emerald-600"
           onClick={() => onTabChange('royalties')}
           sub="Based on published prices"
@@ -252,7 +266,7 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
           </div>
           <div className="p-5 space-y-4">
             <div className="text-center py-2">
-              <p className="text-3xl font-bold text-emerald-600">${estimatedRoyalties.toFixed(2)}</p>
+              <p className="text-3xl font-bold text-emerald-600">${lifetimeEarnings.toFixed(2)}</p>
               <p className="text-xs text-muted-foreground mt-1">Estimated this period</p>
             </div>
             <ResponsiveContainer width="100%" height={100}>
@@ -266,11 +280,11 @@ export default function OverviewTab({ books, authorProfile, onTabChange }) {
             <div className="space-y-1.5">
               <div className="flex justify-between items-center py-2 border-t">
                 <span className="text-xs text-muted-foreground">Pending Payout</span>
-                <span className="text-xs font-semibold">$0.00</span>
+                <span className="text-xs font-semibold">${pendingPayout.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center pb-1">
                 <span className="text-xs text-muted-foreground">Next Payout Date</span>
-                <span className="text-xs font-semibold">Jun 30, 2026</span>
+                <span className="text-xs font-semibold">{nextPayoutDate}</span>
               </div>
             </div>
             <button

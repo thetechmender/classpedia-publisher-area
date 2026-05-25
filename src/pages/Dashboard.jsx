@@ -28,12 +28,18 @@ const MOBILE_NAV = [
   { id: 'profile',  label: 'Profile',  icon: User },
 ];
 
-export default function Dashboard() {
+export default function Dashboard({ initialTab = 'overview' }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('overview');       // raw sidebar id
-  const [resolvedTab, setResolvedTab] = useState('overview');   // actual component to render
+  const [activeTab, setActiveTab] = useState(initialTab);       // raw sidebar id
+  const [resolvedTab, setResolvedTab] = useState(initialTab);   // actual component to render
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Sync tab state when initialTab prop changes (route change)
+  useEffect(() => {
+    setActiveTab(initialTab);
+    setResolvedTab(TAB_ALIAS[initialTab] || initialTab);
+  }, [initialTab]);
 
   const { data: authorProfiles, isFetched: isProfileFetched } = useQuery({
     queryKey: ['author-profile'],

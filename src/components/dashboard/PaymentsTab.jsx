@@ -9,12 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import mockPaymentsData from '@/data/mockPayments.json';
+import mockBooks from '@/data/mockBooks.json';
 
-const MONTHLY_DATA = [
-  { month: 'Dec', royalties: 0 }, { month: 'Jan', royalties: 0 },
-  { month: 'Feb', royalties: 0 }, { month: 'Mar', royalties: 0 },
-  { month: 'Apr', royalties: 0 }, { month: 'May', royalties: 0 },
-];
+// Use mock data
+const MONTHLY_DATA = mockPaymentsData.monthlyData || [];
+const mockStats = mockPaymentsData.stats || {};
+const mockTransactions = mockPaymentsData.transactions || [];
+const mockAuthorProfile = mockPaymentsData.authorProfile || {};
 
 const PAYOUT_STEPS = [
   { icon: BarChart3, color: 'bg-blue-100 text-blue-600', title: 'Sales Recorded', desc: 'Sales are recorded in real-time on the platform.' },
@@ -43,9 +45,13 @@ const TABS = [
   { id: 'tax', label: 'Tax Info' },
 ];
 
-export default function PaymentsTab({ books, authorProfile }) {
+export default function PaymentsTab({ books: propBooks, authorProfile: propAuthorProfile }) {
   const [tab, setTab] = useState('overview');
 
+  // Use mock data if no props provided
+  const books = (propBooks && propBooks.length > 0) ? propBooks : mockBooks;
+  const authorProfile = propAuthorProfile || mockAuthorProfile;
+  
   const published = books.filter(b => b.status === 'published' && b.list_price);
   const paymentMethod = authorProfile?.payment_method;
 
@@ -100,9 +106,9 @@ export default function PaymentsTab({ books, authorProfile }) {
       {tab === 'overview' && (
         <div className="space-y-5">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard icon={DollarSign}   label="Lifetime Earnings"  value="$0.00" sub="All time"              color="text-emerald-600" accent />
-            <StatCard icon={Clock}        label="Pending Payout"     value="$0.00" sub="Next payout: Jun 30"  />
-            <StatCard icon={CheckCircle2} label="Total Paid Out"     value="$0.00" sub="All time"             />
+            <StatCard icon={DollarSign}   label="Lifetime Earnings"  value={`$${mockStats.lifetimeEarnings?.toFixed(2) || '0.00'}`} sub="All time"              color="text-emerald-600" accent />
+            <StatCard icon={Clock}        label="Pending Payout"     value={`$${mockStats.pendingPayout?.toFixed(2) || '0.00'}`} sub={`Next payout: ${mockStats.nextPayoutDate || 'TBD'}`}  />
+            <StatCard icon={CheckCircle2} label="Total Paid Out"     value={`$${mockStats.totalPaidOut?.toFixed(2) || '0.00'}`} sub="All time"             />
             <StatCard icon={BarChart3}    label="Published Titles"   value={`${published.length}`} sub="Earning royalties" />
           </div>
 
@@ -112,7 +118,7 @@ export default function PaymentsTab({ books, authorProfile }) {
                 <h3 className="font-semibold text-sm">Monthly Royalties</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Last 6 months</p>
               </div>
-              <Badge variant="outline" className="text-xs text-muted-foreground">No sales yet</Badge>
+              <Badge variant="outline" className="text-xs text-emerald-600">{mockStats.totalUnitsSold || 0} units sold</Badge>
             </div>
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={MONTHLY_DATA} barSize={28}>

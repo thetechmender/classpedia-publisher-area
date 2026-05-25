@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import mockReviewsData from '@/data/mockReviews.json';
 
 function Stars({ rating, size = 'sm' }) {
   const cls = size === 'lg' ? 'w-4 h-4' : 'w-3 h-3';
@@ -59,15 +60,11 @@ export default function ReviewsTab() {
 
   const queryClient = useQueryClient();
 
-  const { data: reviews = [], isLoading: loadingReviews } = useQuery({
-    queryKey: ['reviews'],
-    queryFn: () => base44.entities.Review.list('-created_date', 200),
-  });
-
-  const { data: issues = [], isLoading: loadingIssues } = useQuery({
-    queryKey: ['issues'],
-    queryFn: () => base44.entities.Issue.list('-created_date', 200),
-  });
+  // Use mock data instead of API calls
+  const reviews = mockReviewsData.reviews || [];
+  const issues = mockReviewsData.issues || [];
+  const loadingReviews = false;
+  const loadingIssues = false;
 
   const reviewMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Review.update(id, data),

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   BookOpen, CreditCard, User, LayoutDashboard,
   TrendingUp, HelpCircle, Star, LogOut, Bell
@@ -9,34 +10,34 @@ import { useAuth } from '@/lib/AuthContext';
 const NAV_SECTIONS = [
   {
     items: [
-      { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+      { id: 'overview', label: 'Overview', icon: LayoutDashboard, path: '/dashboard' },
     ]
   },
   {
     label: 'Publishing',
     items: [
-      { id: 'books', label: 'My Books', icon: BookOpen },
-      { id: 'reviews', label: 'Reviews & Issues', icon: Star },
+      { id: 'books', label: 'My Books', icon: BookOpen, path: '/books' },
+      { id: 'reviews', label: 'Reviews & Issues', icon: Star, path: '/reviews' },
     ]
   },
   {
     label: 'Earnings',
     items: [
-      { id: 'royalties', label: 'Sales & Royalties', icon: TrendingUp },
-      { id: 'payments', label: 'Payments & Tax', icon: CreditCard },
+      { id: 'royalties', label: 'Sales & Royalties', icon: TrendingUp, path: '/royalties' },
+      { id: 'payments', label: 'Payments & Tax', icon: CreditCard, path: '/payments' },
     ]
   },
   {
     label: 'Account',
     items: [
-      { id: 'profile', label: 'Author Profile', icon: User },
-      { id: 'notifications', label: 'Notifications', icon: Bell },
+      { id: 'profile', label: 'Author Profile', icon: User, path: '/profile' },
+      { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications' },
     ]
   },
   {
     label: 'Help',
     items: [
-      { id: 'support', label: 'Support', icon: HelpCircle },
+      { id: 'support', label: 'Support', icon: HelpCircle, path: '/support' },
     ]
   },
 ];
@@ -51,8 +52,16 @@ function getNotificationCount(authorProfile, books = []) {
 
 export default function Sidebar({ activeTab, onTabChange, authorProfile, books = [] }) {
   const { logout, user } = useAuth();
+  const location = useLocation();
   const firstName = authorProfile?.full_name?.split(' ')[0] || user?.publisherFullName?.split(' ')[0] || 'Author';
   const notifCount = getNotificationCount(authorProfile, books);
+
+  // Determine active item based on current URL path
+  const getIsActive = (path, id) => {
+    if (location.pathname === path) return true;
+    if (path === '/dashboard' && location.pathname === '/') return true;
+    return activeTab === id;
+  };
 
   return (
     <aside className="w-60 shrink-0 hidden md:flex flex-col border-r bg-card h-screen sticky top-0">
@@ -77,13 +86,13 @@ export default function Sidebar({ activeTab, onTabChange, authorProfile, books =
               </p>
             )}
             <div className="flex flex-col gap-0.5">
-              {section.items.map(({ id, label, icon: Icon }) => (
-                <button
+              {section.items.map(({ id, label, icon: Icon, path }) => (
+                <Link
                   key={id}
-                  onClick={() => onTabChange(id)}
+                  to={path}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full',
-                    activeTab === id
+                    getIsActive(path, id)
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                   )}
@@ -95,7 +104,7 @@ export default function Sidebar({ activeTab, onTabChange, authorProfile, books =
                       {notifCount}
                     </span>
                   )}
-                </button>
+                </Link>
               ))}
             </div>
           </div>

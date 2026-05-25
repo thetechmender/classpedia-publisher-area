@@ -1,26 +1,31 @@
 import React from 'react';
 import { TrendingUp, DollarSign, BookOpen } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
+import mockPaymentsData from '@/data/mockPayments.json';
+import mockBooks from '@/data/mockBooks.json';
 
-const MONTHLY_DATA = [
-  { month: 'Dec', units: 0, revenue: 0 },
-  { month: 'Jan', units: 0, revenue: 0 },
-  { month: 'Feb', units: 0, revenue: 0 },
-  { month: 'Mar', units: 0, revenue: 0 },
-  { month: 'Apr', units: 0, revenue: 0 },
-  { month: 'May', units: 0, revenue: 0 },
-];
+// Use mock data
+const MONTHLY_DATA = mockPaymentsData.monthlyData || [];
+const stats = mockPaymentsData.stats || {};
+const bookSales = mockPaymentsData.bookSales || [];
 
-export default function RoyaltiesTab({ books = [] }) {
+export default function RoyaltiesTab({ books: propBooks = [] }) {
+  // Use mock books if no books provided
+  const books = (propBooks && propBooks.length > 0) ? propBooks : mockBooks;
   const published = books.filter(b => b.status === 'published' && b.list_price);
   const ROYALTY_RATE = 0.70;
 
-  // Per-book estimated royalty per sale (no actual sales data yet)
-  const perBookData = published.map(b => ({
-    title: b.title,
-    price: b.list_price,
-    royaltyPerSale: b.list_price * ROYALTY_RATE,
-  }));
+  // Per-book data with actual sales from mock
+  const perBookData = published.map(b => {
+    const salesData = bookSales.find(s => s.bookId === b.id);
+    return {
+      title: b.title,
+      price: b.list_price,
+      royaltyPerSale: b.list_price * ROYALTY_RATE,
+      unitsSold: salesData?.unitsSold || 0,
+      totalRoyalties: salesData?.royalties || 0,
+    };
+  });
 
   return (
     <div className="space-y-7">
@@ -32,8 +37,8 @@ export default function RoyaltiesTab({ books = [] }) {
       {/* KPI strip */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total Earned',     value: '$0.00',             icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
-          { label: 'Units Sold',       value: '0',                 icon: BookOpen,   color: 'text-blue-600 bg-blue-50' },
+          { label: 'Total Earned',     value: `$${stats.lifetimeEarnings?.toFixed(2) || '0.00'}`, icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
+          { label: 'Units Sold',       value: `${stats.totalUnitsSold || 0}`, icon: BookOpen,   color: 'text-blue-600 bg-blue-50' },
           { label: 'Published Titles', value: `${published.length}`, icon: TrendingUp, color: 'text-primary bg-primary/10' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-card border rounded-xl p-4 flex items-center gap-3">
@@ -79,7 +84,7 @@ export default function RoyaltiesTab({ books = [] }) {
       {/* Per-book breakdown — uses real books, always 70% */}
       <div className="bg-card border rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b bg-secondary/30">
-          <h3 className="font-semibold text-sm">Per-Book Royalty Potential</h3>
+          <h3 className="font-semibold text-sm">Per-Book Royalty Breakdown</h3>
           <p className="text-xs text-muted-foreground mt-0.5">All titles earn a fixed 70% royalty rate.</p>
         </div>
         {perBookData.length === 0 ? (
@@ -93,11 +98,11 @@ export default function RoyaltiesTab({ books = [] }) {
               <div key={book.title} className="px-5 py-4 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium">{book.title}</p>
-                  <p className="text-xs text-muted-foreground">70% royalty · List price ${book.price.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">70% royalty · List price ${book.price.toFixed(2)} · {book.unitsSold} units sold</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Royalty per sale</p>
-                  <p className="text-sm font-bold text-emerald-600">${book.royaltyPerSale.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">Total Royalties</p>
+                  <p className="text-sm font-bold text-emerald-600">${book.totalRoyalties.toFixed(2)}</p>
                 </div>
               </div>
             ))}

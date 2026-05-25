@@ -78,7 +78,6 @@ const STEP_INFO = [
 export default function PublishBook() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [errors, setErrors] = useState({});
@@ -207,14 +206,6 @@ export default function PublishBook() {
                 <p className="text-[10px] text-muted-foreground mt-0.5">Publishing Platform</p>
               </div>
             </Link>
-            {isAuthenticated && (
-              <Link to="/dashboard">
-                <Button size="sm" className="gap-1.5 h-8 text-xs px-3">
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-            )}
           </div>
 
           {/* Publish header */}

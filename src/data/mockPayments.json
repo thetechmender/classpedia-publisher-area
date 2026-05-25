@@ -1,0 +1,96 @@
+{
+  "monthlyData": [
+    { "month": "Dec", "units": 45, "revenue": 382.50, "royalties": 267.75 },
+    { "month": "Jan", "units": 62, "revenue": 527.00, "royalties": 368.90 },
+    { "month": "Feb", "units": 38, "revenue": 323.00, "royalties": 226.10 },
+    { "month": "Mar", "units": 71, "revenue": 603.50, "royalties": 422.45 },
+    { "month": "Apr", "units": 89, "revenue": 756.50, "royalties": 529.55 },
+    { "month": "May", "units": 54, "revenue": 459.00, "royalties": 321.30 }
+  ],
+  "stats": {
+    "lifetimeEarnings": 2136.05,
+    "pendingPayout": 321.30,
+    "totalPaidOut": 1814.75,
+    "totalUnitsSold": 359,
+    "nextPayoutDate": "Jun 30, 2024"
+  },
+  "transactions": [
+    {
+      "id": "txn_001",
+      "date": "2024-04-30",
+      "type": "payout",
+      "amount": 529.55,
+      "status": "completed",
+      "method": "PayPal",
+      "reference": "PP-2024043001"
+    },
+    {
+      "id": "txn_002",
+      "date": "2024-03-31",
+      "type": "payout",
+      "amount": 422.45,
+      "status": "completed",
+      "method": "PayPal",
+      "reference": "PP-2024033101"
+    },
+    {
+      "id": "txn_003",
+      "date": "2024-02-29",
+      "type": "payout",
+      "amount": 226.10,
+      "status": "completed",
+      "method": "PayPal",
+      "reference": "PP-2024022901"
+    },
+    {
+      "id": "txn_004",
+      "date": "2024-01-31",
+      "type": "payout",
+      "amount": 368.90,
+      "status": "completed",
+      "method": "PayPal",
+      "reference": "PP-2024013101"
+    },
+    {
+      "id": "txn_005",
+      "date": "2023-12-31",
+      "type": "payout",
+      "amount": 267.75,
+      "status": "completed",
+      "method": "PayPal",
+      "reference": "PP-2023123101"
+    }
+  ],
+  "bookSales": [
+    {
+      "bookId": "1",
+      "bookTitle": "The Midnight Garden",
+      "unitsSold": 142,
+      "revenue": 1844.58,
+      "royalties": 1291.21
+    },
+    {
+      "bookId": "4",
+      "bookTitle": "Culinary Adventures",
+      "unitsSold": 87,
+      "revenue": 2609.13,
+      "royalties": 1826.39
+    },
+    {
+      "bookId": "5",
+      "bookTitle": "The Lost Kingdom",
+      "unitsSold": 130,
+      "revenue": 2468.70,
+      "royalties": 1728.09
+    }
+  ],
+  "authorProfile": {
+    "payment_method": "paypal",
+    "paypal_email": "author@example.com",
+    "us_person": false,
+    "tax_country": "Pakistan",
+    "tax_id_type": "ntn",
+    "tax_id": "1234567890",
+    "esignature": "John Author"
+  }
+}
