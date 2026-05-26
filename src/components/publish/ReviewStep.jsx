@@ -92,7 +92,7 @@ function BookPreviewCard({ data }) {
             {price > 0 && (
               <p className="text-base font-bold text-foreground">${price.toFixed(2)} <span className="text-xs font-normal text-muted-foreground">USD</span></p>
             )}
-            {data.classpedia_select && (
+            {data.isBookEnroll && (
               <div className="flex items-center gap-1 text-xs text-primary">
                 <Award className="w-3.5 h-3.5" /> Classpedia Select
               </div>
@@ -192,12 +192,12 @@ export default function ReviewStep({ data, onBack, onPublish, onEdit, publishing
               <Globe className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="text-sm font-medium">
                 {data.territories === 'specific'
-                  ? `${(data.selected_countries || []).length} countries`
+                  ? `${(data.selectedCountries || []).length} countries`
                   : 'Worldwide'}
               </span>
             </div>
           </div>
-          <DetailRow label="Classpedia Select" value={data.classpedia_select ? 'Enrolled' : 'Not enrolled'} />
+          <DetailRow label="Classpedia Select" value={data.isBookEnroll ? 'Enrolled' : 'Not enrolled'} />
         </div>
       </div>
 

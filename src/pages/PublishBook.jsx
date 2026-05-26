@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 // @ts-ignore
+import { PublishBookService, getApiError } from '@/services/publishBook.service';
+// @ts-ignore
 import StepIndicator from '@/components/publish/StepIndicator';
 import BookDetailsStep from '@/components/publish/BookDetailsStep';
 import ContentStep from '@/components/publish/ContentStep';
@@ -21,7 +23,7 @@ import { Button } from '@/components/ui/button';
 const validateStep1 = (data) => {
   const errors = {};
   if (!data.title?.trim()) errors.title = 'Book title is required';
-  if (!data.author_name?.trim()) errors.author_name = 'Author name is required';
+  if (!data.authorName?.trim()) errors.authorName = 'Author name is required';
   if (!data.description?.trim()) errors.description = 'Description is required';
   else if (data.description.trim().length < 50) errors.description = 'Description must be at least 50 characters';
   else if (data.description.trim().length > 4000) errors.description = 'Description cannot exceed 4,000 characters';
@@ -35,20 +37,20 @@ const validateStep1 = (data) => {
 const validateStep2 = (data) => {
   const errors = {};
   if (!data.manuscript_url) errors.manuscript_url = 'Please upload your manuscript';
-  if (!data.cover_url) errors.cover_url = 'Please upload a cover image';
+  if (!data.coverUrl) errors.coverUrl = 'Please upload a cover image';
   return errors;
 };
 
 const validateStep3 = (data) => {
   const errors = {};
-  if (!data.list_price || data.list_price <= 0) {
-    errors.list_price = 'Please enter a valid price';
-  } else if (data.list_price < 1.99) {
-    errors.list_price = 'Price must be at least $1.99';
-  } else if (data.list_price > 199.99) {
-    errors.list_price = 'Price cannot exceed $199.99';
+  if (!data.listPrice || data.listPrice <= 0) {
+    errors.listPrice = 'Please enter a valid price';
+  } else if (data.listPrice < 1.99) {
+    errors.listPrice = 'Price must be at least $1.99';
+  } else if (data.listPrice > 199.99) {
+    errors.listPrice = 'Price cannot exceed $199.99';
   }
-  if (data.territories === 'specific' && (!data.selected_countries || data.selected_countries.length === 0)) {
+  if (data.territories === 'specific' && (!data.selectedCountries || data.selectedCountries.length === 0)) {
     errors.territories = 'Please select at least one country';
   }
   return errors;
@@ -57,14 +59,14 @@ const validateStep3 = (data) => {
 const validateAll = (data) => {
   const errors = [];
   if (!data.title?.trim()) errors.push('Book title is required');
-  if (!data.author_name?.trim()) errors.push('Author name is required');
+  if (!data.authorName?.trim()) errors.push('Author name is required');
   if (!data.description?.trim()) errors.push('Description is required');
   else if (data.description.trim().length < 50) errors.push('Description must be at least 50 characters');
   else if (data.description.trim().length > 4000) errors.push('Description cannot exceed 4,000 characters');
   if (!data.language) errors.push('Language is required');
   if (!data.manuscript_url) errors.push('Manuscript upload is required');
-  if (!data.cover_url) errors.push('Cover image is required');
-  if (!data.list_price || data.list_price <= 0) errors.push('Valid price is required');
+  if (!data.coverUrl) errors.push('Cover image is required');
+  if (!data.listPrice || data.listPrice <= 0) errors.push('Valid price is required');
   return errors;
 };
 
@@ -93,6 +95,8 @@ export default function PublishBook() {
     contributors: [],
   });
   const [lastSaved, setLastSaved] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [contentProgress, setContentProgress] = useState({ done: 0, total: 0 });
   const saveTimeoutRef = useRef(null);
 
   const updateData = useCallback((updates) => {
@@ -144,17 +148,152 @@ export default function PublishBook() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleNext = (stepValidation, nextStep) => {
+  // Build Step 1 payload (book details)
+  const buildStep1Payload = (data) => {
+    const preorderType = data.preorderType || 'release_now';
+    const payload = {
+      title: data.title || '',
+      subtitle: data.subtitle || '',
+      seriesName: data.seriesName || '',
+      seriesNumber: data.seriesNumber || null,
+      editionNumber: data.editionNumber || '',
+      authorFirstName: data.authorFirstName || '',
+      authorName: data.authorName || '',
+      authorLastName: data.authorLastName || '',
+      description: data.description || '',
+      language: data.language || '',
+      categories: data.categories || [],
+      contributors: data.contributors || [],
+      keywords: data.keywords || [],
+      readingAgeMin: data.readingAgeMin || '',
+      readingAgeMax: data.readingAgeMax || '',
+      ageRange: data.ageRange || '',
+      preorderType,
+      preorderDate: preorderType === 'preorder' ? (data.preorderDate || null) : null,
+    };
+    if (payload.seriesNumber === '' || payload.seriesNumber === null || isNaN(Number(payload.seriesNumber))) {
+      delete payload.seriesNumber;
+    } else {
+      payload.seriesNumber = Number(payload.seriesNumber);
+    }
+    return payload;
+  };
+
+  // Build Step 2 payload (content metadata)
+  const buildStep2Payload = (data, bookId) => ({
+    bookId,
+    drm: !!data.drm,
+    coverUrl: data.coverUrl || '',
+    backCoverUrl: data.backCoverUrl || '',
+    spineUrl: data.spineUrl || '',
+    aiGenerated: !!data.aiGenerated,
+    isbn: data.isbn || '',
+    samplePageStart: data.samplePageStart || null,
+    samplePageEnd: data.samplePageEnd || null,
+    totalPages: data.totalPages || null,
+  });
+
+  // Build Step 3 payload (pricing)
+  const buildStep3Payload = (data, bookId) => ({
+    bookId,
+    listPrice: parseFloat(data.listPrice) || 0,
+    territories: data.territories || 'worldwide',
+    isBookEnroll: !!data.isBookEnroll,
+    selectedCountries: data.selectedCountries || [],
+  });
+
+  // Generic flow: validate -> call api -> on success advance step
+  const runStep = async (stepValidation, apiCall, nextStep) => {
+    console.log('runStep starting', { currentStep, nextStep });
     const stepErrors = stepValidation(bookData);
+    console.log('Validation errors', stepErrors);
     if (Object.keys(stepErrors).length > 0) {
       setErrors(stepErrors);
       toast.error('Please fix the errors before continuing');
       return;
     }
     setErrors({});
-    setCompletedSteps(prev => [...new Set([...prev, currentStep])]);
-    goToStep(nextStep);
+    setSubmitting(true);
+    try {
+      await apiCall();
+      console.log('API call succeeded, advancing to step', nextStep);
+      setCompletedSteps(prev => [...new Set([...prev, currentStep])]);
+      goToStep(nextStep);
+    } catch (err) {
+      console.error('API call failed', err);
+      toast.error(getApiError(err, 'Failed to save step. Please try again.'));
+    } finally {
+      console.log('runStep completed, setting submitting false');
+      setSubmitting(false);
+    }
   };
+
+  // Step 1 — book details
+  const handleStep1Next = () => runStep(
+    validateStep1,
+    async () => {
+      const payload = buildStep1Payload(bookData);
+      console.log('Step 1 payload:', payload);
+      const res = await PublishBookService.step1(payload);
+      console.log('Step 1 response:', res);
+      const bookId = res?.data?.bookId ?? res?.bookId;
+      console.log('Extracted bookId:', bookId);
+      if (!bookId) throw new Error(res?.errorMessage || 'Could not create book');
+      updateData({ bookId });
+      toast.success('Book details saved');
+    },
+    2,
+  );
+
+  // Step 2 — content (chapters loop in batches of 3, then step2 API)
+  const handleStep2Next = () => runStep(
+    validateStep2,
+    async () => {
+      const bookId = bookData.bookId;
+      if (!bookId) throw new Error('Missing bookId — please redo Step 1');
+
+      const structure = bookData.manuscriptStructure;
+      const chapters = structure?.chapters || [];
+      if (!chapters.length) throw new Error('Manuscript chapters are missing');
+
+      const BATCH = 3;
+      const total = Math.ceil(chapters.length / BATCH);
+      setContentProgress({ done: 0, total });
+
+      for (let i = 0; i < chapters.length; i += BATCH) {
+        const chunk = chapters.slice(i, i + BATCH);
+        const contentPayload = {
+          bookId,
+          manuscriptFilename: bookData.manuscriptFilename || '',
+          manuscriptStructure: {
+            bookId: structure.bookId,
+            title: structure.title,
+            chapters: chunk,
+          },
+        };
+        await PublishBookService.publishBookContent(contentPayload);
+        setContentProgress({ done: Math.min(i / BATCH + 1, total), total });
+      }
+
+      // After all chapter batches succeed -> step2 metadata
+      await PublishBookService.step2(buildStep2Payload(bookData, bookId));
+      toast.success('Content uploaded');
+      setContentProgress({ done: 0, total: 0 });
+    },
+    3,
+  );
+
+  // Step 3 — pricing
+  const handleStep3Next = () => runStep(
+    validateStep3,
+    async () => {
+      const bookId = bookData.bookId;
+      if (!bookId) throw new Error('Missing bookId — please redo Step 1');
+      await PublishBookService.step3(buildStep3Payload(bookData, bookId));
+      toast.success('Pricing saved');
+    },
+    4,
+  );
 
   const handlePublish = async (status) => {
     if (status === 'in_review') {
@@ -164,20 +303,30 @@ export default function PublishBook() {
         return;
       }
     }
-    setPublishing(true);
-    const payload = { ...bookData, status };
-    // @ts-ignore
-    if (payload.seriesNumber === '' || payload.seriesNumber === null || isNaN(payload.seriesNumber)) {
-      // @ts-ignore
-      delete payload.seriesNumber;
-    } else {
-      // @ts-ignore
-      payload.seriesNumber = Number(payload.seriesNumber);
+    const bookId = bookData.bookId;
+    if (!bookId) {
+      toast.error('Missing bookId — please complete previous steps first');
+      return;
     }
-    await base44.entities.Book.create(payload);
-    setPublishing(false);
-    toast.success(status === 'draft' ? 'Draft saved successfully!' : 'eBook submitted for publishing!');
-    navigate('/');
+    setPublishing(true);
+    try {
+      if (status === 'draft') {
+        // Local draft save fallback
+        // @ts-ignore
+        await base44.entities.Book.create({ ...bookData, status });
+        toast.success('Draft saved successfully!');
+        navigate('/');
+        return;
+      }
+      // Final submission
+      await PublishBookService.step4({ bookId });
+      toast.success('eBook submitted for review!');
+      navigate('/books', { state: { statusFilter: 'in_review' } });
+    } catch (err) {
+      toast.error(getApiError(err, 'Failed to submit for review'));
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const progressPct = ((completedSteps.length) / 4) * 100;
@@ -314,13 +463,13 @@ export default function PublishBook() {
             <div className="max-w-3xl mx-auto w-full">
               <div className="bg-card border rounded-2xl p-5 sm:p-6 lg:p-8 shadow-sm">
                 {currentStep === 1 && (
-                  <BookDetailsStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep1, 2)} />
+                  <BookDetailsStep data={bookData} onChange={updateData} errors={errors} onNext={handleStep1Next} submitting={submitting} />
                 )}
                 {currentStep === 2 && (
-                  <ContentStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep2, 3)} onBack={() => goToStep(1)} />
+                  <ContentStep data={bookData} onChange={updateData} errors={errors} onNext={handleStep2Next} onBack={() => goToStep(1)} submitting={submitting} contentProgress={contentProgress} />
                 )}
                 {currentStep === 3 && (
-                  <PricingStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep3, 4)} onBack={() => goToStep(2)} />
+                  <PricingStep data={bookData} onChange={updateData} errors={errors} onNext={handleStep3Next} onBack={() => goToStep(2)} submitting={submitting} />
                 )}
                 {currentStep === 4 && (
                   <ReviewStep data={bookData} onBack={() => goToStep(3)} onPublish={handlePublish} onEdit={goToStep} publishing={publishing} validationErrors={validateAll(bookData)} />

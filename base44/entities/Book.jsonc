@@ -139,7 +139,7 @@
       "type": "string",
       "description": "Book cover image URL"
     },
-    "classpedia_select": {
+    "isBookEnroll": {
       "type": "boolean",
       "description": "Enrolled in Classpedia Select program"
     },

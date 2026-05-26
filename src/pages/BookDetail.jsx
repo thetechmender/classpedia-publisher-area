@@ -1,7 +1,7 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import React, { useEffect } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,8 +11,74 @@ import {
   Tag, Calendar, Eye, Globe, Shield, Cpu, ChevronRight
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
-import mockBooks from '@/data/mockBooks.json';
+import { PublishBookService, getApiError } from '@/services/publishBook.service';
+
+// Normalize the API book record (handles nested response shape from
+// /publisher-book/details/{bookId}) so the existing UI keeps working.
+function normalizeBook(b) {
+  if (!b) return b;
+  const pub = b.publication || {};
+  const rights = b.rights || {};
+  const content = b.contentFiles || b.content_files || {};
+
+  // Flatten array-of-{id,name} into array-of-strings for plain rendering
+  const toNames = (arr) =>
+    Array.isArray(arr)
+      ? arr.map((x) => (typeof x === 'string' ? x : x?.name)).filter(Boolean)
+      : [];
+
+  const contributors = Array.isArray(b.contributors)
+    ? b.contributors.map((c) => ({
+        id: c.id,
+        name: c.name ?? [c.firstName, c.lastName].filter(Boolean).join(' '),
+        role: c.role ?? c.contributorRoleName ?? c.contributor_role_name ?? '',
+      }))
+    : [];
+
+  const authorName =
+    b.author_name ??
+    b.authorName ??
+    b.author ??
+    ([b.authorFirstName, b.authorLastName].filter(Boolean).join(' ').trim() || undefined);
+
+  let territories;
+  if (rights.isAllTerritory) territories = 'All territories';
+  else if (Array.isArray(rights.selectedCountries) && rights.selectedCountries.length)
+    territories = toNames(rights.selectedCountries).join(', ');
+  else if (typeof b.territories === 'string') territories = b.territories;
+
+  return {
+    id: b.id ?? b.bookId ?? b.book_id,
+    title: b.title,
+    subtitle: b.subtitle ?? b.subTitle,
+    description: b.description,
+    status: b.status ?? b.bookStatusCode ?? b.book_status_code,
+    statusLabel: b.bookStatusName ?? b.book_status_name,
+    isbn: b.isbn,
+    language: b.language ?? b.languageName,
+    territories,
+    drm: b.drm ?? rights.drmProtection,
+    isBookEnroll: b.isBookEnroll ?? b.is_book_enroll ?? rights.classpediaSelectEnrolled,
+    ai_generated: b.ai_generated ?? b.aiGenerated ?? rights.aiGenerated,
+    edition_number: b.edition_number ?? b.editionNumber ?? b.edition,
+    seriesName: b.seriesName ?? b.series_name,
+    seriesNumber: b.seriesNumber ?? b.series_number,
+    author_name: authorName,
+    contributors,
+    keywords: toNames(b.keywords),
+    categories: toNames(b.categories),
+    cover_url: b.cover_url ?? b.coverUrl ?? b.frontCover,
+    list_price: Number(b.list_price ?? b.listPrice ?? b.price ?? 0),
+    currency: b.currency,
+    royalty_plan: b.royalty_plan ?? b.royaltyPlan ?? b.royaltyPercentage,
+    created_date: b.created_date ?? b.createdDate ?? b.createdAt ?? pub.createdAt,
+    publication_date:
+      b.publication_date ?? b.publicationDate ?? b.publishedAt ?? pub.publishedAt,
+    manuscript_filename:
+      b.manuscript_filename ?? b.manuscriptFilename ?? content.manuscriptFilename,
+    sample_filename: b.sample_filename ?? b.sampleFilename ?? content.sampleFilename,
+  };
+}
 
 const STATUS_CONFIG = {
   draft:       { label: 'Draft',       icon: FileEdit,     bg: 'bg-slate-100',   text: 'text-slate-600',   dot: 'bg-slate-400' },
@@ -49,19 +115,21 @@ function StatBox({ icon: Icon, label, value, sub, color = 'text-foreground', bg 
 
 export default function BookDetail() {
   const navigate = useNavigate();
-  const bookId = window.location.pathname.split('/book/')[1];
+  const { id: bookId } = useParams();
 
-  console.log('Debug - bookId:', bookId);
-  console.log('Debug - mockBooks:', mockBooks);
-  console.log('Debug - mockBooks length:', mockBooks.length);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['publisherBookDetails', bookId],
+    queryFn: () => PublishBookService.details(bookId),
+    enabled: !!bookId,
+  });
 
-  // Use mock data instead of API call
-  const books = mockBooks;
-  const isLoading = false;
+  useEffect(() => {
+    if (error) toast.error(getApiError(error, 'Failed to load book'));
+  }, [error]);
 
-  const book = books.find(b => b.id === bookId);
-
-  console.log('Debug - found book:', book);
+  // Tolerate { data: {...} } or direct object
+  const rawBook = data?.data ?? data?.book ?? data;
+  const book = normalizeBook(rawBook);
 
   if (isLoading) {
     return (
@@ -199,7 +267,7 @@ export default function BookDetail() {
             <div className="space-y-0">
               <DetailRow label="Territories" value={book.territories} />
               <DetailRow label="DRM Protection" value={book.drm ? 'Enabled' : 'Disabled'} />
-              <DetailRow label="Classpedia Select" value={book.classpedia_select ? 'Enrolled' : 'Not enrolled'} />
+              <DetailRow label="Classpedia Select" value={book.isBookEnroll ? 'Enrolled' : 'Not enrolled'} />
               <DetailRow label="AI Generated" value={book.ai_generated ? 'Yes' : 'No'} />
             </div>
           </div>

@@ -146,10 +146,10 @@ function TerritoryPicker({ selected = [], onChange }) {
 
 }
 
-export default function PricingStep({ data, onChange, errors, onNext, onBack }) {
+export default function PricingStep({ data, onChange, errors, onNext, onBack, submitting = false }) {
   const [selectExpanded, setSelectExpanded] = useState(false);
 
-  const price = parseFloat(data.list_price) || 0;
+  const price = parseFloat(data.listPrice) || 0;
   const authorEarning = price * (AUTHOR_ROYALTY / 100);
   const priceRange = `$${PRICE_MIN.toFixed(2)}–$${PRICE_MAX.toFixed(2)}`;
 
@@ -178,12 +178,12 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
             { value: true, label: 'Yes, enroll me', desc: 'Exclusive to Classpedia for 60 days' },
             { value: false, label: 'No, skip for now', desc: 'You can enroll later from your dashboard' },
           ].map(opt => {
-            const selected = !!data.classpedia_select === opt.value;
+            const selected = !!data.isBookEnroll === opt.value;
             return (
               <button
                 key={String(opt.value)}
                 type="button"
-                onClick={() => onChange({ classpedia_select: opt.value })}
+                onClick={() => onChange({ isBookEnroll: opt.value })}
                 className={cn(
                   'flex-1 flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all duration-150',
                   selected ? 'border-primary bg-primary/5' : 'border-border bg-background hover:border-primary/30'
@@ -219,7 +219,7 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
           </div>
         )}
 
-        {data.classpedia_select && (
+        {data.isBookEnroll && (
           <InfoBox>
             By enrolling, you confirm this eBook will be exclusive to Classpedia for {SELECT_ENROLLMENT_DAYS} days.
             You can run up to {SELECT_FREE_DAYS} free-promotion days per enrollment window.
@@ -234,7 +234,7 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
         </p>
         <RadioGroup
           value={data.territories || 'worldwide'}
-          onValueChange={(v) => onChange({ territories: v, selected_countries: v === 'worldwide' ? [] : data.selected_countries || [] })}
+          onValueChange={(v) => onChange({ territories: v, selectedCountries: v === 'worldwide' ? [] : data.selectedCountries || [] })}
           className="space-y-2">
           
           <label className={cn(
@@ -264,8 +264,8 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
 
         {data.territories === 'specific' &&
         <TerritoryPicker
-          selected={data.selected_countries || []}
-          onChange={(countries) => onChange({ selected_countries: countries })} />
+          selected={data.selectedCountries || []}
+          onChange={(countries) => onChange({ selectedCountries: countries })} />
 
         }
       </Section>
@@ -317,24 +317,24 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
                       step="0.01"
                       min={PRICE_MIN}
                       max={PRICE_MAX}
-                      value={data.list_price || ''}
-                      onChange={(e) => onChange({ list_price: e.target.value ? parseFloat(e.target.value) : '' })}
+                      value={data.listPrice || ''}
+                      onChange={(e) => onChange({ listPrice: e.target.value ? parseFloat(e.target.value) : '' })}
                       onBlur={(e) => {
                         const v = parseFloat(e.target.value);
-                        if (!isNaN(v) && v < PRICE_MIN) onChange({ list_price: PRICE_MIN });
-                        if (!isNaN(v) && v > PRICE_MAX) onChange({ list_price: PRICE_MAX });
+                        if (!isNaN(v) && v < PRICE_MIN) onChange({ listPrice: PRICE_MIN });
+                        if (!isNaN(v) && v > PRICE_MAX) onChange({ listPrice: PRICE_MAX });
                       }}
                       placeholder="0.00"
-                      className={cn('w-24', errors.list_price ? 'border-destructive' : '')} />
+                      className={cn('w-24', errors.listPrice ? 'border-destructive' : '')} />
                     
                     <span className="text-xs text-muted-foreground">USD</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Set a price between {priceRange}
                   </p>
-                  {errors.list_price &&
+                  {errors.listPrice &&
                   <p className="flex items-center gap-1 text-xs text-destructive mt-1">
-                      <AlertCircle className="w-3 h-3" /> {errors.list_price}
+                      <AlertCircle className="w-3 h-3" /> {errors.listPrice}
                     </p>
                   }
                 </td>
@@ -393,8 +393,15 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack }) 
         <Button variant="outline" onClick={onBack} className="gap-2">
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
-        <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
-          Review & Submit <ChevronRight className="w-4 h-4" />
+        <Button onClick={onNext} disabled={submitting} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
+          {submitting ? (
+            <>
+              <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>Review & Submit <ChevronRight className="w-4 h-4" /></>
+          )}
         </Button>
       </div>
     </div>);

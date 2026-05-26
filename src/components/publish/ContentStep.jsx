@@ -62,10 +62,10 @@ const escapeHtml = (str) =>
 
 // Sample chapter page-range selector
 function SampleChapterSection({ data, onChange }) {
-  const totalPages = data.total_pages || '';
-  const sampleStart = data.sample_page_start || 1;
-  const sampleEnd = data.sample_page_end || '';
-  const hasSample = !!data.sample_page_end;
+  const totalPages = data.totalPages || '';
+  const sampleStart = data.samplePageStart || 1;
+  const sampleEnd = data.samplePageEnd || '';
+  const hasSample = !!data.samplePageEnd;
 
   const maxAllowed = totalPages ? Math.floor(totalPages * 0.2) : null;
   const selectedPages = sampleEnd && sampleStart ? sampleEnd - sampleStart + 1 : 0;
@@ -76,16 +76,16 @@ function SampleChapterSection({ data, onChange }) {
     if (!isNaN(n) && n > 0) {
       const max20 = Math.floor(n * 0.2);
       onChange({
-        total_pages: n,
-        sample_page_start: 1,
-        sample_page_end: Math.min(data.sample_page_end || max20, max20),
+        totalPages: n,
+        samplePageStart: 1,
+        samplePageEnd: Math.min(data.samplePageEnd || max20, max20),
       });
     } else {
-      onChange({ total_pages: '', sample_page_start: 1, sample_page_end: '' });
+      onChange({ totalPages: '', samplePageStart: 1, samplePageEnd: '' });
     }
   };
 
-  const clearSample = () => onChange({ sample_page_start: 1, sample_page_end: '', total_pages: '' });
+  const clearSample = () => onChange({ samplePageStart: 1, samplePageEnd: '', totalPages: '' });
 
   return (
     <Section icon={Layers} title="Sample Chapter" subtitle="Let readers preview pages before buying — no file upload needed">
@@ -137,7 +137,7 @@ function SampleChapterSection({ data, onChange }) {
                   min="1"
                   max={totalPages}
                   value={sampleStart}
-                  onChange={(e) => onChange({ sample_page_start: parseInt(e.target.value) || 1 })}
+                  onChange={(e) => onChange({ samplePageStart: parseInt(e.target.value) || 1 })}
                   className="bg-background w-20"
                 />
               </div>
@@ -150,7 +150,7 @@ function SampleChapterSection({ data, onChange }) {
                   value={sampleEnd}
                   onChange={(e) => {
                     const v = parseInt(e.target.value) || '';
-                    onChange({ sample_page_end: v });
+                    onChange({ samplePageEnd: v });
                   }}
                   className={cn('bg-background w-20', exceedsLimit && 'border-destructive')}
                   placeholder="—"
@@ -183,7 +183,7 @@ function SampleChapterSection({ data, onChange }) {
                 <button
                   key={label}
                   type="button"
-                  onClick={() => onChange({ sample_page_start: 1, sample_page_end: pages })}
+                  onClick={() => onChange({ samplePageStart: 1, samplePageEnd: pages })}
                   className={cn(
                     'px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors',
                     sampleStart === 1 && sampleEnd === pages
@@ -231,6 +231,16 @@ function CoverSection({ data, onChange, errors, uploading, setUploading, coverRe
   const backCoverRef = useRef(null);
   const spineRef = useRef(null);
 
+  // Convert file to base64 string
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleUpload = async (type, file) => {
     if (!file) return;
 
@@ -240,18 +250,14 @@ function CoverSection({ data, onChange, errors, uploading, setUploading, coverRe
 
     setUploading(prev => ({ ...prev, [type]: true }));
     try {
-      let file_url = '';
-      try {
-        const res = await base44.integrations.Core.UploadFile({ file });
-        file_url = res?.file_url || '';
-      } catch (err) {
-        console.error('Cover upload error:', err);
-        // Fallback so the demo still works
-        file_url = localUrl;
-      }
-      if (type === 'cover') onChange({ cover_url: file_url });
-      else if (type === 'back_cover') onChange({ back_cover_url: file_url });
-      else if (type === 'spine') onChange({ spine_url: file_url });
+      // Convert file to base64 for payload
+      const base64String = await fileToBase64(file);
+      
+      if (type === 'cover') onChange({ coverUrl: base64String });
+      else if (type === 'back_cover') onChange({ backCoverUrl: base64String });
+      else if (type === 'spine') onChange({ spineUrl: base64String });
+    } catch (err) {
+      console.error('Cover upload error:', err);
     } finally {
       setUploading(prev => ({ ...prev, [type]: false }));
     }
@@ -272,7 +278,7 @@ function CoverSection({ data, onChange, errors, uploading, setUploading, coverRe
     const isUploading = uploading[uploadKey];
     const hasPreview = !!displayUrl;
     const isFullyUploaded = !!url; // Has server URL
-    
+
     return (
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-foreground mb-1">
@@ -284,8 +290,8 @@ function CoverSection({ data, onChange, errors, uploading, setUploading, coverRe
         {hasPreview ? (
           <div className={cn(
             "relative group rounded-lg overflow-hidden",
-            isFullyUploaded 
-              ? "border border-primary/20 bg-primary/5" 
+            isFullyUploaded
+              ? "border border-primary/20 bg-primary/5"
               : "border-2 border-dashed border-amber-400 bg-amber-50"
           )}>
             <img src={displayUrl} alt={label}
@@ -343,38 +349,38 @@ function CoverSection({ data, onChange, errors, uploading, setUploading, coverRe
           label="Front Cover" required
           hint="Main cover shown on the product page"
           uploadKey="cover"
-          url={data.cover_url}
+          url={data.coverUrl}
           inputRef={coverRef}
-          onRemove={() => handleRemove('cover', () => onChange({ cover_url: '' }))}
+          onRemove={() => handleRemove('cover', () => onChange({ coverUrl: '' }))}
         />
         <CoverUploadSlot
           label="Spine"
           hint="Narrow strip between front and back cover"
           uploadKey="spine"
-          url={data.spine_url}
+          url={data.spineUrl}
           inputRef={spineRef}
-          onRemove={() => handleRemove('spine', () => onChange({ spine_url: '' }))}
+          onRemove={() => handleRemove('spine', () => onChange({ spineUrl: '' }))}
         />
         <CoverUploadSlot
           label="Back Cover"
           hint="Shown in full-spread view"
           uploadKey="back_cover"
-          url={data.back_cover_url}
+          url={data.backCoverUrl}
           inputRef={backCoverRef}
-          onRemove={() => handleRemove('back_cover', () => onChange({ back_cover_url: '' }))}
+          onRemove={() => handleRemove('back_cover', () => onChange({ backCoverUrl: '' }))}
         />
       </div>
 
-      {errors.cover_url && (
+      {errors.coverUrl && (
         <p className="flex items-center gap-1 text-xs text-destructive mt-2">
-          <AlertCircle className="w-3 h-3" /> {errors.cover_url}
+          <AlertCircle className="w-3 h-3" /> {errors.coverUrl}
         </p>
       )}
     </Section>
   );
 }
 
-export default function ContentStep({ data, onChange, errors, onNext, onBack }) {
+export default function ContentStep({ data, onChange, errors, onNext, onBack, submitting = false, contentProgress = { done: 0, total: 0 } }) {
   const manuscriptRef = useRef(null);
   const coverRef = useRef(null);
   const [uploading, setUploading] = useState({ manuscript: false, cover: false, back_cover: false, spine: false });
@@ -481,7 +487,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
     try {
       const md = await book.loaded.metadata;
       metaTitle = md?.title || '';
-    } catch (_) {}
+    } catch (_) { }
 
     return {
       bookId: `local-${Date.now()}`,
@@ -526,8 +532,8 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
       if (type === 'manuscript') {
         onChange({
           manuscript_url: file_url,
-          manuscript_filename: file.name,
-          manuscript_structure: parsedStructure,
+          manuscriptFilename: file.name,
+          manuscriptStructure: parsedStructure,
         });
         // Clear local preview after successful upload
         setLocalPreviews((prev) => ({ ...prev, manuscript: null }));
@@ -545,7 +551,22 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
   };
 
   return (
-    <div className="space-y-5">
+    <div className={cn("space-y-5 relative", submitting && "pointer-events-none")}>
+      {/* Submitting overlay */}
+      {submitting && (
+        <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-card border rounded-xl px-6 py-5 shadow-lg flex items-center gap-4 max-w-md">
+            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
+            <div>
+              <p className="text-sm font-semibold">Uploading your content…</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                This may take a few minutes. Please don&apos;t close this page or change the cover or manuscript while it finishes.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3 pb-4 border-b">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -575,15 +596,15 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           const isUploading = uploading.manuscript;
           const isFullyUploaded = !!data.manuscript_url;
           const hasLocalPreview = !!localPreviews.manuscript;
-          const displayFilename = data.manuscript_filename || localPreviews.manuscript || 'Manuscript';
-          
+          const displayFilename = data.manuscriptFilename || localPreviews.manuscript || 'Manuscript';
+
           // Show uploaded state if fully uploaded OR if uploading with local preview
           if (isFullyUploaded || hasLocalPreview) {
             return (
               <div className={cn(
                 "flex items-center gap-3 rounded-xl p-4 mb-4",
-                isFullyUploaded 
-                  ? "bg-primary/5 border border-primary/20" 
+                isFullyUploaded
+                  ? "bg-primary/5 border border-primary/20"
                   : "bg-amber-50 border-2 border-dashed border-amber-400"
               )}>
                 <div className={cn(
@@ -622,7 +643,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => {
                       setLocalPreviews(prev => ({ ...prev, manuscript: null }));
-                      onChange({ manuscript_url: '', manuscript_filename: '' });
+                      onChange({ manuscript_url: '', manuscriptFilename: '' });
                     }}>
                       <X className="w-4 h-4" />
                     </Button>
@@ -631,7 +652,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
               </div>
             );
           }
-          
+
           // Show upload button
           return (
             <button
@@ -705,12 +726,12 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
       <SampleChapterSection data={data} onChange={onChange} />
 
       {/* ── 3. BOOK COVER ── */}
-      <CoverSection 
-        data={data} 
-        onChange={onChange} 
-        errors={errors} 
-        uploading={uploading} 
-        setUploading={setUploading} 
+      <CoverSection
+        data={data}
+        onChange={onChange}
+        errors={errors}
+        uploading={uploading}
+        setUploading={setUploading}
         coverRef={coverRef}
         localPreviews={localPreviews}
         setLocalPreviews={setLocalPreviews}
@@ -725,26 +746,26 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           Did you use AI tools in creating texts, images, and/or translations in your book?
         </p>
         <RadioGroup
-          value={data.ai_generated != null ? data.ai_generated ? 'yes' : 'no' : ''}
-          onValueChange={(v) => onChange({ ai_generated: v === 'yes' })}
+          value={data.aiGenerated != null ? data.aiGenerated ? 'yes' : 'no' : ''}
+          onValueChange={(v) => onChange({ aiGenerated: v === 'yes' })}
           className="space-y-2"
         >
           <label className={cn(
             'flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all',
-            data.ai_generated === true ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
+            data.aiGenerated === true ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
           )}>
             <RadioGroupItem value="yes" className="text-primary" />
             <span className="text-sm font-medium">Yes</span>
           </label>
           <label className={cn(
             'flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all',
-            data.ai_generated === false ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
+            data.aiGenerated === false ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
           )}>
             <RadioGroupItem value="no" className="text-primary" />
             <span className="text-sm font-medium">No</span>
           </label>
         </RadioGroup>
-        {data.ai_generated && (
+        {data.aiGenerated && (
           <div className="mt-4 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
             <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
             <p className="text-xs text-blue-700">
@@ -762,7 +783,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
           Make sure your formatting looks great before publishing.
         </p>
         {(() => {
-          const hasCover = !!(localPreviews.cover || data.cover_url);
+          const hasCover = !!(localPreviews.cover || data.coverUrl);
           const hasManuscript = !!data.manuscript_url;
           const canPreview = hasCover || hasManuscript;
           return (
@@ -805,25 +826,46 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack }) 
 
       {/* Navigation */}
       <div className="flex justify-between pt-2">
-        <Button variant="outline" onClick={onBack} className="gap-2">
+        <Button variant="outline" onClick={onBack} disabled={submitting} className="gap-2">
           <ChevronLeft className="w-4 h-4" /> Back
         </Button>
-        <Button onClick={onNext} disabled={uploading.manuscript} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
-          Save & Continue <ChevronRight className="w-4 h-4" />
+        <Button onClick={onNext} disabled={uploading.manuscript || submitting} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
+          {submitting ? (
+            <>
+              <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            <>Save & Continue <ChevronRight className="w-4 h-4" /></>
+          )}
         </Button>
       </div>
 
       {/* Book Previewer Modal */}
       {showPreviewer && (
-        <BookPreviewer 
+        <BookPreviewer
           book={{
             ...data,
-            // Use local previews if available, otherwise use uploaded URLs
-            cover_url: localPreviews.cover || data.cover_url,
-            back_cover_url: localPreviews.back_cover || data.back_cover_url,
-            spine_url: localPreviews.spine || data.spine_url,
-          }} 
-          onClose={() => setShowPreviewer(false)} 
+            // BookPreviewer expects snake_case keys — map camelCase form data
+            title: data.title,
+            subtitle: data.subtitle,
+            description: data.description,
+            author_name: data.authorName || data.author_name,
+            contributors: data.contributors,
+            edition_number: data.editionNumber || data.edition_number,
+            seriesName: data.seriesName,
+            cover_url: localPreviews.cover || data.coverUrl || data.cover_url,
+            back_cover_url: localPreviews.back_cover || data.backCoverUrl || data.back_cover_url,
+            spine_url: localPreviews.spine || data.spineUrl || data.spine_url,
+            manuscript_url: data.manuscript_url || data.manuscriptUrl,
+            manuscript_filename: data.manuscriptFilename || data.manuscript_filename,
+            manuscript_structure: data.manuscriptStructure || data.manuscript_structure,
+            // Keep originals for any UI that may still reference camelCase
+            coverUrl: localPreviews.cover || data.coverUrl,
+            backCoverUrl: localPreviews.back_cover || data.backCoverUrl,
+            spineUrl: localPreviews.spine || data.spineUrl,
+          }}
+          onClose={() => setShowPreviewer(false)}
         />
       )}
 

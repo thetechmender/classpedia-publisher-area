@@ -68,7 +68,7 @@ export default function AccountSetup() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [publisherId, setPublisherId] = useState(null);
-  const [formData, setFormData] = useState(/** @type {{ paymentMethod: string; publisherFullName?: string; publisherEmail?: string; publisherPhone?: string; publisherPassword?: string; publisherConfirmPassword?: string; legalFirstName?: string; legalLastName?: string; addressLine1?: string; city?: string; state?: string; zip?: string; country?: string; authorBio?: string; preferredCategories?: string[]; website?: string; twitterHandle?: string; instagramHandle?: string; facebookUrl?: string; linkedinUrl?: string; youtubeUrl?: string; bankAccountName?: string; bankAccountNumber?: string; bankRoutingNumber?: string; paypalEmail?: string; usPerson?: boolean; taxIdType?: string; taxId?: string; taxCountry?: string; taxCertified?: boolean; esignConsent?: boolean; esignature?: string; }} */({
+  const [formData, setFormData] = useState(/** @type {{ paymentMethod: string; publisherFullName?: string; publisherEmail?: string; publisherPhone?: string; publisherPassword?: string; publisherConfirmPassword?: string; legalFirstName?: string; legalLastName?: string; addressLine1?: string; city?: string; state?: string; zip?: string; country?: string; bio?: string; preferredCategories?: string[]; website?: string; twitterHandle?: string; instagramHandle?: string; facebookUrl?: string; linkedinUrl?: string; youtubeUrl?: string; bankAccountName?: string; bankAccountNumber?: string; bankRoutingNumber?: string; paypalEmail?: string; usPerson?: boolean; taxIdType?: string; taxId?: string; taxCountry?: string; taxCertified?: boolean; esignConsent?: boolean; esignature?: string; }} */({
     paymentMethod: 'bank_transfer',
   }));
 
@@ -102,7 +102,7 @@ export default function AccountSetup() {
             zip: account.personalInfo?.zip || '',
             country: account.personalInfo?.country || '',
             // Step 3: Author Info
-            authorBio: account.authInfo?.authorBio || '',
+            bio: account.authInfo?.bio || '',
             preferredCategories: account.authInfo?.preferredCategories || [],
             website: account.authInfo?.website || '',
             twitterHandle: account.authInfo?.twitterHandle || '',
@@ -144,7 +144,7 @@ export default function AccountSetup() {
           }
 
           // Check Step 3: Author Info (optional, so just check if any data exists)
-          if (account.authInfo?.authorBio || (account.authInfo?.preferredCategories && account.authInfo.preferredCategories.length > 0)) {
+          if (account.authInfo?.bio || (account.authInfo?.preferredCategories && account.authInfo.preferredCategories.length > 0)) {
             completed.push(3);
             startStep = 4;
           } else if (completed.includes(2)) {
@@ -238,7 +238,7 @@ export default function AccountSetup() {
     // Include authInfo (step 3) if step >= 3
     if (stepNumber >= 3) {
       payload.authInfo = {
-        authorBio: formData.authorBio || '',
+        bio: formData.bio || '',
         preferredCategories: formData.preferredCategories || [],
         website: formData.website || '',
         twitterHandle: formData.twitterHandle || '',

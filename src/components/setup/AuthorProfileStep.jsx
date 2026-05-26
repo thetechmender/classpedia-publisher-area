@@ -142,7 +142,7 @@ function CategoryPicker({ selected, onChange }) {
 }
 
 export default function AuthorProfileStep({ data, onChange, errors, onSubmit = undefined, onNext, onBack, saving = false }) {
-  const bioLen = (data.authorBio || '').length;
+  const bioLen = (data.bio || '').length;
 
   return (
     <div className="space-y-6">
@@ -164,14 +164,14 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit = u
         </div>
         <div className="px-5 py-5 space-y-3">
           <Textarea
-            value={data.authorBio || ''}
-            onChange={e => onChange({ authorBio: e.target.value })}
+            value={data.bio || ''}
+            onChange={e => onChange({ bio: e.target.value })}
             placeholder="e.g., Jane Smith is an award-winning author of mystery novels. She lives in Portland, Oregon with her two cats and a very old typewriter..."
-            className={cn('min-h-[140px] resize-none', errors.authorBio ? 'border-destructive' : '')}
+            className={cn('min-h-[140px] resize-none', errors.bio ? 'border-destructive' : '')}
             maxLength={2000}
           />
           <div className="flex justify-between">
-            <FieldError msg={errors.authorBio} />
+            <FieldError msg={errors.bio} />
             <p className={cn('text-xs ml-auto', bioLen > 1800 ? 'text-destructive' : 'text-muted-foreground')}>
               {bioLen} / 2000
             </p>

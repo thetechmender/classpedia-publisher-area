@@ -38,7 +38,7 @@ export interface PersonalInfo {
 }
 
 export interface AuthInfo {
-  authorBio: string;
+  bio: string;
   preferredCategories: string[];
   website: string;
   twitterHandle: string;

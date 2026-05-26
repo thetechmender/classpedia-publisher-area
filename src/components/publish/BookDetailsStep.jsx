@@ -215,7 +215,7 @@ function CategoryPicker({ selected, onChange, error }) {
   );
 }
 
-export default function BookDetailsStep({ data, onChange, errors, onNext }) {
+export default function BookDetailsStep({ data, onChange, errors, onNext, submitting = false }) {
   const [keywordInput, setKeywordInput] = useState('');
   const [newContributor, setNewContributor] = useState({ name: '', role: '' });
 
@@ -321,8 +321,8 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
           <div>
             <FieldLabel label="Edition" tooltip="Leave blank if this is the first edition" />
             <Input
-              value={data.edition_number || ''}
-              onChange={(e) => onChange({ edition_number: e.target.value })}
+              value={data.editionNumber || ''}
+              onChange={(e) => onChange({ editionNumber: e.target.value })}
               placeholder="e.g. 2nd Edition"
               className="bg-background"
             />
@@ -339,10 +339,10 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
                 onChange={(e) => {
                   const first = e.target.value;
                   const last = data.authorLastName || '';
-                  onChange({ authorFirstName: first, author_name: `${first} ${last}`.trim() });
+                  onChange({ authorFirstName: first, authorName: `${first} ${last}`.trim() });
                 }}
                 placeholder="First name"
-                className={cn('bg-background', errors.author_name && 'border-destructive')}
+                className={cn('bg-background', errors.authorName && 'border-destructive')}
               />
             </div>
             <div>
@@ -351,14 +351,14 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
                 onChange={(e) => {
                   const last = e.target.value;
                   const first = data.authorFirstName || '';
-                  onChange({ authorLastName: last, author_name: `${first} ${last}`.trim() });
+                  onChange({ authorLastName: last, authorName: `${first} ${last}`.trim() });
                 }}
                 placeholder="Last name"
-                className={cn('bg-background', errors.author_name && 'border-destructive')}
+                className={cn('bg-background', errors.authorName && 'border-destructive')}
               />
             </div>
           </div>
-          <ErrorMsg msg={errors.author_name} />
+          <ErrorMsg msg={errors.authorName} />
         </div>
 
         {/* Contributors */}
@@ -587,7 +587,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
                   <FieldLabel label="Pre-order Release Date" required tooltip="The date your book will be delivered to pre-order customers. Must be at least 10 days from today." />
                   <Input
                     type="date"
-                    value={data.preorderDate || ''}
+                    value={data.preorderDate || null}
                     onChange={(e) => onChange({ preorderDate: e.target.value })}
                     min={new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                     className="bg-background max-w-xs"
@@ -613,8 +613,15 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
 
       {/* Next Button */}
       <div className="flex justify-end pt-2">
-        <Button onClick={() => {onNext(); console.log(data)}} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
-          Save & Continue <ChevronRight className="w-4 h-4" />
+        <Button onClick={onNext} disabled={submitting} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
+          {submitting ? (
+            <>
+              <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>Save & Continue <ChevronRight className="w-4 h-4" /></>
+          )}
         </Button>
       </div>
     </div>

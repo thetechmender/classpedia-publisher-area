@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -13,7 +14,29 @@ import {
   FileEdit, XCircle, ChevronRight, DollarSign, Calendar, Filter, Trash2, Archive, Eye, EyeOff
 } from 'lucide-react';
 import { formatDate } from '@/utils/date';
-import MOCK_BOOKS from '@/data/mockBooks.json';
+import { PublishBookService, getApiError } from '@/services/publishBook.service';
+
+// Normalize a book record so the UI can use a single shape regardless of API casing.
+function normalizeBook(b) {
+  if (!b) return b;
+  const authorName =
+    b.author_name ??
+    b.authorName ??
+    b.author ??
+    ([b.authorFirstName, b.authorLastName].filter(Boolean).join(' ').trim() || undefined);
+  return {
+    id: b.id ?? b.bookId ?? b.book_id,
+    title: b.title,
+    subtitle: b.subtitle ?? b.subTitle,
+    status: b.status ?? b.bookStatusCode ?? b.book_status_code,
+    author_name: authorName,
+    cover_url: b.cover_url ?? b.coverUrl ?? b.frontCover,
+    list_price: Number(b.list_price ?? b.listPrice ?? b.price ?? 0),
+    currency: b.currency,
+    royalty_plan: b.royalty_plan ?? b.royaltyPlan ?? b.royaltyPercentage,
+    created_date: b.created_date ?? b.createdDate ?? b.createdAt ?? b.publication?.createdAt,
+  };
+}
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest first' },
@@ -42,41 +65,77 @@ function StatusPill({ status }) {
   );
 }
 
-export default function BooksTab({ books: propBooks, isLoading }) {
-  // Use mock data if no books provided or empty
-  const books = (propBooks && propBooks.length > 0) ? propBooks : MOCK_BOOKS;
+export default function BooksTab() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState(location.state?.statusFilter || 'all');
   const [sort, setSort] = useState('newest');
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize] = useState(20);
   const [selectedBooks, setSelectedBooks] = useState(new Set());
   const [showBulkActions, setShowBulkActions] = useState(false);
 
+  // Honor incoming navigation state (e.g. redirected from publish flow with "in_review")
+  useEffect(() => {
+    if (location.state?.statusFilter) {
+      setStatusFilter(location.state.statusFilter);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state?.statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setPageNumber(1); }, [debouncedSearch, statusFilter, sort]);
+
+  const queryParams = {
+    pageNumber,
+    pageSize,
+    searchTerm: debouncedSearch,
+    status: statusFilter,
+    sortBy: sort,
+  };
+
+  const { data, isLoading, isFetching, error } = useQuery({
+    queryKey: ['publisherBooks', queryParams],
+    queryFn: () => PublishBookService.list(queryParams),
+    keepPreviousData: true,
+  });
+
+  // Be tolerant to a few possible response shapes
+  const rawBooks = useMemo(() => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    return data.items || data.books || data.data?.items || data.data?.books || data.data || [];
+  }, [data]);
+
+  const books = useMemo(() => rawBooks.map(normalizeBook), [rawBooks]);
+  const totalCount = data?.totalCount ?? data?.total ?? data?.data?.totalCount ?? books.length;
+
+  // Stats from current page (no separate counts endpoint exposed)
   const stats = useMemo(() => ({
-    total: books.length,
+    total: totalCount,
     published: books.filter(b => b.status === 'published').length,
     in_review: books.filter(b => b.status === 'in_review').length,
     draft: books.filter(b => b.status === 'draft').length,
     unpublished: books.filter(b => b.status === 'unpublished').length,
     rejected: books.filter(b => b.status === 'rejected').length,
-  }), [books]);
+  }), [books, totalCount]);
 
-  const filteredBooks = useMemo(() => {
-    let result = books.filter(book => {
-      const matchesSearch = !search ||
-        book.title?.toLowerCase().includes(search.toLowerCase()) ||
-        book.author_name?.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || book.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-    switch (sort) {
-      case 'oldest': result = [...result].sort((a, b) => new Date(a.created_date) - new Date(b.created_date)); break;
-      case 'title': result = [...result].sort((a, b) => (a.title || '').localeCompare(b.title || '')); break;
-      case 'price_desc': result = [...result].sort((a, b) => (b.list_price || 0) - (a.list_price || 0)); break;
-      default: result = [...result].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-    }
-    return result;
-  }, [books, search, statusFilter, sort]);
+  // Server already filters/sorts; use as-is
+  const filteredBooks = books;
+
+  useEffect(() => {
+    if (error) toast.error(getApiError(error, 'Failed to load books'));
+  }, [error]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   const toggleSelect = (bookId) => {
     const newSelected = new Set(selectedBooks);
@@ -279,7 +338,8 @@ export default function BooksTab({ books: propBooks, isLoading }) {
           <div className="divide-y">
             {filteredBooks.map(book => {
               const rate = parseFloat(book.royalty_plan || 70) / 100;
-              const perSale = book.list_price ? book.list_price * rate : null;
+              const priceNum = Number(book.list_price) || 0;
+              const perSale = priceNum > 0 ? priceNum * rate : null;
               return (
                 <div
                   key={book.id}
@@ -316,7 +376,7 @@ export default function BooksTab({ books: propBooks, isLoading }) {
                   </div>
                   {/* Price */}
                   <div className="col-span-2 hidden md:block text-right">
-                    <p className="text-sm font-semibold">{book.list_price ? `$${book.list_price.toFixed(2)}` : '—'}</p>
+                    <p className="text-sm font-semibold">{priceNum > 0 ? `$${priceNum.toFixed(2)}` : '—'}</p>
                     <p className="text-[10px] text-muted-foreground">{book.currency || 'USD'}</p>
                   </div>
                   {/* Royalty */}
@@ -336,6 +396,25 @@ export default function BooksTab({ books: propBooks, isLoading }) {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!isLoading && totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-muted-foreground">
+            Page {pageNumber} of {totalPages}{isFetching ? ' · updating…' : ''}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={pageNumber <= 1 || isFetching}
+              onClick={() => setPageNumber(p => Math.max(1, p - 1))}>
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" disabled={pageNumber >= totalPages || isFetching}
+              onClick={() => setPageNumber(p => Math.min(totalPages, p + 1))}>
+              Next
+            </Button>
           </div>
         </div>
       )}
