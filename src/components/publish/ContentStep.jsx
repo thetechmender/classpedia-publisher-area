@@ -431,6 +431,32 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack, su
     // Allowed element types we want to capture
     const allowedTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'blockquote', 'li'];
 
+    // Build a map of href → chapter title from the EPUB navigation (NCX/nav.xhtml).
+    // This is the most reliable source of real chapter titles, since EPUBs often
+    // store the chapter heading only in the nav and not as an <h1>/<h2> in body.
+    const navTitleByHref = new Map();
+    try {
+      await book.loaded.navigation;
+      /** @type {any} */
+      const nav = book.navigation;
+      const flatten = (items) => {
+        if (!Array.isArray(items)) return;
+        for (const it of items) {
+          if (it && it.href && it.label) {
+            // Strip the in-page anchor so different anchors in the same file
+            // all resolve to the same href.
+            const cleanHref = String(it.href).split('#')[0];
+            const label = String(it.label).replace(/\s+/g, ' ').trim();
+            if (cleanHref && label && !navTitleByHref.has(cleanHref)) {
+              navTitleByHref.set(cleanHref, label);
+            }
+          }
+          if (it && it.subitems) flatten(it.subitems);
+        }
+      };
+      flatten(nav?.toc);
+    } catch (_) { /* navigation is best-effort */ }
+
     for (let i = 0; i < spine.length; i++) {
       const section = spine.get(i);
       if (!section) continue;
@@ -443,15 +469,22 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack, su
       const doc = section.document;
       if (!doc) continue;
 
-      // Determine chapter title
+      // Determine chapter title — prefer the EPUB navigation entry when
+      // available, then fall back to in-document headings.
       let chapterTitle = '';
-      const h1 = doc.querySelector('h1');
-      const h2 = doc.querySelector('h2');
-      const titleEl = doc.querySelector('title');
-      if (h1) chapterTitle = h1.textContent.trim();
-      else if (h2) chapterTitle = h2.textContent.trim();
-      else if (titleEl) chapterTitle = titleEl.textContent.trim();
-      else chapterTitle = `Chapter ${i + 1}`;
+      const sectionHref = String(section.href || '').split('#')[0];
+      if (sectionHref && navTitleByHref.has(sectionHref)) {
+        chapterTitle = navTitleByHref.get(sectionHref);
+      }
+      if (!chapterTitle) {
+        const h1 = doc.querySelector('h1');
+        const h2 = doc.querySelector('h2');
+        const titleEl = doc.querySelector('title');
+        if (h1) chapterTitle = h1.textContent.trim();
+        else if (h2) chapterTitle = h2.textContent.trim();
+        else if (titleEl) chapterTitle = titleEl.textContent.trim();
+        else chapterTitle = `Chapter ${i + 1}`;
+      }
 
       // Walk the body and pick up known elements in order
       const elements = [];

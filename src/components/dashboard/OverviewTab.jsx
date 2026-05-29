@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,15 +9,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import mockBooks from '@/data/mockBooks.json';
-import mockPaymentsData from '@/data/mockPayments.json';
-import mockReviewsData from '@/data/mockReviews.json';
-
-// Use mock data
-const MONTHLY_DATA = mockPaymentsData.monthlyData || [];
-const mockStats = mockPaymentsData.stats || {};
-const mockReviews = mockReviewsData.reviews || [];
-const mockIssues = mockReviewsData.issues || [];
+import { DashboardService } from '@/services/dashboard.service';
 
 const STATUS_CONFIG = {
   published:   { label: 'Published',   bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' },
@@ -95,29 +87,56 @@ function getFormattedDate() {
 }
 
 export default function OverviewTab({ books: propBooks, authorProfile, onTabChange }) {
-  // Use mock books if no books provided
-  const books = (propBooks && propBooks.length > 0) ? propBooks : mockBooks;
+  const [dashboardSummary, setDashboardSummary] = useState(null);
+  const [earningsData, setEarningsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [summaryRes, earningsRes] = await Promise.all([
+          DashboardService.getDashboardSummary(),
+          DashboardService.getEarnings(),
+        ]);
+
+        if (summaryRes.isSuccess) {
+          setDashboardSummary(summaryRes.data);
+        }
+        if (earningsRes.isSuccess) {
+          setEarningsData(earningsRes.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const books = propBooks || [];
   const firstName = authorProfile?.full_name?.split(' ')[0] || 'there';
 
+  // Stats from dashboard summary API
   const stats = {
-    total:      books.length,
-    published:  books.filter(b => b.status === 'published').length,
-    in_review:  books.filter(b => b.status === 'in_review').length,
-    draft:      books.filter(b => b.status === 'draft').length,
-    rejected:   books.filter(b => b.status === 'rejected').length,
+    total:      dashboardSummary?.totalBooks || 0,
+    published:  dashboardSummary?.publishedBooks || 0,
+    in_review:  dashboardSummary?.inReviewBooks || 0,
+    draft:      dashboardSummary?.draftBooks || 0,
+    rejected:   dashboardSummary?.rejectedBooks || 0,
   };
 
-  // Use mock payment stats for royalties
-  const lifetimeEarnings = mockStats.lifetimeEarnings || 0;
-  const pendingPayout = mockStats.pendingPayout || 0;
-  const nextPayoutDate = mockStats.nextPayoutDate || 'TBD';
+  // Earnings data from earnings API
+  const monthlyData = earningsData?.monthlyData || [];
+  const lifetimeEarnings = earningsData?.stats?.lifetimeEarnings || dashboardSummary?.lifetimeEarnings || 0;
+  const pendingPayout = earningsData?.stats?.pendingPayout || dashboardSummary?.pendingPayout || 0;
+  const nextPayoutDate = earningsData?.stats?.nextPayoutDate || 'TBD';
   
-  // Reviews stats
-  const totalReviews = mockReviews.length;
-  const avgRating = totalReviews > 0 
-    ? (mockReviews.reduce((s, r) => s + (r.rating || 0), 0) / totalReviews).toFixed(1) 
-    : '—';
-  const openIssues = mockIssues.filter(i => i.status === 'open').length;
+  // Reviews stats from dashboard summary
+  const totalReviews = dashboardSummary?.totalReviews || 0;
+  const openIssues = dashboardSummary?.openIssues || 0;
 
   const actions = [];
   if (!authorProfile?.payment_method) {
@@ -270,7 +289,7 @@ export default function OverviewTab({ books: propBooks, authorProfile, onTabChan
               <p className="text-xs text-muted-foreground mt-1">Estimated this period</p>
             </div>
             <ResponsiveContainer width="100%" height={100}>
-              <BarChart data={MONTHLY_DATA} barSize={16}>
+              <BarChart data={monthlyData} barSize={16}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
                 <Tooltip formatter={v => [`$${v.toFixed(2)}`, 'Royalties']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />

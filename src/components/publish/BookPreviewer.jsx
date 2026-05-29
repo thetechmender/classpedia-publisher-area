@@ -117,32 +117,42 @@ function TitlePage({ book }) {
   );
 }
 
-function TocPage({ book }) {
-  const entries = [
-    { label: 'Introduction', pg: 1 },
-    { label: 'Chapter One', pg: 14 },
-    { label: 'Chapter Two', pg: 28 },
-    { label: 'Chapter Three', pg: 42 },
-    { label: 'Chapter Four', pg: 58 },
-    { label: 'Conclusion', pg: 74 },
-    { label: 'About the Author', pg: 88 },
-    { label: 'Index', pg: 92 },
+function TocPage({ book, entries: providedEntries }) {
+  const fallback = [
+    { number: null, displayLabel: 'Introduction', pg: 1 },
+    { number: 1, displayLabel: 'Chapter: One', pg: 14 },
+    { number: 2, displayLabel: 'Chapter: Two', pg: 28 },
+    { number: 3, displayLabel: 'Chapter: Three', pg: 42 },
+    { number: 4, displayLabel: 'Chapter: Four', pg: 58 },
+    { number: null, displayLabel: 'Conclusion', pg: 74 },
   ];
+  const entries = (providedEntries && providedEntries.length > 0) ? providedEntries : fallback;
+  // Cap visible TOC items so we don't overflow the page; rest fold into a "… + N more" line
+  const MAX_VISIBLE = 14;
+  const visible = entries.slice(0, MAX_VISIBLE);
+  const remaining = Math.max(0, entries.length - MAX_VISIBLE);
   return (
     <div className="w-full h-full bg-[#faf9f5] px-10 py-12 flex flex-col">
-      <div className="mb-8">
+      <div className="mb-6">
         <p className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em]">Table of Contents</p>
         <div className="w-8 h-0.5 bg-slate-300 mt-2" />
       </div>
-      <div className="flex-1 space-y-0.5">
-        {entries.map((e, i) => (
-          <div key={i} className="flex items-center gap-2 py-2 group">
-            <span className="text-[9px] text-slate-300 w-4 text-right shrink-0 font-mono">{i + 1}</span>
-            <span className="text-[11px] text-slate-700 flex-1 font-medium">{e.label}</span>
-            <div className="flex-1 border-b border-dotted border-slate-200 mx-1" />
-            <span className="text-[9px] text-slate-400 tabular-nums font-mono">{e.pg}</span>
+      <div className="flex-1 space-y-0 overflow-hidden">
+        {visible.map((e, i) => (
+          <div key={i} className="flex items-baseline gap-2 py-1.5">
+            <span className="text-[10px] text-slate-400 w-6 text-right shrink-0 font-mono tabular-nums">
+              {e.number != null ? `${e.number}.` : ''}
+            </span>
+            <span className="text-[11px] text-slate-700 font-medium truncate max-w-[60%]">
+              {e.displayLabel}
+            </span>
+            <span className="flex-1 border-b border-dotted border-slate-300 mx-1 mb-[3px]" />
+            <span className="text-[10px] text-slate-500 tabular-nums font-mono shrink-0">{e.pg}</span>
           </div>
         ))}
+        {remaining > 0 && (
+          <p className="text-[10px] text-slate-400 italic pt-2">… and {remaining} more</p>
+        )}
       </div>
       <p className="text-[8px] text-slate-300 mt-6 truncate">{book.title}</p>
     </div>
@@ -173,34 +183,100 @@ function renderElement(el, key) {
   }
 }
 
-// Approximate elements per page for pagination
-const ELEMENTS_PER_PAGE = 6;
+// Character budget per page — used by paginateChapter to split content fairly
+// regardless of paragraph length.
+const CHARS_PER_PAGE = 1400;
+const FIRST_PAGE_BUDGET = 1000; // first page of a chapter loses room to the chapter intro block
 
-function ContentPage({ book, chapterIndex, pageWithinChapter, pageNumber }) {
-  const structure = book.manuscript_structure;
-  const chapter = structure?.chapters?.[chapterIndex];
+// Estimate visual cost of an element (rough char-equivalent of vertical space).
+function elementCost(el) {
+  const len = (el?.content || '').length;
+  switch (el?.type) {
+    case 'h1': return Math.max(len * 2.2, 220);
+    case 'h2': return Math.max(len * 1.8, 160);
+    case 'h3': return Math.max(len * 1.5, 120);
+    case 'h4':
+    case 'h5':
+    case 'h6': return Math.max(len * 1.3, 100);
+    case 'blockquote': return len + 80;
+    case 'li': return len + 40;
+    case 'p':
+    default: return len + 50;
+  }
+}
 
-  const startIdx = pageWithinChapter * ELEMENTS_PER_PAGE;
-  const elements = chapter ? chapter.elements.slice(startIdx, startIdx + ELEMENTS_PER_PAGE) : [];
-  const isFirstPageOfChapter = pageWithinChapter === 0;
+// Split paragraphs / blockquotes that on their own exceed a page so they can flow
+// across multiple pages instead of being silently clipped by overflow-hidden.
+function splitLongElement(el) {
+  const content = el?.content || '';
+  if ((el?.type !== 'p' && el?.type !== 'blockquote') || content.length <= CHARS_PER_PAGE - 200) {
+    return [el];
+  }
+  const sentences = content.match(/[^.!?]+[.!?]+["')\]]?\s*|[^.!?]+$/g) || [content];
+  const limit = CHARS_PER_PAGE - 250;
+  const chunks = [];
+  let buf = '';
+  for (const s of sentences) {
+    if (buf.length + s.length > limit && buf.length > 0) {
+      chunks.push({ ...el, content: buf.trim() });
+      buf = s;
+    } else {
+      buf += s;
+    }
+  }
+  if (buf.trim()) chunks.push({ ...el, content: buf.trim() });
+  return chunks.length > 0 ? chunks : [el];
+}
 
+// Paginate a chapter's elements into pages using the char budget.
+function paginateChapterElements(elements) {
+  const expanded = (elements || []).flatMap(splitLongElement);
+  const pages = [];
+  let current = [];
+  let cost = 0;
+  let budget = FIRST_PAGE_BUDGET;
+  for (const el of expanded) {
+    const c = elementCost(el);
+    if (cost + c > budget && current.length > 0) {
+      pages.push(current);
+      current = [];
+      cost = 0;
+      budget = CHARS_PER_PAGE;
+    }
+    current.push(el);
+    cost += c;
+  }
+  if (current.length > 0) pages.push(current);
+  if (pages.length === 0) pages.push([]);
+  return pages;
+}
+
+function ContentPage({ book, displayTitle, chapterNumber, kind, elements, pageNumber }) {
+  // Top-left header per spec:
+  //   real chapter → "<index>: Chapter: <title>" (falls back to book title
+  //                  when the parsed chapter title is missing/empty)
+  //   front matter → "<label>" (no chapter number)
+  let headerLeft;
+  if (kind === 'chapter' && chapterNumber) {
+    const titleText = displayTitle || book?.title || '';
+    headerLeft = titleText
+      ? `${chapterNumber}: Chapter: ${titleText}`
+      : `${chapterNumber}: Chapter`;
+  } else {
+    headerLeft = displayTitle || book?.title || '';
+  }
   return (
     <div className="w-full h-full bg-[#faf9f5] px-9 py-10 flex flex-col relative">
-      <div className="flex items-center justify-between mb-5">
-        <p className="text-[8px] text-slate-300 uppercase tracking-widest truncate max-w-[60%] font-medium">
-          {chapter?.title || book.title}
+      {/* Top bar — chapter index + title on the left, page number on the right */}
+      <div className="flex items-baseline justify-between gap-3 mb-2">
+        <p className="text-[9px] text-slate-500 uppercase tracking-widest truncate font-semibold">
+          {headerLeft}
         </p>
-        <p className="text-[8px] text-slate-300 font-mono">{pageNumber}</p>
+        <p className="text-[9px] text-slate-400 font-mono shrink-0 tabular-nums">{pageNumber}</p>
       </div>
-      {isFirstPageOfChapter && chapter && (
-        <div className="mb-5">
-          <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-1">Chapter {chapter.chapterIndex}</p>
-          <h2 className="text-base font-serif font-bold text-slate-800 leading-snug">{chapter.title}</h2>
-          <div className="w-8 h-0.5 bg-slate-300 mt-2" />
-        </div>
-      )}
+      <div className="w-full h-px bg-slate-200 mb-4" />
       <div className="flex-1 space-y-3 overflow-hidden">
-        {elements.length > 0 ? (
+        {elements && elements.length > 0 ? (
           elements.map((el, i) => renderElement(el, i))
         ) : (
           <p className="text-[11px] text-slate-400 italic">No content available on this page.</p>
@@ -288,56 +364,257 @@ function BackCoverPage({ book }) {
 // We display pages in spreads: [cover | blank], [title | toc], [ch1L | ch1R], …
 // Each "spread" has a left and right component
 
+// "Chapter N" / roman / numeric bare label patterns used when stripping
+// duplicate headings from chapter bodies and when extracting display titles.
+const BARE_CHAPTER_LABEL_RE = /^(chapter\s+[ivxlcdm0-9]+|part\s+[ivxlcdm0-9]+|prologue|epilogue|[ivxlcdm]+|[0-9]+)\.?\s*$/i;
+const isBareChapterLabel = (s) => BARE_CHAPTER_LABEL_RE.test((s || '').trim());
+
+// Front-matter title patterns → friendly label.
+const FRONT_MATTER_PATTERNS = [
+  { re: /^cover$/i, label: 'Cover' },
+  { re: /cover\s*page/i, label: 'Cover' },
+  { re: /titlepage/i, label: 'Title Page' },
+  { re: /^title\s*page$/i, label: 'Title Page' },
+  { re: /half[-\s]?title/i, label: 'Half Title' },
+  { re: /copyright|imprint|colophon/i, label: 'Copyright' },
+  { re: /dedication/i, label: 'Dedication' },
+  { re: /preface/i, label: 'Preface' },
+  { re: /foreword/i, label: 'Foreword' },
+  { re: /introduction/i, label: 'Introduction' },
+  { re: /acknowledg/i, label: 'Acknowledgments' },
+  { re: /^contents$|table\s+of\s+contents|^toc$/i, label: 'Contents' },
+  { re: /about\s+the\s+author/i, label: 'About the Author' },
+  { re: /^index$/i, label: 'Index' },
+  { re: /bookmarks?/i, label: 'Bookmarks' },
+  { re: /bibliography/i, label: 'Bibliography' },
+  { re: /glossary/i, label: 'Glossary' },
+  { re: /appendix/i, label: 'Appendix' },
+  { re: /^notes?$/i, label: 'Notes' },
+];
+
+// Detect whether a parsed section is a real chapter or front matter.
+//
+// Strategy: be PERMISSIVE — any section with substantive body content is a
+// chapter unless it clearly matches a front-matter pattern (cover / title
+// page / copyright / dedication / etc.) or is too small to be a real chapter.
+// This mirrors how a reader perceives the book even when the EPUB doesn't
+// embed explicit "Chapter N" markers.
+function classifyChapter(chapter, bookTitleLc) {
+  const title = (chapter?.title || '').trim();
+  const titleLc = title.toLowerCase();
+  const elements = Array.isArray(chapter?.elements) ? chapter.elements : [];
+  const totalChars = elements.reduce((s, el) => s + (el?.content?.length || 0), 0);
+  const paragraphCount = elements.filter((el) => el?.type === 'p').length;
+
+  // 1. Title matches a known front-matter pattern → front.
+  for (const fm of FRONT_MATTER_PATTERNS) {
+    if (fm.re.test(title)) return { kind: 'front', label: fm.label };
+  }
+
+  // 2. Title equals the book title AND content is small → title page.
+  if (titleLc && titleLc === bookTitleLc && totalChars < 600) {
+    return { kind: 'front', label: 'Title Page' };
+  }
+
+  // 3. Project Gutenberg boilerplate page (title + license / metadata).
+  if (/project\s+gutenberg/i.test(title) && totalChars < 2000) {
+    return { kind: 'front', label: 'Title Page' };
+  }
+
+  // 4. Very short sections (likely cover, separator, etc.).
+  if (totalChars < 250 || paragraphCount < 1) {
+    return { kind: 'front', label: title || 'Front Matter' };
+  }
+
+  // 5. Otherwise treat as a real chapter.
+  return { kind: 'chapter' };
+}
+
+// Extract a display title from a chapter:
+//   1. If chapter.title contains an embedded title after a marker
+//      (e.g. "Chapter I. Down the Rabbit-Hole"), strip the marker.
+//   2. Otherwise scan the first ~12 elements for a heading or short paragraph
+//      that isn't the book title and isn't a bare "Chapter N" label.
+function computeDisplayTitle(chapter, bookTitleLc) {
+  const elements = Array.isArray(chapter?.elements) ? chapter.elements : [];
+  const ct = (chapter?.title || '').trim();
+  const ctLc = ct.toLowerCase();
+
+  // 1. chapter.title path
+  if (ct && ctLc !== bookTitleLc) {
+    if (!isBareChapterLabel(ct)) {
+      // Strip a leading "Chapter X" / "Part X" / roman / numeric prefix if present.
+      const stripped = ct
+        .replace(/^(chapter\s+[ivxlcdm0-9]+|part\s+[ivxlcdm0-9]+|[ivxlcdm]+|[0-9]+)[\s.\u2014\u2013:\-_]+/i, '')
+        .trim();
+      if (stripped && stripped.toLowerCase() !== bookTitleLc) return stripped;
+    }
+  }
+
+  // 2. Scan elements: prefer non-marker, non-book-title heading;
+  //    fall back to a short paragraph that looks like a subtitle.
+  let sawMarker = false;
+  for (let i = 0; i < Math.min(elements.length, 12); i++) {
+    const el = elements[i];
+    if (!el) continue;
+    const isH = /^h[1-6]$/i.test(el.type || '');
+    const isP = el.type === 'p';
+    if (!isH && !isP) continue;
+    const t = (el.content || '').trim();
+    if (!t) continue;
+    if (t.toLowerCase() === bookTitleLc) continue;
+    if (isBareChapterLabel(t)) { sawMarker = true; continue; }
+    // Headings are always candidates.
+    if (isH) return t;
+    // Accept short paragraphs as titles only if we already saw a chapter marker
+    // (so we don't accidentally pick up body text as the title).
+    if (isP && sawMarker && t.length <= 80) return t;
+  }
+  return '';
+}
+
 function buildSpreads(book) {
   const structure = book.manuscript_structure;
   const chapters = structure?.chapters || [];
+  const bookTitleLc = (book?.title || '').trim().toLowerCase();
 
-  // Build a flat list of pages from chapter elements
-  const contentPages = [];
-  chapters.forEach((chapter, ci) => {
-    const totalPages = Math.max(1, Math.ceil(chapter.elements.length / ELEMENTS_PER_PAGE));
-    for (let p = 0; p < totalPages; p++) {
-      contentPages.push({ chapterIndex: ci, pageWithinChapter: p, chapterTitle: chapter.title });
+  // Pre-process each section:
+  //  - classify as real chapter vs. front matter
+  //  - compute display-only chapter title
+  //  - strip leading duplicate headings (book title, bare "Chapter N" labels,
+  //    or the display title itself) so the page header doesn't repeat them
+  //  - paginate elements within the per-page char budget
+  let chapterCounter = 0;
+  const processedChapters = chapters.map((chapter) => {
+    const cls = classifyChapter(chapter, bookTitleLc);
+
+    let chapterNumber = null;
+    let displayTitle = '';
+    if (cls.kind === 'chapter') {
+      chapterCounter += 1;
+      chapterNumber = chapterCounter;
+      displayTitle = computeDisplayTitle(chapter, bookTitleLc);
+    } else {
+      displayTitle = cls.label || chapter?.title || '';
     }
+
+    let elements = Array.isArray(chapter?.elements) ? chapter.elements.slice() : [];
+    const titleLc = (chapter?.title || '').trim().toLowerCase();
+    const displayLc = displayTitle.trim().toLowerCase();
+    while (elements.length > 0) {
+      const first = elements[0];
+      const isHeading = first && /^h[1-6]$/i.test(first.type || '');
+      const firstText = (first?.content || '').trim();
+      const firstLc = firstText.toLowerCase();
+      const isBookTitle = firstLc === bookTitleLc;
+      const isChapterLabel = isBareChapterLabel(firstText);
+      const isDisplayTitle = displayLc && firstLc === displayLc;
+      const isParserTitle = titleLc && firstLc === titleLc;
+      if (isHeading && (isBookTitle || isChapterLabel || isDisplayTitle || isParserTitle)) {
+        elements = elements.slice(1);
+      } else {
+        break;
+      }
+    }
+
+    const pages = paginateChapterElements(elements);
+    return { chapter, kind: cls.kind, chapterNumber, displayTitle, pages };
+  });
+
+  // Flatten into a sequential list of content pages and build a clean TOC.
+  //  - All leading front matter (title page, copyright, preface, etc.) is
+  //    collapsed into a single "Introduction" entry pointing at page 1.
+  //  - Each real chapter gets its own entry; missing chapter titles fall back
+  //    to the book title so the row is never blank.
+  //  - Trailing back matter (bookmarks, indexes, etc.) is omitted from the TOC
+  //    but still rendered in the reading flow.
+  const contentPages = [];
+  const tocEntries = [];
+  let pageCounter = 1;
+  const firstChapterIdx = processedChapters.findIndex((p) => p.kind === 'chapter');
+  const hasLeadingFrontMatter = firstChapterIdx > 0;
+
+  processedChapters.forEach(({ chapter, kind, chapterNumber, displayTitle, pages }, idx) => {
+    const startPage = pageCounter;
+    if (kind === 'chapter') {
+      const titleForToc = displayTitle || book?.title || '';
+      tocEntries.push({
+        number: chapterNumber,
+        displayLabel: titleForToc ? `Chapter: ${titleForToc}` : 'Chapter',
+        pg: startPage,
+      });
+    } else if (hasLeadingFrontMatter && idx === 0) {
+      // Single consolidated Introduction entry for all leading front matter.
+      tocEntries.push({
+        number: null,
+        displayLabel: 'Introduction',
+        pg: startPage,
+      });
+    }
+    // Front matter sections after the first chapter (back matter) are not
+    // added to the TOC, but their pages still appear in the reading flow.
+
+    pages.forEach((els, p) => {
+      contentPages.push({
+        chapter,
+        kind,
+        chapterNumber,
+        displayTitle,
+        pageWithinChapter: p,
+        elements: els,
+        pageNumber: pageCounter++,
+      });
+    });
   });
 
   const spreads = [
     // Spread 0: cover + blank verso
     { left: (b) => <CoverPage book={b} />, right: () => <RightBlankPage />, leftLabel: 'Cover', rightLabel: '' },
-    // Spread 1: title + toc
-    { left: (b) => <TitlePage book={b} />, right: (b) => <TocPage book={b} />, leftLabel: 'Title Page', rightLabel: 'Contents' },
+    // Spread 1: title + toc (real chapter list when available)
+    { left: (b) => <TitlePage book={b} />, right: (b) => <TocPage book={b} entries={tocEntries} />, leftLabel: 'Title Page', rightLabel: 'Contents' },
   ];
 
   // If we have parsed manuscript content, generate content spreads
   if (contentPages.length > 0) {
-    let pageNumber = 1;
     for (let i = 0; i < contentPages.length; i += 2) {
       const leftPage = contentPages[i];
       const rightPage = contentPages[i + 1];
-      const leftPg = pageNumber++;
-      const rightPg = rightPage ? pageNumber++ : null;
+
+      const labelOf = (p) => {
+        if (!p) return '';
+        if (p.kind === 'chapter' && p.chapterNumber) {
+          return p.displayTitle
+            ? `Chapter ${p.chapterNumber}: ${p.displayTitle}`
+            : `Chapter ${p.chapterNumber}`;
+        }
+        return p.displayTitle || '';
+      };
 
       spreads.push({
         left: (b) => (
           <ContentPage
             book={b}
-            chapterIndex={leftPage.chapterIndex}
-            pageWithinChapter={leftPage.pageWithinChapter}
-            pageNumber={leftPg}
+            kind={leftPage.kind}
+            chapterNumber={leftPage.chapterNumber}
+            displayTitle={leftPage.displayTitle}
+            elements={leftPage.elements}
+            pageNumber={leftPage.pageNumber}
           />
         ),
         right: rightPage
           ? (b) => (
               <ContentPage
                 book={b}
-                chapterIndex={rightPage.chapterIndex}
-                pageWithinChapter={rightPage.pageWithinChapter}
-                pageNumber={rightPg}
+                kind={rightPage.kind}
+                chapterNumber={rightPage.chapterNumber}
+                displayTitle={rightPage.displayTitle}
+                elements={rightPage.elements}
+                pageNumber={rightPage.pageNumber}
               />
             )
           : () => <RightBlankPage />,
-        leftLabel: leftPage.chapterTitle,
-        rightLabel: rightPage ? rightPage.chapterTitle : '',
+        leftLabel: labelOf(leftPage),
+        rightLabel: labelOf(rightPage),
       });
     }
   } else if (book.manuscript_url) {

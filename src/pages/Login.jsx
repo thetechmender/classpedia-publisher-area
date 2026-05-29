@@ -176,12 +176,13 @@ export default function Login() {
             {/* Register Link */}
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">Don't have an account? </span>
-              <Link
-                to="/account-setup"
+              <a
+                href="https://www.classpedia.ai/" 
+                target="_blank"
                 className="text-primary font-medium hover:underline"
               >
                 Create an account
-              </Link>
+              </a>
             </div>
           </div>
 

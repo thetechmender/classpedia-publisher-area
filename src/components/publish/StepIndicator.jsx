@@ -1,4 +1,3 @@
-import React from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -32,8 +31,8 @@ export default function StepIndicator({ currentStep, completedSteps = [] }) {
                   isCompleted
                     ? 'bg-primary border-primary text-primary-foreground'
                     : isCurrent
-                    ? 'bg-background border-primary text-primary shadow-lg shadow-primary/20'
-                    : 'bg-background border-border text-muted-foreground'
+                      ? 'bg-background border-primary text-primary shadow-lg shadow-primary/20'
+                      : 'bg-background border-border text-muted-foreground'
                 )}
               >
                 {isCompleted ? <Check className="w-5 h-5" /> : step.id}

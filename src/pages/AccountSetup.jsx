@@ -365,7 +365,7 @@ export default function AccountSetup() {
         )}
 
         <SetupStepIndicator currentStep={currentStep} completedSteps={completedSteps} />
-        {currentStep > 1 && (
+        {currentStep > 2 && (
           <button
             onClick={() => goToStep(currentStep - 1)}
             className="flex items-center mb-1 border border-secondary/50 gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors text-sm font-medium"
