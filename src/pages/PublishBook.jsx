@@ -85,7 +85,7 @@ export default function PublishBook() {
   const [errors, setErrors] = useState({});
   const [publishing, setPublishing] = useState(false);
   const [bookData, setBookData] = useState({
-    language: 'English',
+    language: null,
     territories: 'worldwide',
     currency: 'USD',
     drm: false,

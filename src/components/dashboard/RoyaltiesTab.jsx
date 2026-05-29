@@ -1,31 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, DollarSign, BookOpen } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
-import mockPaymentsData from '@/data/mockPayments.json';
-import mockBooks from '@/data/mockBooks.json';
+import { DashboardService } from '@/services/dashboard.service';
 
-// Use mock data
-const MONTHLY_DATA = mockPaymentsData.monthlyData || [];
-const stats = mockPaymentsData.stats || {};
-const bookSales = mockPaymentsData.bookSales || [];
+export default function RoyaltiesTab() {
+  const [earningsData, setEarningsData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-export default function RoyaltiesTab({ books: propBooks = [] }) {
-  // Use mock books if no books provided
-  const books = (propBooks && propBooks.length > 0) ? propBooks : mockBooks;
-  const published = books.filter(b => b.status === 'published' && b.list_price);
-  const ROYALTY_RATE = 0.70;
-
-  // Per-book data with actual sales from mock
-  const perBookData = published.map(b => {
-    const salesData = bookSales.find(s => s.bookId === b.id);
-    return {
-      title: b.title,
-      price: b.list_price,
-      royaltyPerSale: b.list_price * ROYALTY_RATE,
-      unitsSold: salesData?.unitsSold || 0,
-      totalRoyalties: salesData?.royalties || 0,
+  useEffect(() => {
+    const fetchEarnings = async () => {
+      try {
+        setLoading(true);
+        const response = await DashboardService.getEarnings();
+        if (response.isSuccess) {
+          setEarningsData(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch earnings data:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-  });
+
+    fetchEarnings();
+  }, []);
+
+  const monthlyData = earningsData?.monthlyData || [];
+  const stats = earningsData?.stats || {};
+  const bookSales = earningsData?.bookSales || [];
+
+  // Per-book data from API
+  const perBookData = bookSales.map(sale => ({
+    title: sale.bookTitle,
+    unitsSold: sale.unitsSold,
+    revenue: sale.revenue,
+    totalRoyalties: sale.royalties,
+  }));
 
   return (
     <div className="space-y-7">
@@ -39,7 +49,7 @@ export default function RoyaltiesTab({ books: propBooks = [] }) {
         {[
           { label: 'Total Earned',     value: `$${stats.lifetimeEarnings?.toFixed(2) || '0.00'}`, icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
           { label: 'Units Sold',       value: `${stats.totalUnitsSold || 0}`, icon: BookOpen,   color: 'text-blue-600 bg-blue-50' },
-          { label: 'Published Titles', value: `${published.length}`, icon: TrendingUp, color: 'text-primary bg-primary/10' },
+          { label: 'Pending Payout',   value: `$${stats.pendingPayout?.toFixed(2) || '0.00'}`, icon: TrendingUp, color: 'text-primary bg-primary/10' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-card border rounded-xl p-4 flex items-center gap-3">
             <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color}`}>
@@ -57,7 +67,7 @@ export default function RoyaltiesTab({ books: propBooks = [] }) {
       <div className="bg-card border rounded-xl p-5">
         <h3 className="font-semibold text-sm mb-4">Monthly Revenue</h3>
         <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={MONTHLY_DATA}>
+          <LineChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
@@ -71,7 +81,7 @@ export default function RoyaltiesTab({ books: propBooks = [] }) {
       <div className="bg-card border rounded-xl p-5">
         <h3 className="font-semibold text-sm mb-4">Units Sold per Month</h3>
         <ResponsiveContainer width="100%" height={160}>
-          <BarChart data={MONTHLY_DATA}>
+          <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
@@ -85,12 +95,12 @@ export default function RoyaltiesTab({ books: propBooks = [] }) {
       <div className="bg-card border rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b bg-secondary/30">
           <h3 className="font-semibold text-sm">Per-Book Royalty Breakdown</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">All titles earn a fixed 70% royalty rate.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">All titles earn a fixed 25% royalty rate.</p>
         </div>
         {perBookData.length === 0 ? (
           <div className="px-5 py-12 text-center">
             <DollarSign className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">No published books yet. Publish a title to see royalty potential.</p>
+            <p className="text-sm text-muted-foreground">No sales data yet. Publish a title to see royalty potential.</p>
           </div>
         ) : (
           <div className="divide-y">
@@ -98,11 +108,11 @@ export default function RoyaltiesTab({ books: propBooks = [] }) {
               <div key={book.title} className="px-5 py-4 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium">{book.title}</p>
-                  <p className="text-xs text-muted-foreground">70% royalty · List price ${book.price.toFixed(2)} · {book.unitsSold} units sold</p>
+                  <p className="text-xs text-muted-foreground">Revenue ${book.revenue?.toFixed(2) || '0.00'} · {book.unitsSold} units sold</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">Total Royalties</p>
-                  <p className="text-sm font-bold text-emerald-600">${book.totalRoyalties.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-emerald-600">${book.totalRoyalties?.toFixed(2) || '0.00'}</p>
                 </div>
               </div>
             ))}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import {
   Percent, AlertCircle, X, Search } from
 'lucide-react';
 import { cn } from '@/lib/utils';
+import { generalSettingsService } from '@/services/generalSettings.service';
 
 // ── Policy constants ──────────────────────────────────────────────────────────
 const SELECT_MIN_PRICE_FREE = 1.99;
@@ -22,22 +23,6 @@ const PRICE_MIN = 1.99;
 const PRICE_MAX = 199.99;
 // ─────────────────────────────────────────────────────────────────────────────
 
-const COUNTRIES = [
-'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Armenia', 'Australia', 'Austria',
-'Azerbaijan', 'Bahrain', 'Bangladesh', 'Belgium', 'Bolivia', 'Bosnia and Herzegovina',
-'Brazil', 'Bulgaria', 'Cambodia', 'Canada', 'Chile', 'China', 'Colombia', 'Costa Rica',
-'Croatia', 'Cyprus', 'Czech Republic', 'Denmark', 'Dominican Republic', 'Ecuador',
-'Egypt', 'El Salvador', 'Estonia', 'Ethiopia', 'Finland', 'France', 'Georgia', 'Germany',
-'Ghana', 'Greece', 'Guatemala', 'Honduras', 'Hungary', 'India', 'Indonesia', 'Iran',
-'Iraq', 'Ireland', 'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya',
-'Kuwait', 'Latvia', 'Lebanon', 'Lithuania', 'Luxembourg', 'Malaysia', 'Malta', 'Mexico',
-'Morocco', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Nigeria', 'Norway',
-'Pakistan', 'Panama', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar',
-'Romania', 'Russia', 'Saudi Arabia', 'Senegal', 'Serbia', 'Singapore', 'Slovakia',
-'Slovenia', 'South Africa', 'South Korea', 'Spain', 'Sri Lanka', 'Sweden', 'Switzerland',
-'Taiwan', 'Tanzania', 'Thailand', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Uganda',
-'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay',
-'Uzbekistan', 'Venezuela', 'Vietnam', 'Zimbabwe'];
 
 
 const Section = ({ title, children }) =>
@@ -56,19 +41,19 @@ const InfoBox = ({ children }) =>
   </div>;
 
 
-function TerritoryPicker({ selected = [], onChange }) {
+function TerritoryPicker({ selected = [], onChange, countries = [] }) {
   const [search, setSearch] = useState('');
-  const filtered = COUNTRIES.filter((c) =>
-  c.toLowerCase().includes(search.toLowerCase())
+  const filtered = countries.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
   );
-  const toggle = (country) => {
-    if (selected.includes(country)) {
-      onChange(selected.filter((c) => c !== country));
+  const toggle = (countryId) => {
+    if (selected.includes(countryId)) {
+      onChange(selected.filter((id) => id !== countryId));
     } else {
-      onChange([...selected, country]);
+      onChange([...selected, countryId]);
     }
   };
-  const selectAll = () => onChange([...COUNTRIES]);
+  const selectAll = () => onChange(countries.map(c => c.id));
   const clearAll = () => onChange([]);
 
   return (
@@ -92,26 +77,26 @@ function TerritoryPicker({ selected = [], onChange }) {
       <div className="max-h-52 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-px bg-border">
         {filtered.map((country) =>
         <button
-          key={country}
-          onClick={() => toggle(country)}
+          key={country.id}
+          onClick={() => toggle(country.id)}
           className={cn(
             'flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors',
-            selected.includes(country) ?
+            selected.includes(country.id) ?
             'bg-primary/8 text-primary font-medium' :
             'bg-card text-foreground hover:bg-secondary/60'
           )}>
           
             <div className={cn(
             'w-3.5 h-3.5 rounded border shrink-0 flex items-center justify-center',
-            selected.includes(country) ? 'bg-primary border-primary' : 'border-border'
+            selected.includes(country.id) ? 'bg-primary border-primary' : 'border-border'
           )}>
-              {selected.includes(country) &&
+              {selected.includes(country.id) &&
             <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
                   <path d="M1.5 5L4 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
             }
             </div>
-            {country}
+            {country.emoji} {country.name}
           </button>
         )}
         {filtered.length === 0 &&
@@ -124,14 +109,17 @@ function TerritoryPicker({ selected = [], onChange }) {
       {/* Selected chips */}
       {selected.length > 0 &&
       <div className="px-3 py-2.5 border-t border-border bg-card flex flex-wrap gap-1.5">
-          {selected.map((c) =>
-        <span key={c} className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[11px] font-medium rounded-full px-2 py-0.5">
-              {c}
-              <button onClick={() => toggle(c)} className="hover:text-destructive transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-        )}
+          {selected.map((id) => {
+            const country = countries.find(c => c.id === id);
+            return country ? (
+              <span key={id} className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[11px] font-medium rounded-full px-2 py-0.5">
+                {country.emoji} {country.name}
+                <button onClick={() => toggle(id)} className="hover:text-destructive transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ) : null;
+          })}
         </div>
       }
 
@@ -148,6 +136,13 @@ function TerritoryPicker({ selected = [], onChange }) {
 
 export default function PricingStep({ data, onChange, errors, onNext, onBack, submitting = false }) {
   const [selectExpanded, setSelectExpanded] = useState(false);
+  const [countries, setCountries] = useState([]);
+
+  useEffect(() => {
+    generalSettingsService.getCountries()
+      .then(setCountries)
+      .catch(console.error);
+  }, []);
 
   const price = parseFloat(data.listPrice) || 0;
   const authorEarning = price * (AUTHOR_ROYALTY / 100);
@@ -265,7 +260,8 @@ export default function PricingStep({ data, onChange, errors, onNext, onBack, su
         {data.territories === 'specific' &&
         <TerritoryPicker
           selected={data.selectedCountries || []}
-          onChange={(countries) => onChange({ selectedCountries: countries })} />
+          onChange={(countryIds) => onChange({ selectedCountries: countryIds })}
+          countries={countries} />
 
         }
       </Section>

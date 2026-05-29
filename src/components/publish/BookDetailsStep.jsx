@@ -10,28 +10,9 @@ import { Separator } from '@/components/ui/separator';
 import { X, Plus, ChevronRight, BookOpen, Info, Users, Tag, Clock, AlertCircle, CheckCircle2, Search, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { generalSettingsService } from '@/services/generalSettings.service';
 
-const LANGUAGES = [
-  'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese',
-  'Japanese', 'Chinese', 'Korean', 'Hindi', 'Arabic', 'Russian',
-  'Dutch', 'Swedish', 'Norwegian', 'Danish', 'Finnish', 'Polish'
-];
 
-const CATEGORIES = [
-  'Arts & Photography', 'Biographies & Memoirs', 'Business & Money',
-  "Children's eBooks", 'Comics & Graphic Novels', 'Computers & Technology',
-  'Cookbooks, Food & Wine', 'Crafts, Hobbies & Home', 'Education & Teaching',
-  'Engineering & Transportation', 'Health, Fitness & Dieting', 'History',
-  'Humor & Entertainment', 'Law', 'Literature & Fiction', 'Medical eBooks',
-  'Mystery, Thriller & Suspense', 'Parenting & Relationships',
-  'Politics & Social Sciences', 'Reference', 'Religion & Spirituality',
-  'Romance', 'Science & Math', 'Science Fiction & Fantasy',
-  'Self-Help', 'Sports & Outdoors', 'Teen & Young Adult', 'Travel'
-];
-
-const CONTRIBUTOR_ROLES = [
-  'Co-author', 'Editor', 'Illustrator', 'Translator', 'Foreword', 'Narrator', 'Photographer'
-];
 
 const READING_AGES = ['0-2', '3-5', '6-8', '9-11', '12-14', '15-17', '18+', 'Adult'];
 
@@ -102,30 +83,30 @@ function SeriesDetails({ data, onChange }) {
 }
 
 // ── Category Picker Component ─────────────────────────────────────────────────
-function CategoryPicker({ selected, onChange, error }) {
+function CategoryPicker({ selected, onChange, error, categories = [] }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const containerRef = useRef(null);
   const atMax = selected.length >= 3;
 
   const filtered = query.trim()
-    ? CATEGORIES.filter(c => c.toLowerCase().includes(query.toLowerCase()) && !selected.includes(c))
-    : CATEGORIES.filter(c => !selected.includes(c));
+    ? categories.filter(c => c.title.toLowerCase().includes(query.toLowerCase()) && !selected.includes(c.id))
+    : categories.filter(c => !selected.includes(c.id));
 
   const showAddCustom = query.trim() &&
-    !CATEGORIES.some(c => c.toLowerCase() === query.toLowerCase()) &&
-    !selected.some(c => c.toLowerCase() === query.toLowerCase());
+    !categories.some(c => c.title.toLowerCase() === query.toLowerCase()) &&
+    !selected.some(id => categories.find(c => c.id === id)?.title.toLowerCase() === query.toLowerCase());
 
-  const add = (cat) => {
-    if (!atMax && !selected.includes(cat)) {
-      const next = [...selected, cat];
+  const add = (catId) => {
+    if (!atMax && !selected.includes(catId)) {
+      const next = [...selected, catId];
       onChange(next);
       setQuery('');
       if (next.length >= 3) setOpen(false);
     }
   };
 
-  const remove = (cat) => onChange(selected.filter(c => c !== cat));
+  const remove = (catId) => onChange(selected.filter(id => id !== catId));
 
   useEffect(() => {
     const handler = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false); };
@@ -140,14 +121,17 @@ function CategoryPicker({ selected, onChange, error }) {
       {/* Selected chips */}
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {selected.map(cat => (
-            <span key={cat} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/25">
-              {cat}
-              <button type="button" onClick={() => remove(cat)} className="hover:text-destructive transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
+          {selected.map(id => {
+            const cat = categories.find(c => c.id === id);
+            return cat ? (
+              <span key={id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/25">
+                {cat.title}
+                <button type="button" onClick={() => remove(id)} className="hover:text-destructive transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ) : null;
+          })}
         </div>
       )}
 
@@ -185,12 +169,12 @@ function CategoryPicker({ selected, onChange, error }) {
                 )}
                 {filtered.map(cat => (
                   <button
-                    key={cat}
+                    key={cat.id}
                     type="button"
-                    onMouseDown={e => { e.preventDefault(); add(cat); }}
+                    onMouseDown={e => { e.preventDefault(); add(cat.id); }}
                     className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                   >
-                    {cat}
+                    {cat.title}
                   </button>
                 ))}
                 {showAddCustom && (
@@ -218,6 +202,29 @@ function CategoryPicker({ selected, onChange, error }) {
 export default function BookDetailsStep({ data, onChange, errors, onNext, submitting = false }) {
   const [keywordInput, setKeywordInput] = useState('');
   const [newContributor, setNewContributor] = useState({ name: '', role: '' });
+  const [categories, setCategories] = useState([]);
+  const [languages, setLanguages] = useState([]);
+  const [contributorRoles, setContributorRoles] = useState([]);
+
+  useEffect(() => {
+    generalSettingsService.getCategories()
+      .then(setCategories)
+      .catch(console.error);
+    generalSettingsService.getLanguages()
+      .then(setLanguages)
+      .catch(console.error);
+    generalSettingsService.getContributorRoles()
+      .then(setContributorRoles)
+      .catch(console.error);
+  }, []);
+
+  // Set English as default language when languages are loaded
+  useEffect(() => {
+    if (languages.length > 0 && !data.language) {
+      const english = languages.find(l => l.title.toLowerCase() === 'english');
+      if (english) onChange({ language: english.id });
+    }
+  }, [languages]);
 
   const addKeyword = () => {
     const kw = keywordInput.trim();
@@ -267,12 +274,12 @@ export default function BookDetailsStep({ data, onChange, errors, onNext, submit
         {/* Language */}
         <div className="mb-5">
           <FieldLabel label="Language" required tooltip="The primary language your book is written in" />
-          <Select value={data.language || ''} onValueChange={(v) => onChange({ language: v })}>
+          <Select value={data.language ? String(data.language) : ''} onValueChange={(v) => onChange({ language: parseInt(v) })}>
             <SelectTrigger className={cn('bg-background', errors.language && 'border-destructive')}>
               <SelectValue placeholder="Select language…" />
             </SelectTrigger>
             <SelectContent>
-              {LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+              {languages.map(l => <SelectItem key={l.id} value={String(l.id)}>{l.title}</SelectItem>)}
             </SelectContent>
           </Select>
           <ErrorMsg msg={errors.language} />
@@ -369,7 +376,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext, submit
               {data.contributors.map((c, i) => (
                 <div key={i} className="flex items-center gap-2 bg-secondary/60 rounded-lg px-3 py-2 border border-border">
                   <span className="text-sm flex-1 font-medium">{c.name}</span>
-                  <Badge variant="outline" className="text-xs border-primary/30 text-primary bg-primary/5">{c.role}</Badge>
+                  <Badge variant="outline" className="text-xs border-primary/30 text-primary bg-primary/5">{contributorRoles.find(r => r.id === c.role)?.title || c.role}</Badge>
                   <button onClick={() => removeContributor(i)} className="text-muted-foreground hover:text-destructive transition-colors">
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -384,12 +391,12 @@ export default function BookDetailsStep({ data, onChange, errors, onNext, submit
               placeholder="Contributor name"
               className="flex-1 bg-background"
             />
-            <Select value={newContributor.role} onValueChange={(v) => setNewContributor({ ...newContributor, role: v })}>
+            <Select value={newContributor.role ? String(newContributor.role) : ''} onValueChange={(v) => setNewContributor({ ...newContributor, role: parseInt(v) })}>
               <SelectTrigger className="w-36 bg-background">
                 <SelectValue placeholder="Role" />
               </SelectTrigger>
               <SelectContent>
-                {CONTRIBUTOR_ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                {contributorRoles.map(r => <SelectItem key={r.id} value={String(r.id)}>{r.title}</SelectItem>)}
               </SelectContent>
             </Select>
             <Button
@@ -471,6 +478,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext, submit
           selected={data.categories || []}
           onChange={(cats) => onChange({ categories: cats })}
           error={errors.categories}
+          categories={categories}
         />
       </Section>
 

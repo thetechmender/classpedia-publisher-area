@@ -740,6 +740,8 @@ export default function BookPreviewer({ book, onClose }) {
   const [spreadIndex, setSpreadIndex] = useState(0);
   const [flipping, setFlipping] = useState(null); // { direction, fromSpread, toSpread }
   const [device, setDevice] = useState('desktop');
+  const [scale, setScale] = useState(1);
+  const canvasRef = useRef(null);
   // Only desktop view is available
 
   const SPREADS = buildSpreads(book);
@@ -776,6 +778,22 @@ export default function BookPreviewer({ book, onClose }) {
   const isMobile = !deviceConfig.twoPage;
   const pageW = isMobile ? deviceConfig.w : deviceConfig.w / 2;
   const pageH = deviceConfig.h;
+
+  // Responsive scaling — fit the book inside the available canvas area
+  useEffect(() => {
+    const update = () => {
+      if (!canvasRef.current) return;
+      const rect = canvasRef.current.getBoundingClientRect();
+      // Reserve space for nav buttons (~48px each + gap) and bottom dots/label (~80px)
+      const availW = rect.width - 160;
+      const availH = rect.height - 120;
+      const s = Math.min(availW / deviceConfig.w, availH / deviceConfig.h, 1);
+      setScale(Math.max(s, 0.35));
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [deviceConfig.w, deviceConfig.h]);
 
   const currentSpread = SPREADS[spreadIndex];
   const displaySpread = flipping ? SPREADS[flipping.fromSpread] : currentSpread;
@@ -830,7 +848,7 @@ export default function BookPreviewer({ book, onClose }) {
         <div className="flex flex-1 overflow-hidden">
 
           {/* ── Center canvas ── */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-5 relative overflow-hidden py-4">
+          <div ref={canvasRef} className="flex-1 flex flex-col items-center justify-center gap-5 relative overflow-hidden py-4">
 
             {/* Ambient glow */}
             <div className="absolute inset-0 pointer-events-none"
@@ -849,11 +867,18 @@ export default function BookPreviewer({ book, onClose }) {
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              {/* Book spread container */}
+              {/* Book spread container (responsive scaled wrapper) */}
+              <div style={{
+                width: deviceConfig.w * scale,
+                height: deviceConfig.h * scale,
+                position: 'relative',
+              }}>
               <div className="relative"
                 style={{
                   width: deviceConfig.w,
                   height: deviceConfig.h,
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top left',
                   filter: 'drop-shadow(0 40px 60px rgba(0,0,0,0.8)) drop-shadow(0 0 40px rgba(99,102,241,0.08))',
                 }}
               >
@@ -932,6 +957,7 @@ export default function BookPreviewer({ book, onClose }) {
                     <div className="flex-1 bg-slate-900" />
                   </div>
                 </div>
+              </div>
               </div>
 
               {/* Next button */}

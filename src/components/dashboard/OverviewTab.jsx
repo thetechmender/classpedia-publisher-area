@@ -306,12 +306,14 @@ export default function OverviewTab({ books: propBooks, authorProfile, onTabChan
                 <span className="text-xs font-semibold">{nextPayoutDate}</span>
               </div>
             </div>
+            <Link to="/royalties">
             <button
-              onClick={() => onTabChange('royalties')}
+              // onClick={() => onTabChange('royalties')}
               className="w-full text-xs text-primary font-semibold hover:underline flex items-center justify-center gap-1 pt-1"
             >
               View full earnings <ArrowUpRight className="w-3 h-3" />
             </button>
+            </Link>
           </div>
         </div>
       </div>

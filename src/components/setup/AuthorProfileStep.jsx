@@ -5,18 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ChevronLeft, ChevronRight, Sparkles, AlertCircle, Globe, Twitter, Instagram, Facebook, Linkedin, Youtube, Tag, Search, X, Plus, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { generalSettingsService } from '@/services/generalSettings.service';
 
-const BOOK_CATEGORIES = [
-  'Arts & Photography', 'Biographies & Memoirs', 'Business & Money',
-  'Children\'s Books', 'Comics & Graphic Novels', 'Computers & Technology',
-  'Cookbooks, Food & Wine', 'Crafts, Hobbies & Home', 'Education & Teaching',
-  'Engineering & Transportation', 'Health, Fitness & Dieting', 'History',
-  'Humor & Entertainment', 'Law', 'LGBTQ+', 'Literature & Fiction',
-  'Medical Books', 'Mystery, Thriller & Suspense', 'Parenting & Relationships',
-  'Politics & Social Sciences', 'Reference', 'Religion & Spirituality',
-  'Romance', 'Science & Math', 'Science Fiction & Fantasy', 'Self-Help',
-  'Sports & Outdoors', 'Teen & Young Adult', 'Travel',
-];
 
 const FieldError = ({ msg }) => msg ? (
   <p className="flex items-center gap-1 text-xs text-destructive mt-1">
@@ -24,10 +14,9 @@ const FieldError = ({ msg }) => msg ? (
   </p>
 ) : null;
 
-function CategoryPicker({ selected, onChange }) {
+function CategoryPicker({ selected, onChange, categories = [] }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [customInput, setCustomInput] = useState('');
 
   // Prevent duplicate categories
   const uniqueSelected = [...new Set(selected)];
@@ -35,16 +24,16 @@ function CategoryPicker({ selected, onChange }) {
   const atMax = selected.length >= 3;
 
   const filtered = query.trim()
-    ? BOOK_CATEGORIES.filter(c => c.toLowerCase().includes(query.toLowerCase()) && !selected.includes(c))
-    : BOOK_CATEGORIES.filter(c => !selected.includes(c));
+    ? categories.filter(c => c.title.toLowerCase().includes(query.toLowerCase()) && !selected.includes(c.id))
+    : categories.filter(c => !selected.includes(c.id));
 
   const showAddCustom = query.trim() &&
-    !BOOK_CATEGORIES.some(c => c.toLowerCase() === query.toLowerCase()) &&
-    !selected.some(c => c.toLowerCase() === query.toLowerCase());
+    !categories.some(c => c.title.toLowerCase() === query.toLowerCase()) &&
+    !selected.some(id => categories.find(c => c.id === id)?.title.toLowerCase() === query.toLowerCase());
 
-  const add = (cat) => {
-    if (!atMax && !selected.includes(cat)) {
-      const next = [...selected, cat];
+  const add = (catId) => {
+    if (!atMax && !selected.includes(catId)) {
+      const next = [...selected, catId];
       onChange(next);
       setQuery('');
       // keep open unless now at max
@@ -52,7 +41,7 @@ function CategoryPicker({ selected, onChange }) {
     }
   };
 
-  const remove = (cat) => onChange(selected.filter(c => c !== cat));
+  const remove = (catId) => onChange(selected.filter(id => id !== catId));
 
   // Close on outside click
   useEffect(() => {
@@ -66,14 +55,17 @@ function CategoryPicker({ selected, onChange }) {
       {/* Selected chips */}
       {uniqueSelected.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {uniqueSelected.map(cat => (
-            <span key={cat} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/25">
-              {cat}
-              <button type="button" onClick={() => remove(cat)} className="hover:text-destructive transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
+          {uniqueSelected.map(id => {
+            const cat = categories.find(c => c.id === id);
+            return cat ? (
+              <span key={id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/25">
+                {cat.title}
+                <button type="button" onClick={() => remove(id)} className="hover:text-destructive transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ) : null;
+          })}
         </div>
       )}
 
@@ -111,12 +103,12 @@ function CategoryPicker({ selected, onChange }) {
                 )}
                 {filtered.map(cat => (
                   <button
-                    key={cat}
+                    key={cat.id}
                     type="button"
-                    onMouseDown={e => { e.preventDefault(); add(cat); }}
+                    onMouseDown={e => { e.preventDefault(); add(cat.id); }}
                     className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                   >
-                    {cat}
+                    {cat.title}
                   </button>
                 ))}
                 {showAddCustom && (
@@ -143,6 +135,13 @@ function CategoryPicker({ selected, onChange }) {
 
 export default function AuthorProfileStep({ data, onChange, errors, onSubmit = undefined, onNext, onBack, saving = false }) {
   const bioLen = (data.bio || '').length;
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    generalSettingsService.getCategories()
+      .then(setCategories)
+      .catch(console.error);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -202,6 +201,7 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit = u
           <CategoryPicker
             selected={data.preferredCategories || []}
             onChange={cats => onChange({ preferredCategories: cats })}
+            categories={categories}
           />
         </div>
       </div>
