@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import SessionManager from '@/components/SessionManager';
 import Dashboard from './pages/Dashboard';
 import PublishBook from './pages/PublishBook';
 import BookDetail from './pages/BookDetail';
@@ -36,21 +37,26 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/publish" element={isAuthenticated ? <PublishBook /> : <Login />} />
-      <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Login />} />
-      <Route path="/books" element={isAuthenticated ? <Dashboard initialTab="books" /> : <Login />} />
-      <Route path="/book/:id" element={isAuthenticated ? <BookDetail /> : <Login />} />
-      <Route path="/reviews" element={isAuthenticated ? <Dashboard initialTab="reviews" /> : <Login />} />
-      <Route path="/royalties" element={isAuthenticated ? <Dashboard initialTab="royalties" /> : <Login />} />
-      <Route path="/payments" element={isAuthenticated ? <Dashboard initialTab="payments" /> : <Login />} />
-      <Route path="/profile" element={isAuthenticated ? <Dashboard initialTab="profile" /> : <Login />} />
-      <Route path="/notifications" element={isAuthenticated ? <Dashboard initialTab="notifications" /> : <Login />} />
-      <Route path="/account-setup" element={<AccountSetup />} />
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    <>
+      {/* Session Manager - monitors token expiry and shows warnings */}
+      <SessionManager />
+      
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/publish" element={isAuthenticated ? <PublishBook /> : <Login />} />
+        <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Login />} />
+        <Route path="/books" element={isAuthenticated ? <Dashboard initialTab="books" /> : <Login />} />
+        <Route path="/book/:id" element={isAuthenticated ? <BookDetail /> : <Login />} />
+        <Route path="/reviews" element={isAuthenticated ? <Dashboard initialTab="reviews" /> : <Login />} />
+        <Route path="/royalties" element={isAuthenticated ? <Dashboard initialTab="royalties" /> : <Login />} />
+        <Route path="/payments" element={isAuthenticated ? <Dashboard initialTab="payments" /> : <Login />} />
+        <Route path="/profile" element={isAuthenticated ? <Dashboard initialTab="profile" /> : <Login />} />
+        <Route path="/notifications" element={isAuthenticated ? <Dashboard initialTab="notifications" /> : <Login />} />
+        <Route path="/account-setup" element={<AccountSetup />} />
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </>
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -68,6 +68,7 @@ function StatusPill({ status }) {
 export default function BooksTab() {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(location.state?.statusFilter || 'all');
@@ -76,6 +77,7 @@ export default function BooksTab() {
   const [pageSize] = useState(20);
   const [selectedBooks, setSelectedBooks] = useState(new Set());
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Honor incoming navigation state (e.g. redirected from publish flow with "in_review")
   useEffect(() => {
@@ -159,16 +161,50 @@ export default function BooksTab() {
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Delete ${selectedBooks.size} selected books? This cannot be undone.`)) return;
+    const count = selectedBooks.size;
+    const bookWord = count > 1 ? 'books' : 'book';
+    
+    if (!confirm(`Are you sure you want to delete ${count} ${bookWord}?\n\nThis action cannot be undone and will permanently remove all book data, including content, pricing, and reviews.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+    const failedTitles = [];
+
     try {
       for (const bookId of selectedBooks) {
-        await base44.entities.Book.delete(bookId);
+        try {
+          await PublishBookService.delete(bookId);
+          successCount++;
+        } catch (err) {
+          failCount++;
+          const book = books.find(b => b.id === bookId);
+          failedTitles.push(book?.title || `Book #${bookId}`);
+          console.error(`Failed to delete book ${bookId}:`, err);
+        }
       }
-      toast.success(`Deleted ${selectedBooks.size} book${selectedBooks.size > 1 ? 's' : ''}`);
+
+      // Invalidate queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['publisherBooks'] });
+
+      // Show results
+      if (successCount > 0) {
+        toast.success(`Successfully deleted ${successCount} ${successCount > 1 ? 'books' : 'book'}`);
+      }
+      if (failCount > 0) {
+        toast.error(`Failed to delete ${failCount} ${failCount > 1 ? 'books' : 'book'}: ${failedTitles.join(', ')}`, {
+          duration: 5000,
+        });
+      }
+
       setSelectedBooks(new Set());
       setShowBulkActions(false);
-    } catch {
-      toast.error('Failed to delete books');
+    } catch (err) {
+      toast.error(getApiError(err, 'Failed to delete books'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -279,8 +315,14 @@ export default function BooksTab() {
             <Button variant="ghost" size="sm" onClick={handleBulkUnpublish} className="text-xs gap-1.5">
               <EyeOff className="w-3.5 h-3.5" /> Unpublish
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleBulkDelete} className="text-xs gap-1.5 text-destructive hover:text-destructive">
-              <Trash2 className="w-3.5 h-3.5" /> Delete
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleBulkDelete} 
+              disabled={isDeleting}
+              className="text-xs gap-1.5 text-destructive hover:text-destructive disabled:opacity-50"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => { setSelectedBooks(new Set()); setShowBulkActions(false); }} className="text-xs">
               Clear

@@ -69,6 +69,14 @@ export const PublishBookService = {
     const res = await api.get(`/publisher-book/details/${bookId}`);
     return res.data;
   },
+
+  /** Delete a book by ID. */
+  delete: async (bookId) => {
+    console.log('PublishBookService.delete called with bookId:', bookId);
+    const res = await api.delete(`/publisher-book/${bookId}`);
+    console.log('PublishBookService.delete response:', res.data);
+    return res.data;
+  },
 };
 
 export { getApiError };

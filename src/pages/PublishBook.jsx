@@ -77,6 +77,9 @@ const STEP_INFO = [
   { step: 4, label: 'Review', icon: Eye, desc: 'Final check before submission' },
 ];
 
+const DRAFT_STORAGE_KEY = 'classpedia_book_draft';
+const DRAFT_EXPIRY_DAYS = 7; // Drafts expire after 7 days
+
 export default function PublishBook() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -97,7 +100,75 @@ export default function PublishBook() {
   const [lastSaved, setLastSaved] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [contentProgress, setContentProgress] = useState({ done: 0, total: 0 });
+  const [draftRestored, setDraftRestored] = useState(false);
   const saveTimeoutRef = useRef(null);
+
+  // Load draft from localStorage on mount
+  useEffect(() => {
+    const loadDraft = () => {
+      try {
+        const stored = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (!stored) return;
+
+        const draft = JSON.parse(stored);
+        
+        // Check if draft has expired
+        if (draft.expiresAt && new Date(draft.expiresAt) < new Date()) {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+          return;
+        }
+
+        // Restore draft data
+        if (draft.bookData) {
+          setBookData(draft.bookData);
+          setCurrentStep(draft.currentStep || 1);
+          setCompletedSteps(draft.completedSteps || []);
+          setLastSaved(draft.lastSaved ? new Date(draft.lastSaved) : null);
+          setDraftRestored(true);
+          toast.success('Draft restored! Continue where you left off.', {
+            duration: 5000,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load draft:', error);
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      }
+    };
+
+    loadDraft();
+  }, []);
+
+  // Save draft to localStorage whenever bookData changes
+  useEffect(() => {
+    // Don't save if we just restored (prevent immediate overwrite)
+    if (!draftRestored && Object.keys(bookData).length <= 7) return;
+
+    // Only save if there's meaningful data
+    if (!bookData.title && !bookData.description && !bookData.bookId) return;
+
+    try {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + DRAFT_EXPIRY_DAYS);
+
+      const draft = {
+        bookData,
+        currentStep,
+        completedSteps,
+        lastSaved: new Date().toISOString(),
+        expiresAt: expiresAt.toISOString(),
+      };
+
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+      // If localStorage is full, try to clear old draft
+      if (error.name === 'QuotaExceededError') {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        toast.error('Storage full. Please clear browser data.');
+      }
+    }
+  }, [bookData, currentStep, completedSteps, draftRestored]);
 
   const updateData = useCallback((updates) => {
     setBookData(prev => ({ ...prev, ...updates }));
@@ -315,12 +386,16 @@ export default function PublishBook() {
         // @ts-ignore
         await base44.entities.Book.create({ ...bookData, status });
         toast.success('Draft saved successfully!');
+        // Clear localStorage draft after successful save
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
         navigate('/');
         return;
       }
       // Final submission
       await PublishBookService.step4({ bookId });
       toast.success('eBook submitted for review!');
+      // Clear localStorage draft after successful submission
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
       navigate('/books', { state: { statusFilter: 'in_review' } });
     } catch (err) {
       toast.error(getApiError(err, 'Failed to submit for review'));
@@ -328,6 +403,25 @@ export default function PublishBook() {
       setPublishing(false);
     }
   };
+
+  // Clear draft function (for manual clearing)
+  const clearDraft = useCallback(() => {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    setBookData({
+      language: null,
+      territories: 'worldwide',
+      currency: 'USD',
+      drm: false,
+      ageRange: 'not_specified',
+      keywords: [],
+      categories: [],
+      contributors: [],
+    });
+    setCurrentStep(1);
+    setCompletedSteps([]);
+    setLastSaved(null);
+    toast.success('Draft cleared');
+  }, []);
 
   const progressPct = ((completedSteps.length) / 4) * 100;
 
@@ -363,12 +457,31 @@ export default function PublishBook() {
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">New Publication</p>
               {lastSaved && (
                 <p className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <Save className="w-3 h-3" /> Auto-saved
                 </p>
               )}
             </div>
             <h2 className="text-base font-semibold">Publish Your eBook</h2>
             <p className="text-xs text-muted-foreground mt-1">Complete all 4 steps to submit for review</p>
+            
+            {/* Draft restored indicator */}
+            {draftRestored && bookData.title && (
+              <div className="mt-3 flex items-center justify-between gap-2 p-2.5 rounded-lg bg-blue-50 border border-blue-200">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold text-blue-900 truncate">{bookData.title}</p>
+                    <p className="text-[10px] text-blue-600">Draft in progress</p>
+                  </div>
+                </div>
+                <button
+                  onClick={clearDraft}
+                  className="text-[10px] text-blue-600 hover:text-blue-800 font-medium shrink-0 underline"
+                >
+                  Start Over
+                </button>
+              </div>
+            )}
             {/* Progress bar */}
             <div className="mt-4">
               <div className="flex justify-between text-[10px] text-muted-foreground mb-1.5">

@@ -1,5 +1,5 @@
 // @ts-ignore
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { BookOpen, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
@@ -26,6 +26,18 @@ export default function Login() {
   });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
+  const [logoutMessage, setLogoutMessage] = useState('');
+
+  // Check for logout reason on mount
+  useEffect(() => {
+    const reason = sessionStorage.getItem('logout_reason');
+    if (reason) {
+      setLogoutMessage(reason);
+      sessionStorage.removeItem('logout_reason');
+      // Auto-clear message after 10 seconds
+      setTimeout(() => setLogoutMessage(''), 10000);
+    }
+  }, []);
 
   const validate = () => {
     const e = {};
@@ -100,6 +112,14 @@ export default function Login() {
               <h2 className="text-2xl font-semibold font-serif">Welcome Back</h2>
               <p className="text-sm text-muted-foreground mt-2">Sign in to your author account</p>
             </div>
+
+            {/* Logout Message */}
+            {logoutMessage && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 mb-4">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <p className="text-sm text-amber-800">{logoutMessage}</p>
+              </div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5">

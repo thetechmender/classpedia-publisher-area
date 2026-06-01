@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { isTokenExpired, clearAuthAndRedirect } from '@/services/api';
+import { isTokenExpired, clearAuthAndRedirect, updateLastActivity } from '@/services/api';
 import { CredentialService } from '@/services/credential.service';
 import { useToast } from "@/components/ui/use-toast";
 
@@ -35,12 +35,15 @@ export const AuthProvider = ({ children }) => {
 
       // Check if token is expired
       if (isTokenExpired()) {
-        clearAuthAndRedirect();
+        clearAuthAndRedirect('Your session has expired. Please log in again.');
         return;
       }
 
       // Token exists and is valid, set authenticated
       setIsAuthenticated(true);
+      
+      // Update last activity on auth check
+      updateLastActivity();
       
       // Load user data from localStorage
       const publisherId = localStorage.getItem('publisher_id');
@@ -88,6 +91,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('publisher_full_name', publisherFullName);
       localStorage.setItem('publisher_email', publisherEmail);
       localStorage.setItem('is_profile_completed', profileCompleted.toString());
+      
+      // Set initial activity timestamp
+      updateLastActivity();
 
       // Update state
       setUser({
@@ -125,13 +131,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('publisher_full_name');
     localStorage.removeItem('publisher_email');
     localStorage.removeItem('is_profile_completed');
+    localStorage.removeItem('last_activity');
 
     // Show logout success message
-    // toast.success('Logout successfully');
     toast({
       title: "Logged out",
       description: "You have been logged out successfully.",
     });
+    
     if (shouldRedirect) {
       window.location.href = '/login';
     }
