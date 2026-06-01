@@ -55,6 +55,26 @@ export interface AuthorProfile {
   tax_id_type: string;
   tax_id: string;
   esignature: string;
+  author_bio: string;
+  full_name: string;
+  country: string;
+}
+
+export interface ActionItem {
+  id: string;
+  type: 'payment' | 'tax' | 'bio' | 'book' | 'profile';
+  title: string;
+  description: string;
+  urgency: 'urgent' | 'pending' | 'optional';
+  ctaText: string;
+  ctaLink: string;
+  metadata?: any;
+}
+
+export interface ActionCenterData {
+  items: ActionItem[];
+  totalCount: number;
+  profileCompleteness: number;
 }
 
 export interface EarningsData {
@@ -80,6 +100,11 @@ export const DashboardService = {
 
   getEarnings: async (): Promise<ApiResponse<EarningsData>> => {
     const response = await api.get<ApiResponse<EarningsData>>('/publisher-dashboard/earnings');
+    return response.data;
+  },
+
+  getActionCenter: async (): Promise<ApiResponse<ActionCenterData>> => {
+    const response = await api.get<ApiResponse<ActionCenterData>>('/publisher-dashboard/action-center');
     return response.data;
   },
 };

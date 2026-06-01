@@ -90,15 +90,17 @@ function getFormattedDate() {
 export default function OverviewTab({ books: propBooks, authorProfile, onTabChange }) {
   const [dashboardSummary, setDashboardSummary] = useState(null);
   const [earningsData, setEarningsData] = useState(null);
+  const [actionCenterData, setActionCenterData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [summaryRes, earningsRes] = await Promise.all([
+        const [summaryRes, earningsRes, actionCenterRes] = await Promise.all([
           DashboardService.getDashboardSummary(),
           DashboardService.getEarnings(),
+          DashboardService.getActionCenter(),
         ]);
 
         if (summaryRes.isSuccess) {
@@ -106,6 +108,9 @@ export default function OverviewTab({ books: propBooks, authorProfile, onTabChan
         }
         if (earningsRes.isSuccess) {
           setEarningsData(earningsRes.data);
+        }
+        if (actionCenterRes.isSuccess) {
+          setActionCenterData(actionCenterRes.data);
         }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -149,55 +154,62 @@ export default function OverviewTab({ books: propBooks, authorProfile, onTabChan
   const totalReviews = dashboardSummary?.totalReviews || 0;
   const openIssues = dashboardSummary?.openIssues || 0;
 
-  const actions = [];
-  if (!authorProfile?.payment_method) {
-    actions.push({
-      icon: CreditCard, iconBg: 'bg-red-100 text-red-600',
-      title: 'Set up your payment method',
-      subtitle: 'Add your bank account or PayPal to receive royalty payouts.',
-      cta: 'Add now', ctaFn: () => onTabChange('payments'), urgency: 'high',
-    });
-  }
-  if (authorProfile?.us_person === undefined || !authorProfile?.tax_id) {
-    actions.push({
-      icon: FileText, iconBg: 'bg-amber-100 text-amber-600',
-      title: 'Complete your tax information',
-      subtitle: 'Required for royalty processing and IRS compliance.',
-      cta: 'Complete', ctaFn: () => onTabChange('payments'), urgency: 'medium',
-    });
-  }
-  if (!authorProfile?.author_bio) {
-    actions.push({
-      icon: User, iconBg: 'bg-blue-100 text-blue-600',
-      title: 'Add your author biography',
-      subtitle: 'Readers convert better when there\'s a compelling author bio.',
-      cta: 'Add bio', ctaFn: () => onTabChange('profile'), urgency: 'low',
-    });
-  }
-  books.filter(b => b.status === 'draft').slice(0, 2).forEach(book => {
-    actions.push({
-      icon: FileEdit, iconBg: 'bg-slate-100 text-slate-600',
-      title: `Continue: "${book.title}"`,
-      subtitle: 'This draft is waiting to be completed and published.',
-      cta: 'Continue', ctaFn: () => window.location.href = `/book/${book.id}`, urgency: 'medium',
-    });
+  // Map action items from API to UI format
+  const actionItems = actionCenterData?.items || [];
+  const actions = actionItems.map(item => {
+    // Map type to icon and styling
+    const iconMap = {
+      payment: { icon: CreditCard, iconBg: 'bg-red-100 text-red-600' },
+      tax: { icon: FileText, iconBg: 'bg-amber-100 text-amber-600' },
+      bio: { icon: User, iconBg: 'bg-blue-100 text-blue-600' },
+      profile: { icon: User, iconBg: 'bg-blue-100 text-blue-600' },
+      book: { icon: BookOpen, iconBg: 'bg-primary/10 text-primary' },
+    };
+    
+    const { icon, iconBg } = iconMap[item.type] || iconMap.book;
+    
+    // Map urgency from API format to UI format
+    const urgencyMap = {
+      urgent: 'high',
+      pending: 'medium',
+      optional: 'low',
+    };
+    
+    return {
+      icon,
+      iconBg,
+      title: item.title,
+      subtitle: item.description,
+      cta: item.ctaText,
+      ctaFn: () => {
+        // Handle internal navigation
+        if (item.ctaLink.startsWith('/')) {
+          window.location.href = item.ctaLink;
+        } else {
+          // Handle tab changes
+          const tabMap = {
+            payments: 'payments',
+            profile: 'profile',
+            books: 'books',
+          };
+          const tab = tabMap[item.ctaLink] || item.ctaLink;
+          onTabChange(tab);
+        }
+      },
+      urgency: urgencyMap[item.urgency] || 'medium',
+    };
   });
-  if (books.length === 0) {
-    actions.push({
-      icon: BookOpen, iconBg: 'bg-primary/10 text-primary',
-      title: 'Publish your first eBook',
-      subtitle: 'Start earning royalties by submitting your first title today.',
-      cta: 'Start now', ctaFn: () => window.location.href = '/publish', urgency: 'medium',
-    });
-  }
 
-  const readinessItems = [
-    { label: 'Account Info',    done: !!(authorProfile?.full_name && authorProfile?.country) },
-    { label: 'Payment Method',  done: !!authorProfile?.payment_method },
-    { label: 'Tax Info',        done: !!(authorProfile?.tax_id || authorProfile?.tax_country) },
-    { label: 'Author Profile',  done: !!authorProfile?.author_bio },
-  ];
-  const readinessPct = Math.round((readinessItems.filter(r => r.done).length / readinessItems.length) * 100);
+  // Use profile completeness from API if available, otherwise calculate locally
+  const readinessPct = actionCenterData?.profileCompleteness ?? (() => {
+    const readinessItems = [
+      { label: 'Account Info',    done: !!(authorProfile?.full_name && authorProfile?.country) },
+      { label: 'Payment Method',  done: !!authorProfile?.payment_method },
+      { label: 'Tax Info',        done: !!(authorProfile?.tax_id || authorProfile?.tax_country) },
+      { label: 'Author Profile',  done: !!authorProfile?.author_bio },
+    ];
+    return Math.round((readinessItems.filter(r => r.done).length / readinessItems.length) * 100);
+  })();
 
   return (
     <div className="space-y-6">
