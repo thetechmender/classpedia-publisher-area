@@ -16,6 +16,7 @@ const STATUS_CONFIG = {
   in_review:   { label: 'In Review',   bg: 'bg-amber-100',   text: 'text-amber-700',   dot: 'bg-amber-500'   },
   draft:       { label: 'Draft',       bg: 'bg-slate-100',   text: 'text-slate-600',   dot: 'bg-slate-400'   },
   unpublished: { label: 'Unpublished', bg: 'bg-red-100',     text: 'text-red-700',     dot: 'bg-red-500'     },
+  rejected:    { label: 'Rejected',    bg: 'bg-red-100',     text: 'text-red-700',     dot: 'bg-red-500'     },
 };
 
 function StatusBadge({ status }) {
@@ -116,7 +117,17 @@ export default function OverviewTab({ books: propBooks, authorProfile, onTabChan
     fetchDashboardData();
   }, []);
 
-  const books = propBooks || [];
+  // Use recent books from API, map to expected format
+  const recentBooksFromApi = dashboardSummary?.recentBooks || [];
+  const books = recentBooksFromApi.map(book => ({
+    id: book.id,
+    title: book.title,
+    cover_url: book.frontCover,
+    list_price: book.price,
+    status: book.statusName?.toLowerCase().replace(' ', '_') || 'draft',
+    author_name: authorProfile?.full_name || 'Unknown Author',
+    royalty_plan: '70',
+  }));
   const firstName = authorProfile?.full_name?.split(' ')[0] || 'there';
 
   // Stats from dashboard summary API
@@ -331,7 +342,14 @@ export default function OverviewTab({ books: propBooks, authorProfile, onTabChan
             View all <ChevronRight className="w-3 h-3" />
           </button>
         </div>
-        {books.length === 0 ? (
+        {loading ? (
+          <div className="px-5 py-14 text-center">
+            <div className="w-14 h-14 bg-accent rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <BookOpen className="w-7 h-7 text-accent-foreground" />
+            </div>
+            <p className="text-sm font-semibold mb-1">Loading books...</p>
+          </div>
+        ) : books.length === 0 ? (
           <div className="px-5 py-14 text-center">
             <div className="w-14 h-14 bg-accent rounded-2xl flex items-center justify-center mx-auto mb-4">
               <BookOpen className="w-7 h-7 text-accent-foreground" />

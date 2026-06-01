@@ -117,7 +117,7 @@ function TitlePage({ book }) {
   );
 }
 
-function TocPage({ book, entries: providedEntries }) {
+function TocPage({ book, entries: providedEntries, onNavigate }) {
   const fallback = [
     { number: null, displayLabel: 'Introduction', pg: 1 },
     { number: 1, displayLabel: 'Chapter: One', pg: 14 },
@@ -139,16 +139,20 @@ function TocPage({ book, entries: providedEntries }) {
       </div>
       <div className="flex-1 space-y-0 overflow-hidden">
         {visible.map((e, i) => (
-          <div key={i} className="flex items-baseline gap-2 py-1.5">
+          <button
+            key={i}
+            onClick={() => onNavigate && onNavigate(e.spreadIndex)}
+            className="flex items-baseline gap-2 py-1.5 w-full hover:bg-slate-100/50 active:bg-slate-100 transition-colors rounded px-1 -mx-1 cursor-pointer group"
+          >
             <span className="text-[10px] text-slate-400 w-6 text-right shrink-0 font-mono tabular-nums">
               {e.number != null ? `${e.number}.` : ''}
             </span>
-            <span className="text-[11px] text-slate-700 font-medium truncate max-w-[60%]">
+            <span className="text-[11px] text-slate-700 font-medium truncate max-w-[60%] group-hover:text-indigo-600">
               {e.displayLabel}
             </span>
             <span className="flex-1 border-b border-dotted border-slate-300 mx-1 mb-[3px]" />
-            <span className="text-[10px] text-slate-500 tabular-nums font-mono shrink-0">{e.pg}</span>
-          </div>
+            <span className="text-[10px] text-slate-500 tabular-nums font-mono shrink-0 group-hover:text-indigo-600">{e.pg}</span>
+          </button>
         ))}
         {remaining > 0 && (
           <p className="text-[10px] text-slate-400 italic pt-2">… and {remaining} more</p>
@@ -473,7 +477,7 @@ function computeDisplayTitle(chapter, bookTitleLc) {
   return '';
 }
 
-function buildSpreads(book) {
+function buildSpreads(book, onNavigateToSpread) {
   const structure = book.manuscript_structure;
   const chapters = structure?.chapters || [];
   const bookTitleLc = (book?.title || '').trim().toLowerCase();
@@ -536,12 +540,15 @@ function buildSpreads(book) {
 
   processedChapters.forEach(({ chapter, kind, chapterNumber, displayTitle, pages }, idx) => {
     const startPage = pageCounter;
+    const contentPageStartIndex = contentPages.length;
+    
     if (kind === 'chapter') {
       const titleForToc = displayTitle || book?.title || '';
       tocEntries.push({
         number: chapterNumber,
         displayLabel: titleForToc ? `Chapter: ${titleForToc}` : 'Chapter',
         pg: startPage,
+        contentPageIndex: contentPageStartIndex,
       });
     } else if (hasLeadingFrontMatter && idx === 0) {
       // Single consolidated Introduction entry for all leading front matter.
@@ -549,6 +556,7 @@ function buildSpreads(book) {
         number: null,
         displayLabel: 'Introduction',
         pg: startPage,
+        contentPageIndex: contentPageStartIndex,
       });
     }
     // Front matter sections after the first chapter (back matter) are not
@@ -571,7 +579,7 @@ function buildSpreads(book) {
     // Spread 0: cover + blank verso
     { left: (b) => <CoverPage book={b} />, right: () => <RightBlankPage />, leftLabel: 'Cover', rightLabel: '' },
     // Spread 1: title + toc (real chapter list when available)
-    { left: (b) => <TitlePage book={b} />, right: (b) => <TocPage book={b} entries={tocEntries} />, leftLabel: 'Title Page', rightLabel: 'Contents' },
+    { left: (b) => <TitlePage book={b} />, right: (b) => <TocPage book={b} entries={[]} onNavigate={onNavigateToSpread} />, leftLabel: 'Title Page', rightLabel: 'Contents' },
   ];
 
   // If we have parsed manuscript content, generate content spreads
@@ -634,6 +642,20 @@ function buildSpreads(book) {
     leftLabel: '',
     rightLabel: 'Back Cover',
   });
+
+  // Now map TOC entries to spread indices (2 content pages per spread, starting at spread index 2)
+  const tocEntriesWithSpreadIndex = tocEntries.map(entry => ({
+    ...entry,
+    spreadIndex: 2 + Math.floor(entry.contentPageIndex / 2),
+  }));
+
+  // Update the TOC page with the correct entries
+  spreads[1] = {
+    left: (b) => <TitlePage book={b} />,
+    right: (b) => <TocPage book={b} entries={tocEntriesWithSpreadIndex} onNavigate={onNavigateToSpread} />,
+    leftLabel: 'Title Page',
+    rightLabel: 'Contents',
+  };
 
   return spreads;
 }
@@ -739,13 +761,29 @@ function FlipLeaf({ direction, fromContent, toContent, pageH, pageW }) {
 export default function BookPreviewer({ book, onClose }) {
   const [spreadIndex, setSpreadIndex] = useState(0);
   const [flipping, setFlipping] = useState(null); // { direction, fromSpread, toSpread }
-  const [device, setDevice] = useState('desktop');
+  const [isMobileView, setIsMobileView] = useState(false);
   const [scale, setScale] = useState(1);
   const canvasRef = useRef(null);
-  // Only desktop view is available
 
-  const SPREADS = buildSpreads(book);
+  // Navigation callback for TOC
+  const handleNavigateToSpread = useCallback((targetSpreadIndex) => {
+    if (targetSpreadIndex === spreadIndex || flipping) return;
+    playPageFlipSound();
+    setSpreadIndex(targetSpreadIndex);
+  }, [spreadIndex, flipping]);
+
+  const SPREADS = buildSpreads(book, handleNavigateToSpread);
   const total = SPREADS.length;
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const navigate = useCallback((dir) => {
     if (flipping) return;
@@ -772,11 +810,12 @@ export default function BookPreviewer({ book, onClose }) {
     return () => window.removeEventListener('keydown', handler);
   }, [navigate, onClose]);
 
-  // Desktop-only: two-page spread
-  const deviceConfig = { w: 900, h: 580, twoPage: true };
+  // Responsive device config: mobile uses single page, desktop uses two-page spread
+  const deviceConfig = isMobileView
+    ? { w: 360, h: 640, twoPage: false }
+    : { w: 900, h: 580, twoPage: true };
 
-  const isMobile = !deviceConfig.twoPage;
-  const pageW = isMobile ? deviceConfig.w : deviceConfig.w / 2;
+  const pageW = deviceConfig.twoPage ? deviceConfig.w / 2 : deviceConfig.w;
   const pageH = deviceConfig.h;
 
   // Responsive scaling — fit the book inside the available canvas area
@@ -784,16 +823,18 @@ export default function BookPreviewer({ book, onClose }) {
     const update = () => {
       if (!canvasRef.current) return;
       const rect = canvasRef.current.getBoundingClientRect();
-      // Reserve space for nav buttons (~48px each + gap) and bottom dots/label (~80px)
-      const availW = rect.width - 160;
-      const availH = rect.height - 120;
+      // Reserve space for nav buttons and controls
+      const navSpace = isMobileView ? 80 : 160;
+      const bottomSpace = isMobileView ? 60 : 120;
+      const availW = rect.width - navSpace;
+      const availH = rect.height - bottomSpace;
       const s = Math.min(availW / deviceConfig.w, availH / deviceConfig.h, 1);
-      setScale(Math.max(s, 0.35));
+      setScale(Math.max(s, isMobileView ? 0.5 : 0.35));
     };
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, [deviceConfig.w, deviceConfig.h]);
+  }, [deviceConfig.w, deviceConfig.h, isMobileView]);
 
   const currentSpread = SPREADS[spreadIndex];
   const displaySpread = flipping ? SPREADS[flipping.fromSpread] : currentSpread;
@@ -824,14 +865,8 @@ export default function BookPreviewer({ book, onClose }) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Device indicator */}
-            <div className="flex items-center gap-1.5 bg-white/[0.06] rounded-lg px-2.5 h-8">
-              <Monitor className="w-3.5 h-3.5 text-white/60" />
-              <span className="text-white/60 text-[11px] font-medium hidden sm:inline">Desktop</span>
-            </div>
-
-            {/* Page counter */}
-            <div className="hidden sm:flex items-center gap-1.5 bg-white/[0.06] rounded-lg px-3 h-8">
+            {/* Page counter - show on mobile too */}
+            <div className="flex items-center gap-1.5 bg-white/[0.06] rounded-lg px-2.5 sm:px-3 h-8">
               <span className="text-white/60 text-[11px] font-medium tabular-nums">
                 {spreadIndex + 1} <span className="text-white/20">/</span> {total}
               </span>
@@ -855,16 +890,16 @@ export default function BookPreviewer({ book, onClose }) {
               style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 55%, rgba(99,102,241,0.07) 0%, transparent 70%)' }} />
 
             {/* Nav + Book spread */}
-            <div className="flex items-center gap-3 sm:gap-6 z-10 px-2 sm:px-0 max-w-full overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-6 z-10 px-1 sm:px-0 max-w-full overflow-hidden">
 
               {/* Prev button */}
               <button
                 onClick={() => navigate('prev')}
                 disabled={spreadIndex === 0 || !!flipping}
-                className="w-12 h-12 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white/50 hover:text-white active:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed shrink-0"
                 style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
               {/* Book spread container (responsive scaled wrapper) */}
@@ -886,7 +921,7 @@ export default function BookPreviewer({ book, onClose }) {
                 <div className="absolute inset-0 rounded-sm overflow-hidden"
                   style={{ boxShadow: '0 2px 0 rgba(255,255,255,0.04) inset' }}>
 
-                  {isMobile ? (
+                  {!deviceConfig.twoPage ? (
                     /* Single page on mobile — show the more interesting side */
                     <div className="w-full h-full">
                       {spreadIndex === 0
@@ -937,7 +972,7 @@ export default function BookPreviewer({ book, onClose }) {
                   )}
 
                   {/* Persistent spine highlight */}
-                  {!isMobile && (
+                  {deviceConfig.twoPage && (
                     <>
                       <div className="absolute inset-y-0 left-0 w-5 pointer-events-none z-[15]"
                         style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.25) 0%, transparent 100%)' }} />
@@ -964,16 +999,16 @@ export default function BookPreviewer({ book, onClose }) {
               <button
                 onClick={() => navigate('next')}
                 disabled={spreadIndex === total - 1 || !!flipping}
-                className="w-12 h-12 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-white/50 hover:text-white active:text-white transition-all disabled:opacity-20 disabled:cursor-not-allowed shrink-0"
                 style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
 
             {/* Spread dots + label */}
-            <div className="flex flex-col items-center gap-3 z-10">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col items-center gap-2 sm:gap-3 z-10">
+              <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto max-w-full px-2">
                 {SPREADS.map((_, i) => (
                   <button
                     key={i}
@@ -982,21 +1017,21 @@ export default function BookPreviewer({ book, onClose }) {
                       playPageFlipSound();
                       setSpreadIndex(i);
                     }}
-                    className={cn('rounded-full transition-all duration-300',
+                    className={cn('rounded-full transition-all duration-300 shrink-0',
                       i === spreadIndex
-                        ? 'w-6 h-2 bg-indigo-400'
-                        : 'w-2 h-2 hover:bg-white/40'
+                        ? 'w-5 h-1.5 sm:w-6 sm:h-2 bg-indigo-400'
+                        : 'w-1.5 h-1.5 sm:w-2 sm:h-2 hover:bg-white/40'
                     )}
                     style={{ background: i === spreadIndex ? undefined : 'rgba(255,255,255,0.2)' }}
                   />
                 ))}
               </div>
-              <div className="flex items-center gap-3">
-                <p className="text-white/50 text-[11px] font-medium">
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 px-2">
+                <p className="text-white/50 text-[10px] sm:text-[11px] font-medium text-center truncate max-w-[280px]">
                   {[currentSpread.leftLabel, currentSpread.rightLabel].filter(Boolean).join(' · ') || `Spread ${spreadIndex + 1}`}
                 </p>
-                <span className="text-white/15 text-[10px]">·</span>
-                <p className="text-white/20 text-[10px]">← → Arrow keys · Esc to close</p>
+                <span className="hidden sm:inline text-white/15 text-[10px]">·</span>
+                <p className="hidden sm:block text-white/20 text-[10px]">← → Arrow keys · Esc to close</p>
               </div>
             </div>
           </div>
