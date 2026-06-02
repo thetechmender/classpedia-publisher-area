@@ -18,7 +18,8 @@ const formDataInitial = {
   paymentMethod: 'bank_transfer',
 };
 
-const validateStep2 = (data) => {
+// Step 1: Personal Info (was step 2)
+const validateStep1 = (data) => {
   const errors = {};
   if (!data.legalFirstName?.trim()) errors.legalFirstName = 'First name is required';
   if (!data.legalLastName?.trim()) errors.legalLastName = 'Last name is required';
@@ -26,10 +27,11 @@ const validateStep2 = (data) => {
   return errors;
 };
 
-// Step 3: Author Profile — no required fields
-const validateStep3 = (_data) => ({});
+// Step 2: Author Profile — no required fields (was step 3)
+const validateStep2 = (_data) => ({});
 
-const validateStep4 = (data) => {
+// Step 3: Payment Setup (was step 4)
+const validateStep3 = (data) => {
   const errors = {};
   if (!data.paymentMethod) { errors.paymentMethod = 'Please select a payment method'; return errors; }
   if (data.paymentMethod === 'bank_transfer') {
@@ -44,7 +46,8 @@ const validateStep4 = (data) => {
   return errors;
 };
 
-const validateStep5 = (data) => {
+// Step 4: Tax & Signing (was step 5)
+const validateStep4 = (data) => {
   const errors = {};
   if (data.usPerson === undefined) { errors.usPerson = 'Please select your US tax status'; return errors; }
   if (data.usPerson) {
@@ -131,41 +134,35 @@ export default function AccountSetup() {
           const completed = [];
           let startStep = 1;
 
-          // Check Step 1: Create Account (basic info)
-          if (account.publisherFullName && account.publisherEmail && account.publisherPhone) {
+          // Check Step 1: Personal Info (was step 2)
+          if (account.personalInfo?.legalFirstName && account.personalInfo?.legalLastName && account.personalInfo?.country) {
             completed.push(1);
             startStep = 2;
           }
 
-          // Check Step 2: Personal Info
-          if (account.personalInfo?.legalFirstName && account.personalInfo?.legalLastName && account.personalInfo?.country) {
+          // Check Step 2: Author Info (was step 3, optional)
+          if (account.authInfo?.bio || (account.authInfo?.preferredCategories && account.authInfo.preferredCategories.length > 0)) {
             completed.push(2);
             startStep = 3;
+          } else if (completed.includes(1)) {
+            // Author info is optional, so if step 1 is done, we can move to step 2
+            startStep = 2;
           }
 
-          // Check Step 3: Author Info (optional, so just check if any data exists)
-          if (account.authInfo?.bio || (account.authInfo?.preferredCategories && account.authInfo.preferredCategories.length > 0)) {
-            completed.push(3);
-            startStep = 4;
-          } else if (completed.includes(2)) {
-            // Author info is optional, so if step 2 is done, we can move to step 3
-            startStep = 3;
-          }
-
-          // Check Step 4: Payment Info
+          // Check Step 3: Payment Info (was step 4)
           if (account.paymentInfo?.paymentMethod) {
             const hasBank = account.paymentInfo.paymentMethod === 'bank_transfer' &&
               account.paymentInfo.bankAccountName && account.paymentInfo.bankAccountNumber;
             const hasPaypal = account.paymentInfo.paymentMethod === 'paypal' && account.paymentInfo.paypalEmail;
             if (hasBank || hasPaypal) {
-              completed.push(4);
-              startStep = 5;
+              completed.push(3);
+              startStep = 4;
             }
           }
 
-          // Check Step 5: Tax Info
+          // Check Step 4: Tax Info (was step 5)
           if (account.taxInfo?.taxCertified && account.taxInfo?.esignConsent && account.taxInfo?.esignature) {
-            completed.push(5);
+            completed.push(4);
           }
 
           setCompletedSteps(completed);
@@ -222,8 +219,8 @@ export default function AccountSetup() {
       publisherConfirmPassword: formData.publisherConfirmPassword || '',
     };
 
-    // Include personalInfo (step 2) if step >= 2
-    if (stepNumber >= 2) {
+    // Include personalInfo (step 1) if step >= 1
+    if (stepNumber >= 1) {
       payload.personalInfo = {
         legalFirstName: formData.legalFirstName || '',
         legalLastName: formData.legalLastName || '',
@@ -235,8 +232,8 @@ export default function AccountSetup() {
       };
     }
 
-    // Include authInfo (step 3) if step >= 3
-    if (stepNumber >= 3) {
+    // Include authInfo (step 2) if step >= 2
+    if (stepNumber >= 2) {
       payload.authInfo = {
         bio: formData.bio || '',
         preferredCategories: formData.preferredCategories || [],
@@ -249,8 +246,8 @@ export default function AccountSetup() {
       };
     }
 
-    // Include paymentInfo (step 4) if step >= 4
-    if (stepNumber >= 4) {
+    // Include paymentInfo (step 3) if step >= 3
+    if (stepNumber >= 3) {
       payload.paymentInfo = {
         paymentMethod: formData.paymentMethod || 'bank_transfer',
         bankAccountName: formData.bankAccountName || '',
@@ -260,8 +257,8 @@ export default function AccountSetup() {
       };
     }
 
-    // Include taxInfo (step 5) if step >= 5
-    if (stepNumber >= 5) {
+    // Include taxInfo (step 4) if step >= 4
+    if (stepNumber >= 4) {
       payload.taxInfo = {
         usPerson: formData.usPerson || false,
         taxIdType: formData.taxIdType || '',
@@ -294,7 +291,7 @@ export default function AccountSetup() {
   };
 
   const handleSubmit = async () => {
-    const stepErrors = validateStep5(formData);
+    const stepErrors = validateStep4(formData);
     if (Object.keys(stepErrors).length > 0) {
       setErrors(stepErrors);
       toast.error('Please fix the errors before continuing');
@@ -302,7 +299,7 @@ export default function AccountSetup() {
     }
 
     setSaving(true);
-    const success = await saveStepData(5);
+    const success = await saveStepData(4);
     setSaving(false);
 
     if (success) {
@@ -365,7 +362,7 @@ export default function AccountSetup() {
         )}
 
         <SetupStepIndicator currentStep={currentStep} completedSteps={completedSteps} />
-        {currentStep > 2 && (
+        {currentStep > 1 && (
           <button
             onClick={() => goToStep(currentStep - 1)}
             className="flex items-center mb-1 border border-secondary/50 gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors text-sm font-medium"
@@ -376,10 +373,18 @@ export default function AccountSetup() {
         )}
         <div className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm overflow-visible">
           {currentStep === 1 && (
-            <CreateAccountStep
+            <AccountInfoStep
               data={formData}
               onChange={updateData}
+              errors={errors}
               onNext={async () => {
+                const stepErrors = validateStep1(formData);
+                if (Object.keys(stepErrors).length > 0) {
+                  setErrors(stepErrors);
+                  toast.error('Please fix the errors before continuing');
+                  return;
+                }
+                setErrors({});
                 setSaving(true);
                 const success = await saveStepData(1);
                 setSaving(false);
@@ -388,15 +393,16 @@ export default function AccountSetup() {
                   goToStep(2);
                 }
               }}
+              onBack={undefined}
               saving={saving}
-              isExistingUser={completedSteps.includes(1)}
             />
           )}
           {currentStep === 2 && (
-            <AccountInfoStep
+            <AuthorProfileStep
               data={formData}
               onChange={updateData}
               errors={errors}
+              onSubmit={undefined}
               onNext={async () => {
                 const stepErrors = validateStep2(formData);
                 if (Object.keys(stepErrors).length > 0) {
@@ -418,11 +424,10 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 3 && (
-            <AuthorProfileStep
+            <PaymentStep
               data={formData}
               onChange={updateData}
               errors={errors}
-              onSubmit={undefined}
               onNext={async () => {
                 const stepErrors = validateStep3(formData);
                 if (Object.keys(stepErrors).length > 0) {
@@ -444,37 +449,12 @@ export default function AccountSetup() {
             />
           )}
           {currentStep === 4 && (
-            <PaymentStep
-              data={formData}
-              onChange={updateData}
-              errors={errors}
-              onNext={async () => {
-                const stepErrors = validateStep4(formData);
-                if (Object.keys(stepErrors).length > 0) {
-                  setErrors(stepErrors);
-                  toast.error('Please fix the errors before continuing');
-                  return;
-                }
-                setErrors({});
-                setSaving(true);
-                const success = await saveStepData(4);
-                setSaving(false);
-                if (success) {
-                  setCompletedSteps(prev => [...new Set([...prev, 4])]);
-                  goToStep(5);
-                }
-              }}
-              onBack={() => goToStep(3)}
-              saving={saving}
-            />
-          )}
-          {currentStep === 5 && (
             <TaxStep
               data={formData}
               onChange={updateData}
               errors={errors}
               onNext={handleSubmit}
-              onBack={() => goToStep(4)}
+              onBack={() => goToStep(3)}
               saving={saving}
             />
           )}

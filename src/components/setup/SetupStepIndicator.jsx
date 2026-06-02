@@ -3,11 +3,10 @@ import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STEPS = [
-  // { id: 1, label: 'Create Account' },
-  { id: 2, label: 'Personal Info' },
-  { id: 3, label: 'Author Profile' },
-  { id: 4, label: 'Payment Setup' },
-  { id: 5, label: 'Tax & Signing' },
+  { id: 1, label: 'Personal Info' },
+  { id: 2, label: 'Author Profile' },
+  { id: 3, label: 'Payment Setup' },
+  { id: 4, label: 'Tax & Signing' },
 ];
 
 export default function SetupStepIndicator({ currentStep, completedSteps = [] }) {
