@@ -120,35 +120,45 @@ export default function AccountInfoStep({ data, onChange, errors, onNext, onBack
         </div>
         <div className="px-5 py-5 space-y-4">
           <div className="space-y-1.5">
-            <Label>Address Line</Label>
+            <Label>Address Line <span className="text-destructive">*</span></Label>
             <Input
               ref={autocompleteRef}
               value={data.addressLine1 || ''}
               onChange={(e) => onChange({ addressLine1: e.target.value })}
-              placeholder="Start typing your street address…" />
-            <p className="text-[10px] text-muted-foreground">City, state, ZIP and country will auto-fill when you select an address.</p>
+              placeholder="Start typing your street address…"
+              className={errors.addressLine1 ? 'border-destructive' : ''}
+               />
+                <FieldError msg={errors.addressLine1} />
+            <p className="text-[10px] text-muted-foreground"
+            >City, state, ZIP and country will auto-fill when you select an address.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label>City</Label>
+              <Label>City <span className="text-destructive">*</span></Label>
               <Input
                 value={data.city || ''}
                 onChange={(e) => onChange({ city: e.target.value })}
-                placeholder="City" />
+                placeholder="City"
+                className={errors.city ? 'border-destructive' : ''} />
+              <FieldError msg={errors.city} />
             </div>
             <div className="space-y-1.5">
-              <Label>State / Province</Label>
+              <Label>State / Province <span className="text-destructive">*</span></Label>
               <Input
                 value={data.state || ''}
                 onChange={(e) => onChange({ state: e.target.value })}
-                placeholder="State / Province" />
+                placeholder="State / Province"
+                className={errors.state ? 'border-destructive' : ''} />
+              <FieldError msg={errors.state} />
             </div>
             <div className="space-y-1.5">
-              <Label>ZIP / Postal Code</Label>
+              <Label>ZIP / Postal Code <span className="text-destructive">*</span></Label>
               <Input
                 value={data.zip || ''}
                 onChange={(e) => onChange({ zip: e.target.value })}
-                placeholder="ZIP / Postal code" />
+                placeholder="ZIP / Postal code"
+                className={errors.zip ? 'border-destructive' : ''} />
+              <FieldError msg={errors.zip} />
             </div>
           </div>
           <div className="space-y-1.5">

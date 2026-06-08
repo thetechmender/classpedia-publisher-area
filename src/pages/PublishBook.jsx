@@ -28,6 +28,8 @@ const validateStep1 = (data) => {
   else if (data.description.trim().length < 50) errors.description = 'Description must be at least 50 characters';
   else if (data.description.trim().length > 4000) errors.description = 'Description cannot exceed 4,000 characters';
   if (!data.language) errors.language = 'Please select a language';
+  if (!data.keywords || data.keywords.length === 0) errors.keywords = 'Please add at least one keyword';
+  if (!data.categories || data.categories.length === 0) errors.categories = 'Please select at least one category';
   if (data.preorderType === 'preorder' && !data.preorderDate) {
     errors.preorderDate = 'Please set a pre-order release date';
   }
@@ -38,6 +40,8 @@ const validateStep2 = (data) => {
   const errors = {};
   if (!data.manuscript_url) errors.manuscript_url = 'Please upload your manuscript';
   if (!data.coverUrl) errors.coverUrl = 'Please upload a cover image';
+  if (!data.totalPages || data.totalPages <= 0) errors.totalPages = 'Please enter the total number of pages';
+  if (data.aiGenerated == null) errors.aiGenerated = 'Please indicate whether you used AI tools';
   return errors;
 };
 

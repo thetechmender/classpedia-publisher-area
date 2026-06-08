@@ -430,7 +430,7 @@ export default function BooksTab() {
                   </div>
                   {/* Action */}
                   <div className="col-span-1 flex justify-end">
-                    <span className="text-xs text-primary font-medium flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-xs text-primary font-medium flex items-center gap-0.5">
                       {book.status === 'draft' ? 'Continue' : 'View'}
                       <ChevronRight className="w-3.5 h-3.5" />
                     </span>

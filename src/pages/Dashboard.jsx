@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { CredentialService } from '@/services/credential.service';
+import { PublishBookService } from '@/services/publishBook.service';
 import {
   LayoutDashboard, BookOpen, CreditCard, User, Menu, X, Bell
 } from 'lucide-react';
@@ -41,26 +42,55 @@ export default function Dashboard({ initialTab = 'overview' }) {
     setResolvedTab(TAB_ALIAS[initialTab] || initialTab);
   }, [initialTab]);
 
-  const { data: authorProfiles, isFetched: isProfileFetched } = useQuery({
+  const { data: accountData, isFetched: isProfileFetched } = useQuery({
     queryKey: ['author-profile'],
-    queryFn: () => base44.entities.AuthorProfile.list('-created_date', 1),
+    queryFn: async () => {
+      const response = await CredentialService.getAccount();
+      return response.data;
+    },
     staleTime: 30_000,
   });
 
   useEffect(() => {
-    if (isProfileFetched && authorProfiles && authorProfiles.length === 0) {
+    if (isProfileFetched && accountData && !accountData.isProfileCompleted) {
       // Only redirect if they have truly never set up (no profile record at all)
       navigate('/account-setup');
     }
-  }, [isProfileFetched, authorProfiles, navigate]);
+  }, [isProfileFetched, accountData, navigate]);
 
-  const authorProfile = authorProfiles?.[0] ?? null;
+  // Transform account data to authorProfile format for compatibility
+  const authorProfile = useMemo(() => {
+    if (!accountData) return null;
+    return {
+      full_name: accountData.publisherFullName,
+      email: accountData.publisherEmail,
+      phone: accountData.publisherPhone,
+      payment_method: accountData.paymentInfo?.paymentMethod || null,
+      paypal_email: accountData.paymentInfo?.paypalEmail || null,
+      bank_account_name: accountData.paymentInfo?.bankAccountName || null,
+      bank_account_number: accountData.paymentInfo?.bankAccountNumber || null,
+      bank_routing_number: accountData.paymentInfo?.bankRoutingNumber || null,
+      us_person: accountData.taxInfo?.usPerson || false,
+      tax_country: accountData.taxInfo?.taxCountry || null,
+      tax_id_type: accountData.taxInfo?.taxIdType || null,
+      tax_id: accountData.taxInfo?.taxId || null,
+      esignature: accountData.taxInfo?.esignature || null,
+      author_bio: accountData.authInfo?.bio || null,
+      country: accountData.personalInfo?.country || null,
+    };
+  }, [accountData]);
 
-  const { data: books = [], isLoading: isBooksLoading } = useQuery({
+  const { data: booksData, isLoading: isBooksLoading } = useQuery({
     queryKey: ['books'],
-    queryFn: () => base44.entities.Book.list('-created_date'),
-    enabled: (authorProfiles?.length ?? 0) > 0,
+    queryFn: () => PublishBookService.list({ pageSize: 100, sortBy: 'newest' }),
+    enabled: !!accountData,
   });
+
+  const books = useMemo(() => {
+    if (!booksData) return [];
+    if (Array.isArray(booksData)) return booksData;
+    return booksData.items || booksData.books || booksData.data?.items || booksData.data?.books || booksData.data || [];
+  }, [booksData]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -95,7 +125,7 @@ export default function Dashboard({ initialTab = 'overview' }) {
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileSidebarOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0 w-64 bg-card shadow-xl z-50">
-            <Sidebar activeTab={activeTab} onTabChange={handleTabChange} authorProfile={authorProfile} books={books} mobile />
+            <Sidebar activeTab={activeTab} onTabChange={handleTabChange} authorProfile={authorProfile} books={books} />
           </div>
         </div>
       )}
@@ -134,10 +164,10 @@ export default function Dashboard({ initialTab = 'overview' }) {
         {/* Page content */}
         <main className="flex-1 p-5 md:p-8 max-w-6xl w-full mx-auto pb-24 md:pb-8">
           {resolvedTab === 'overview'  && <OverviewTab books={books} authorProfile={authorProfile} onTabChange={handleTabChange} />}
-          {resolvedTab === 'books'     && <BooksTab books={books} isLoading={isBooksLoading} />}
-          {resolvedTab === 'reviews'   && <ReviewsTab books={books} />}
-          {resolvedTab === 'royalties' && <RoyaltiesTab books={books} />}
-          {resolvedTab === 'payments'  && <PaymentsTab books={books} authorProfile={authorProfile} />}
+          {resolvedTab === 'books'     && <BooksTab />}
+          {resolvedTab === 'reviews'   && <ReviewsTab />}
+          {resolvedTab === 'royalties' && <RoyaltiesTab />}
+          {resolvedTab === 'payments'  && <PaymentsTab authorProfile={authorProfile} />}
 
           {resolvedTab === 'profile'   && <AuthorProfileTab authorProfile={authorProfile} onProfileUpdated={() => queryClient.invalidateQueries({ queryKey: ['author-profile'] })} onShowNotifications={() => handleTabChange('notifications')} />}
           {resolvedTab === 'notifications' && <NotificationsTab books={books} authorProfile={authorProfile} onTabChange={handleTabChange} />}

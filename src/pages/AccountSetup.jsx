@@ -24,11 +24,39 @@ const validateStep1 = (data) => {
   if (!data.legalFirstName?.trim()) errors.legalFirstName = 'First name is required';
   if (!data.legalLastName?.trim()) errors.legalLastName = 'Last name is required';
   if (!data.country) errors.country = 'Please select your country';
+   if (!data.addressLine1?.trim()) {
+    errors.addressLine1 = 'Address Line  is required';
+  }
+  if (!data.city?.trim()) {
+    errors.city = 'City is required';
+  }
+
+  if (!data.state?.trim()) {
+    errors.state = 'State / Province is required';
+  }
+
+  if (!data.zip?.trim()) {
+    errors.zip = 'ZIP / Postal Code is required';
+  }
+
   return errors;
 };
 
-// Step 2: Author Profile — no required fields (was step 3)
-const validateStep2 = (_data) => ({});
+// Step 2: Author Profile (was step 3)
+const validateStep2 = (data) => {
+  const errors = {};
+  if (!data.bio?.trim()) {
+    errors.bio = 'Author biography is required';
+  } else if(data.bio?.length > 2000) {
+    errors.bio = 'Bio must be less than 2000 characters';
+  }
+  if (!data.preferredCategories || data.preferredCategories.length === 0) {
+    errors.preferredCategories = 'Please select at least one category';
+  } else if(data.preferredCategories?.length > 3) {
+    errors.preferredCategories = 'You can select up to 3 categories';
+  }
+  return errors;
+};
 
 // Step 3: Payment Setup (was step 4)
 const validateStep3 = (data) => {
@@ -55,6 +83,7 @@ const validateStep4 = (data) => {
     if (!data.taxId?.trim()) errors.taxId = 'Tax ID is required';
   } else {
     if (!data.taxCountry) errors.taxCountry = 'Please select your country of tax residence';
+    if (!data.taxId?.trim()) errors.taxId = 'Foreign Tax ID is required';
   }
   if (!data.taxCertified) errors.taxCertified = 'You must certify this information is correct';
   if (!data.esignConsent) errors.esignConsent = 'You must consent to provide an electronic signature';

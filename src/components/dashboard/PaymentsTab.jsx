@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DollarSign, CreditCard, AlertCircle, CheckCircle2, Clock,
   TrendingUp, Download, Info, Banknote, Wallet, FileText,
@@ -7,16 +7,8 @@ import {
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import mockPaymentsData from '@/data/mockPayments.json';
-import mockBooks from '@/data/mockBooks.json';
-
-// Use mock data
-const MONTHLY_DATA = mockPaymentsData.monthlyData || [];
-const mockStats = mockPaymentsData.stats || {};
-const mockTransactions = mockPaymentsData.transactions || [];
-const mockAuthorProfile = mockPaymentsData.authorProfile || {};
+import { DashboardService } from '@/services/dashboard.service';
 
 const PAYOUT_STEPS = [
   { icon: BarChart3, color: 'bg-blue-100 text-blue-600', title: 'Sales Recorded', desc: 'Sales are recorded in real-time on the platform.' },
@@ -25,7 +17,7 @@ const PAYOUT_STEPS = [
   { icon: CheckCircle2, color: 'bg-primary/10 text-primary', title: 'Funds Received', desc: 'PayPal: 1–3 days. Bank transfer: 5–7 business days.' },
 ];
 
-function StatCard({ icon: Icon, label, value, sub, color = 'text-foreground', accent }) {
+function StatCard({ icon: Icon, label, value, sub, color = 'text-foreground', accent='' }) {
   return (
     <div className={`bg-card border rounded-xl p-5 ${accent ? 'border-primary/30 bg-primary/5' : ''}`}>
       <div className="flex items-center justify-between mb-3">
@@ -45,14 +37,42 @@ const TABS = [
   { id: 'tax', label: 'Tax Info' },
 ];
 
-export default function PaymentsTab({ books: propBooks, authorProfile: propAuthorProfile }) {
+export default function PaymentsTab({ authorProfile: propAuthorProfile }) {
   const [tab, setTab] = useState('overview');
+  const [earningsData, setEarningsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Use mock data if no props provided
-  const books = (propBooks && propBooks.length > 0) ? propBooks : mockBooks;
-  const authorProfile = propAuthorProfile || mockAuthorProfile;
+  useEffect(() => {
+    const fetchEarningsData = async () => {
+      try {
+        setLoading(true);
+        const result = await DashboardService.getEarnings();
+        
+        if (result.isSuccess && result.data) {
+          setEarningsData(result.data);
+        } else {
+          throw new Error(result.errorMessage || 'Failed to load earnings data');
+        }
+      } catch (err) {
+        console.error('Error fetching earnings:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEarningsData();
+  }, []);
+
+  // Use API data from earnings endpoint
+  const monthlyData = earningsData?.monthlyData || [];
+  const stats = earningsData?.stats || {};
+  const authorProfile = earningsData?.authorProfile || propAuthorProfile || {};
+  const bookSales = earningsData?.bookSales || [];
   
-  const published = books.filter(b => b.status === 'published' && b.list_price);
+  // Use bookSales from API for published books count
+  const published = bookSales.filter(b => b.unitsSold >= 0);
   const paymentMethod = authorProfile?.payment_method;
 
   const paymentDisplay = paymentMethod === 'paypal'
@@ -60,6 +80,29 @@ export default function PaymentsTab({ books: propBooks, authorProfile: propAutho
     : paymentMethod === 'bank_transfer'
       ? { type: 'Bank Transfer', detail: `Account: ${authorProfile.bank_account_name || '—'}`, icon: Banknote }
       : null;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-sm text-muted-foreground">Loading earnings data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
+          <p className="text-sm font-semibold mb-1">Failed to load earnings data</p>
+          <p className="text-xs text-muted-foreground">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -106,9 +149,9 @@ export default function PaymentsTab({ books: propBooks, authorProfile: propAutho
       {tab === 'overview' && (
         <div className="space-y-5">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard icon={DollarSign}   label="Lifetime Earnings"  value={`$${mockStats.lifetimeEarnings?.toFixed(2) || '0.00'}`} sub="All time"              color="text-emerald-600" accent />
-            <StatCard icon={Clock}        label="Pending Payout"     value={`$${mockStats.pendingPayout?.toFixed(2) || '0.00'}`} sub={`Next payout: ${mockStats.nextPayoutDate || 'TBD'}`}  />
-            <StatCard icon={CheckCircle2} label="Total Paid Out"     value={`$${mockStats.totalPaidOut?.toFixed(2) || '0.00'}`} sub="All time"             />
+            <StatCard icon={DollarSign}   label="Lifetime Earnings"  value={`$${stats.lifetimeEarnings?.toFixed(2) || '0.00'}`} sub="All time"              color="text-emerald-600" />
+            <StatCard icon={Clock}        label="Pending Payout"     value={`$${stats.pendingPayout?.toFixed(2) || '0.00'}`} sub={`Next payout: ${stats.nextPayoutDate || 'TBD'}`}  />
+            <StatCard icon={CheckCircle2} label="Total Paid Out"     value={`$${stats.totalPaidOut?.toFixed(2) || '0.00'}`} sub="All time"             />
             <StatCard icon={BarChart3}    label="Published Titles"   value={`${published.length}`} sub="Earning royalties" />
           </div>
 
@@ -118,10 +161,10 @@ export default function PaymentsTab({ books: propBooks, authorProfile: propAutho
                 <h3 className="font-semibold text-sm">Monthly Royalties</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Last 6 months</p>
               </div>
-              <Badge variant="outline" className="text-xs text-emerald-600">{mockStats.totalUnitsSold || 0} units sold</Badge>
+              <Badge variant="outline" className="text-xs text-emerald-600">{stats.totalUnitsSold || 0} units sold</Badge>
             </div>
             <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={MONTHLY_DATA} barSize={28}>
+              <BarChart data={monthlyData} barSize={28}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
@@ -157,57 +200,67 @@ export default function PaymentsTab({ books: propBooks, authorProfile: propAutho
               <h3 className="text-sm font-semibold">Royalty Breakdown by Book</h3>
               <p className="text-xs text-muted-foreground mt-0.5">Estimated earnings per sale based on your pricing and royalty plan.</p>
             </div>
-            {books.length === 0 ? (
+            {bookSales.length === 0 ? (
               <div className="px-5 py-14 text-center">
                 <DollarSign className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No books yet. Publish a title to see your royalty breakdown.</p>
+                <p className="text-sm text-muted-foreground">No sales data yet. Your book sales will appear here once you start earning.</p>
               </div>
             ) : (
               <>
                 <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-2.5 border-b bg-secondary/20">
-                  <span className="col-span-5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Book</span>
+                  <span className="col-span-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Book</span>
                   <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center">Status</span>
                   <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Price</span>
-                  <span className="col-span-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center">Rate</span>
+                  <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Rate</span>
                   <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Per Sale</span>
                 </div>
                 <div className="divide-y">
-                  {books.map(book => {
-                    const rate = parseFloat(book.royalty_plan || 70) / 100;
-                    const perSale = book.list_price ? book.list_price * rate : null;
-                    return (
-                      <div key={book.id} className="px-5 py-4 grid grid-cols-12 gap-3 items-center">
-                        <div className="col-span-5 flex items-center gap-3 min-w-0">
-                          {book.cover_url
-                            ? <img src={book.cover_url} alt={book.title} className="w-8 h-11 object-cover rounded shadow-sm shrink-0" />
-                            : <div className="w-8 h-11 bg-secondary rounded flex items-center justify-center shrink-0 text-muted-foreground text-xs font-bold">?</div>
-                          }
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{book.title}</p>
-                            <p className="text-xs text-muted-foreground truncate">{book.author_name}</p>
+                  {bookSales.map(book => (
+                    <div key={book.bookId} className="px-5 py-4 grid grid-cols-12 gap-3 items-center">
+                      <div className="col-span-4 flex items-center gap-3 min-w-0">
+                        {book.frontCover ? (
+                          <img 
+                            src={book.frontCover} 
+                            alt={book.bookTitle} 
+                            className="w-10 h-14 object-cover rounded-lg shadow-sm shrink-0" 
+                          />
+                        ) : (
+                          <div className="w-10 h-14 bg-secondary rounded-lg flex items-center justify-center shrink-0 text-muted-foreground text-xs font-bold">
+                            <DollarSign className="w-4 h-4" />
                           </div>
-                        </div>
-                        <div className="col-span-2 flex justify-center">
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                            book.status === 'published' ? 'bg-emerald-100 text-emerald-700' :
-                            book.status === 'in_review' ? 'bg-amber-100 text-amber-700' :
-                            'bg-secondary text-muted-foreground'
-                          }`}>{book.status.replace('_', ' ')}</span>
-                        </div>
-                        <div className="col-span-2 text-right">
-                          <p className="text-sm font-medium">{book.list_price ? `$${book.list_price.toFixed(2)}` : '—'}</p>
-                        </div>
-                        <div className="col-span-1 text-center">
-                          <p className="text-sm text-muted-foreground">{book.royalty_plan || 70}%</p>
-                        </div>
-                        <div className="col-span-2 text-right">
-                          <p className={`text-sm font-bold ${perSale ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                            {perSale ? `$${perSale.toFixed(2)}` : '—'}
-                          </p>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate">{book.bookTitle}</p>
+                          <p className="text-xs text-muted-foreground truncate">Author Name</p>
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="col-span-2 flex justify-center">
+                        <span className={`text-xs px-2.5 py-1 rounded-md font-medium ${
+                          book.status === 'published' ? 'bg-emerald-100 text-emerald-700' :
+                          book.status === 'in_review' ? 'bg-amber-100 text-amber-700' :
+                          book.status === 'draft' ? 'bg-slate-100 text-slate-600' :
+                          'bg-secondary text-muted-foreground'
+                        }`}>
+                          {book.status || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <p className="text-sm font-medium">
+                          {book.price > 0 ? `$${book.price.toFixed(2)}` : '—'}
+                        </p>
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <p className="text-sm font-medium">
+                          {book.rate > 0 ? `${book.rate}%` : '—'}
+                        </p>
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <p className="text-sm font-bold text-emerald-600">
+                          {book.perSale > 0 ? `$${book.perSale.toFixed(2)}` : '—'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </>
             )}
@@ -350,7 +403,7 @@ export default function PaymentsTab({ books: propBooks, authorProfile: propAutho
             </div>
             <div className="divide-y">
               {[
-                { label: 'Tax Form', value: authorProfile?.us_person === true ? 'W-9 (US Person)' : authorProfile?.us_person === false ? 'W-8BEN (Non-US)' : '—' },
+                { label: 'Tax Form', value: authorProfile?.us_person === true ? 'US Person' : authorProfile?.us_person === false ? 'Non-US Person' : '—' },
                 { label: 'Tax Country', value: authorProfile?.tax_country || authorProfile?.country || '—' },
                 { label: 'Tax ID Type', value: authorProfile?.tax_id_type?.toUpperCase() || '—' },
                 { label: 'Tax ID', value: authorProfile?.tax_id ? `****${authorProfile.tax_id.slice(-4)}` : '—' },

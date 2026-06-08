@@ -14,14 +14,17 @@ import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
 import BookPreviewer from './BookPreviewer';
 
-const Section = ({ icon: Icon, title, subtitle, children }) => (
+const Section = ({ icon: Icon, title, subtitle, children, required = false }) => (
   <div className="rounded-xl border border-border bg-card shadow-sm">
     <div className="flex items-start gap-3 px-5 py-4 bg-secondary/40 border-b border-border">
       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
         <Icon className="w-4 h-4 text-primary" />
       </div>
       <div>
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        <h3 className="text-sm font-semibold text-foreground">
+          {title}
+          {required && <span className="text-destructive ml-0.5">*</span>}
+        </h3>
         {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
       </div>
     </div>
@@ -48,6 +51,13 @@ const FieldLabel = ({ label, required, tooltip }) => (
   </div>
 );
 
+const ErrorMsg = ({ msg }) =>
+  msg ? (
+    <p className="flex items-center gap-1 text-xs text-destructive mt-1.5">
+      <AlertCircle className="w-3 h-3 shrink-0" /> {msg}
+    </p>
+  ) : null;
+
 // const SUPPORTED_FORMATS = ['EPUB', 'MOBI', 'KPF', 'DOC', 'DOCX', 'PDF'];
 const SUPPORTED_FORMATS = ['EPUB'];
 
@@ -61,7 +71,7 @@ const escapeHtml = (str) =>
 
 
 // Sample chapter page-range selector
-function SampleChapterSection({ data, onChange }) {
+function SampleChapterSection({ data, onChange, errors = {} }) {
   const totalPages = data.totalPages || '';
   const sampleStart = data.samplePageStart || 1;
   const sampleEnd = data.samplePageEnd || '';
@@ -105,6 +115,7 @@ function SampleChapterSection({ data, onChange }) {
       <div className="mb-5">
         <FieldLabel
           label="Total Pages in Your Book"
+          required
           tooltip="Enter the approximate total page count so Classpedia can calculate the 20% sample limit"
         />
         <div className="flex items-center gap-3">
@@ -114,7 +125,7 @@ function SampleChapterSection({ data, onChange }) {
             value={totalPages}
             onChange={(e) => handleTotalPagesChange(e.target.value)}
             placeholder="e.g. 250"
-            className="bg-background max-w-[140px]"
+            className={cn('bg-background max-w-[140px]', errors.totalPages && 'border-destructive')}
           />
           {totalPages && (
             <span className="text-xs text-muted-foreground">
@@ -122,6 +133,7 @@ function SampleChapterSection({ data, onChange }) {
             </span>
           )}
         </div>
+        <ErrorMsg msg={errors.totalPages} />
       </div>
 
       {/* Step 2: Page range */}
@@ -756,7 +768,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack, su
       </Section>
 
       {/* ── 2. SAMPLE CHAPTER ── */}
-      <SampleChapterSection data={data} onChange={onChange} />
+      <SampleChapterSection data={data} onChange={onChange} errors={errors} />
 
       {/* ── 3. BOOK COVER ── */}
       <CoverSection
@@ -771,7 +783,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack, su
       />
 
       {/* ── 4. AI-GENERATED CONTENT ── */}
-      <Section icon={Cpu} title="AI-Generated Content" subtitle="Transparency about the use of AI tools in your book">
+      <Section icon={Cpu} title="AI-Generated Content" subtitle="Transparency about the use of AI tools in your book" required>
         <p className="text-sm text-muted-foreground mb-1">
           Classpedia is collecting information about the use of Artificial Intelligence (AI) tools in creating content.
         </p>
@@ -798,6 +810,7 @@ export default function ContentStep({ data, onChange, errors, onNext, onBack, su
             <span className="text-sm font-medium">No</span>
           </label>
         </RadioGroup>
+        <ErrorMsg msg={errors.aiGenerated} />
         {data.aiGenerated && (
           <div className="mt-4 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
             <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />

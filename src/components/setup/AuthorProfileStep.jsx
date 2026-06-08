@@ -14,7 +14,7 @@ const FieldError = ({ msg }) => msg ? (
   </p>
 ) : null;
 
-function CategoryPicker({ selected, onChange, categories = [] }) {
+function CategoryPicker({ selected, onChange, categories = [] ,errors}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -89,6 +89,7 @@ function CategoryPicker({ selected, onChange, categories = [] }) {
             />
             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           </div>
+          <FieldError msg={errors.preferredCategories} />
 
           {open && (
             <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
@@ -186,9 +187,8 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit = u
           <div>
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <Tag className="w-4 h-4 text-muted-foreground" /> Preferred Categories
-              <span className="text-muted-foreground font-normal text-xs">(Optional)</span>
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Up to 3 genres you primarily write in</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Select 1-3 genres you primarily write in</p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {[0, 1, 2].map(i => (
@@ -202,6 +202,7 @@ export default function AuthorProfileStep({ data, onChange, errors, onSubmit = u
             selected={data.preferredCategories || []}
             onChange={cats => onChange({ preferredCategories: cats })}
             categories={categories}
+            errors={errors}
           />
         </div>
       </div>

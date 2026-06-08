@@ -211,13 +211,15 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack, saving
                   <FieldError msg={errors.taxCountry} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Foreign Tax ID (if applicable)</Label>
+                  <Label>Foreign Tax ID <span className="text-destructive">*</span></Label>
                   <Input
                     value={data.taxId || ''}
                     onChange={e => onChange({ taxId: e.target.value })}
                     placeholder="Your country's tax ID"
+                    className={errors.taxId ? 'border-destructive' : ''}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Leave blank if you don't have a foreign tax ID.</p>
+                  <FieldError msg={errors.taxId} />
+                  <p className="text-xs text-muted-foreground mt-1">Enter your tax identification number from your country of residence.</p>
                 </div>
                 <InfoBox>
                   Non-US authors may be subject to withholding tax depending on your country's tax treaty with the United States. You may qualify for a reduced rate.
@@ -259,13 +261,85 @@ export default function TaxStep({ data, onChange, errors, onNext, onBack, saving
             {data.esignConsent && (
               <>
                 {/* Form document preview */}
-                <div className="border border-border rounded-lg  text-xs">
+                <div className="border-2 border-border rounded-lg overflow-hidden">
                   <div className="bg-muted/50 px-4 py-2 border-b border-border text-center text-muted-foreground font-mono text-[11px]">
                     Reference ID: {FORM_REF_ID}
                   </div>
-                  <div className="bg-white px-6 py-10 flex flex-col items-center justify-center gap-3">
-                    <FileText className="w-10 h-10 text-muted-foreground/30" />
-                    <p className="text-xs text-muted-foreground">IRS Form {formName} — document preview</p>
+                  <div className="bg-white px-6 py-6 space-y-4">
+                    {/* Form Header */}
+                    <div className="text-center border-b-2 border-black pb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-semibold">Form {formName}</span>
+                        <span className="text-[10px]">Department of the Treasury - Internal Revenue Service</span>
+                      </div>
+                      <h3 className="text-sm font-bold uppercase tracking-wide">
+                        {isUS ? 'Request for Taxpayer Identification Number and Certification' : 'Certificate of Foreign Status of Beneficial Owner for United States Tax Withholding'}
+                      </h3>
+                    </div>
+
+                    {/* Form Content */}
+                    <div className="space-y-3 text-xs">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Name</p>
+                          <p className="font-medium">{data.legalFirstName || '[First Name]'} {data.legalLastName || '[Last Name]'}</p>
+                        </div>
+                        {isUS && data.taxIdType && (
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">
+                              {data.taxIdType === 'ein' ? 'Employer ID Number' : 'Social Security Number'}
+                            </p>
+                            <p className="font-mono">{data.taxId ? '***-**-' + data.taxId.slice(-4) : '[Not Provided]'}</p>
+                          </div>
+                        )}
+                        {!isUS && (
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Country of Tax Residence</p>
+                            <p className="font-medium">{data.taxCountry || '[Not Selected]'}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">Address</p>
+                        <p className="text-xs">
+                          {data.addressLine1 || '[Address Line 1]'}<br />
+                          {data.city || '[City]'}, {data.state || '[State]'} {data.zip || '[ZIP]'}<br />
+                          {data.country || '[Country]'}
+                        </p>
+                      </div>
+
+                      {/* Signature Section */}
+                      <div className="border-t-2 border-dashed border-muted-foreground/30 pt-4 mt-4">
+                        <p className="text-[11px] font-semibold mb-3">CERTIFICATION</p>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed mb-4">
+                          Under penalties of perjury, I certify that the information provided on this form is true, correct, and complete.
+                        </p>
+                        
+                        {/* Signature Display Box */}
+                        <div className="border-2 border-primary/30 bg-primary/5 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] text-muted-foreground uppercase font-semibold">Electronic Signature</p>
+                            <FileText className="w-4 h-4 text-primary/50" />
+                          </div>
+                          {data.esignature?.trim() ? (
+                            <p className="text-2xl font-serif italic text-primary mt-2 border-b-2 border-primary/40 pb-2">
+                              {data.esignature}
+                            </p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground/50 italic border-b-2 border-dashed border-muted-foreground/30 pb-2">
+                              [Your signature will appear here]
+                            </p>
+                          )}
+                          <p className="text-[10px] text-muted-foreground mt-2">
+                            Date: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-muted/30 px-4 py-2 border-t border-border text-center">
+                    <p className="text-[10px] text-muted-foreground">IRS Form {formName} — Document Preview</p>
                   </div>
                 </div>
 

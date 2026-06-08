@@ -31,7 +31,7 @@ const Section = ({ icon: Icon, title, subtitle, children }) => (
   </div>
 );
 
-const FieldLabel = ({ label, required, tooltip }) => (
+const FieldLabel = ({ label, required=true, tooltip }) => (
   <div className="flex items-center gap-1.5 mb-1.5">
     <Label className="text-sm font-medium text-foreground">
       {label}
@@ -437,7 +437,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext, submit
         </div>
 
         <div>
-          <FieldLabel label="Keywords" tooltip="Up to 7 keywords to help readers discover your book through search" />
+          <FieldLabel label="Keywords" required tooltip="Up to 7 keywords to help readers discover your book through search" />
           {(data.keywords || []).length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
               {data.keywords.map(kw => (
@@ -457,7 +457,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext, submit
                 onChange={(e) => setKeywordInput(e.target.value)}
                 placeholder="Type a keyword and press Enter or Add"
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
-                className="flex-1 bg-background"
+                className={cn('flex-1 bg-background', errors.keywords && 'border-destructive')}
               />
               <Button type="button" variant="outline" onClick={addKeyword} disabled={!keywordInput.trim()}
                 className="border-primary/30 hover:bg-primary/10 hover:text-primary">
@@ -465,6 +465,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext, submit
               </Button>
             </div>
           )}
+          <ErrorMsg msg={errors.keywords} />
           <p className="text-xs text-muted-foreground mt-1.5">
             {(data.keywords || []).length}/7 keywords
             {(data.keywords || []).length === 7 && <span className="ml-2 text-primary font-medium">✓ Maximum reached</span>}
@@ -473,7 +474,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext, submit
       </Section>
 
       {/* ── 3. CATEGORIES ── */}
-      <Section icon={Tag} title="Categories" subtitle="Choose up to 3 categories that best describe your book">
+      <Section icon={Tag} title="Categories" subtitle="Choose up to 3 categories that best describe your book" required>
         <CategoryPicker
           selected={data.categories || []}
           onChange={(cats) => onChange({ categories: cats })}

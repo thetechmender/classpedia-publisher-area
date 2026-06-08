@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { CredentialService } from '@/services/credential.service';
 import {
   User, Mail, Phone, MapPin, Globe, CreditCard, FileText,
   Pencil, Check, X, AlertCircle, Shield, Twitter,
@@ -13,31 +14,18 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-function SectionCard({ icon: Icon, title, badge, editable, onEdit, saving, onSave, onCancel, editing, children }) {
+function SectionCard({ icon: Icon, title, badge, children }) {
   return (
-    <div className="bg-card border rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3.5 border-b bg-secondary/20">
-        <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4 text-muted-foreground" />
-          <h3 className="font-semibold text-sm">{title}</h3>
+    <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-secondary/30 to-secondary/10">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Icon className="w-4 h-4 text-primary" />
+          </div>
+          <h3 className="font-semibold text-base">{title}</h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {badge}
-          {editable && !editing && (
-            <button onClick={onEdit} className="text-xs text-primary hover:underline flex items-center gap-1">
-              <Pencil className="w-3 h-3" /> Edit
-            </button>
-          )}
-          {editing && (
-            <div className="flex items-center gap-1.5">
-              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={onCancel} disabled={saving}>
-                <X className="w-3 h-3" /> Cancel
-              </Button>
-              <Button size="sm" className="h-7 text-xs gap-1" onClick={onSave} disabled={saving}>
-                <Check className="w-3 h-3" /> {saving ? 'Saving…' : 'Save'}
-              </Button>
-            </div>
-          )}
         </div>
       </div>
       <div>{children}</div>
@@ -48,8 +36,8 @@ function SectionCard({ icon: Icon, title, badge, editable, onEdit, saving, onSav
 function InfoRow({ label, value, placeholder = '—' }) {
   if (!value && !placeholder) return null;
   return (
-    <div className="flex items-start justify-between gap-4 px-5 py-3 border-b last:border-0">
-      <span className="text-xs text-muted-foreground font-medium w-28 shrink-0 mt-0.5 uppercase tracking-wide">{label}</span>
+    <div className="flex items-start justify-between gap-6 px-6 py-4 border-b last:border-0 hover:bg-secondary/20 transition-colors">
+      <span className="text-xs text-muted-foreground font-semibold w-32 shrink-0 mt-0.5 uppercase tracking-wider">{label}</span>
       <span className={cn('text-sm flex-1 text-right', value ? 'text-foreground font-medium' : 'text-muted-foreground italic')}>
         {value || placeholder}
       </span>
@@ -58,17 +46,77 @@ function InfoRow({ label, value, placeholder = '—' }) {
 }
 
 const ReadOnly = () => (
-  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+  <Badge variant="secondary" className="text-[10px] gap-1.5 font-medium">
     <Shield className="w-3 h-3" /> Read-only
-  </span>
+  </Badge>
 );
 
 export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onShowNotifications }) {
-  const [editing, setEditing] = useState(null); // which section is editing: 'bio' | 'contact' | 'social'
-  const [saving, setSaving] = useState(false);
-  const [editData, setEditData] = useState({});
+  const [accountData, setAccountData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!authorProfile) return (
+  // Fetch account data from API
+  useEffect(() => {
+    const fetchAccountData = async () => {
+      try {
+        setLoading(true);
+        const response = await CredentialService.getAccount();
+        if (response.isSuccess && response.data) {
+          setAccountData(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch account data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAccountData();
+  }, []);
+
+  // Map API data to component format
+  const profile = accountData ? {
+    id: accountData.publisherId,
+    full_name: accountData.publisherFullName,
+    email: accountData.publisherEmail,
+    phone: accountData.publisherPhone,
+    profile_image_url: accountData.profileImageUrl,
+    setup_complete: accountData.isProfileCompleted,
+    author_bio: accountData.authInfo?.bio,
+    website: accountData.authInfo?.website,
+    twitter_handle: accountData.authInfo?.twitterHandle,
+    instagram_handle: accountData.authInfo?.instagramHandle,
+    facebook_url: accountData.authInfo?.facebookUrl,
+    linkedin_url: accountData.authInfo?.linkedinUrl,
+    youtube_url: accountData.authInfo?.youtubeUrl,
+    address_line1: accountData.personalInfo?.addressLine1,
+    address_line2: null,
+    city: accountData.personalInfo?.city,
+    state: accountData.personalInfo?.state,
+    zip: accountData.personalInfo?.zip,
+    country: accountData.personalInfo?.country,
+    payment_method: accountData.paymentInfo?.paymentMethod,
+    bank_account_name: accountData.paymentInfo?.bankAccountName,
+    bank_account_number: accountData.paymentInfo?.bankAccountNumber,
+    bank_routing_number: accountData.paymentInfo?.bankRoutingNumber,
+    paypal_email: accountData.paymentInfo?.paypalEmail,
+    us_person: accountData.taxInfo?.usPerson,
+    tax_id_type: accountData.taxInfo?.taxIdType,
+    tax_id: accountData.taxInfo?.taxId,
+    tax_country: accountData.taxInfo?.taxCountry,
+    esignature: accountData.taxInfo?.esignature,
+    created_date: new Date().toISOString(),
+  } : authorProfile;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!profile) return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold font-serif">Author Profile</h2>
@@ -93,50 +141,24 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
     </div>
   );
 
-  const startEdit = (section) => {
-    setEditData({
-      author_bio: authorProfile.author_bio || '',
-      email: authorProfile.email || '',
-      phone: authorProfile.phone || '',
-      website: authorProfile.website || '',
-      twitter_handle: authorProfile.twitter_handle || '',
-      instagram_handle: authorProfile.instagram_handle || '',
-      facebook_url: authorProfile.facebook_url || '',
-      linkedin_url: authorProfile.linkedin_url || '',
-      youtube_url: authorProfile.youtube_url || '',
-    });
-    setEditing(section);
-  };
 
-  const handleSave = async () => {
-    setSaving(true);
-    await base44.entities.AuthorProfile.update(authorProfile.id, editData);
-    setSaving(false);
-    setEditing(null);
-    toast.success('Profile updated');
-    if (onProfileUpdated) onProfileUpdated();
-  };
-
-  const cancel = () => { setEditing(null); setEditData({}); };
-  const set = (key, val) => setEditData(p => ({ ...p, [key]: val }));
-
-  const initials = (authorProfile.full_name || '?')[0].toUpperCase();
-  const memberSince = authorProfile.created_date
-    ? new Date(authorProfile.created_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const initials = (profile.full_name || '?')[0].toUpperCase();
+  const memberSince = profile.created_date
+    ? new Date(profile.created_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : 'Unknown';
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 mb-2">
         <div>
-          <h2 className="text-xl font-bold font-serif">Author Profile</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Your public identity, contact details, and account information.</p>
+          <h2 className="text-2xl font-bold font-serif bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Author Profile</h2>
+          <p className="text-sm text-muted-foreground mt-1.5">Your public identity, contact details, and account information</p>
         </div>
         <Button
           variant="outline"
           size="sm"
-          className="shrink-0 gap-2"
+          className="shrink-0 gap-2 h-9 shadow-sm hover:shadow"
           onClick={onShowNotifications}
         >
           <Bell className="w-4 h-4" /> Notifications
@@ -144,217 +166,163 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
       </div>
 
       {/* Account Setup CTA — always visible */}
-      <Link to="/account-setup">
+      {/* <Link to="/account-setup">
         <div className={cn(
-          "flex items-center justify-between gap-4 rounded-xl px-5 py-4 transition-colors cursor-pointer border",
-          authorProfile.setup_complete
-            ? "bg-secondary/40 border-border hover:bg-secondary/70"
-            : "bg-amber-50 border-amber-200 hover:bg-amber-100"
+          "flex items-center justify-between gap-4 rounded-2xl px-6 py-5 transition-all cursor-pointer border-2 shadow-sm hover:shadow-md",
+          profile.setup_complete
+            ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200 hover:border-emerald-300"
+            : "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300 hover:border-amber-400"
         )}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <div className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border",
-              authorProfile.setup_complete
-                ? "bg-secondary border-border"
-                : "bg-amber-100 border-amber-200"
+              "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+              profile.setup_complete
+                ? "bg-emerald-100 border-2 border-emerald-200"
+                : "bg-amber-100 border-2 border-amber-200"
             )}>
-              {authorProfile.setup_complete
-                ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                : <Clock className="w-4 h-4 text-amber-600" />
+              {profile.setup_complete
+                ? <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                : <Clock className="w-6 h-6 text-amber-600" />
               }
             </div>
             <div>
-              <p className={cn("text-sm font-semibold", authorProfile.setup_complete ? "text-foreground" : "text-amber-900")}>
-                {authorProfile.setup_complete ? "Review / update account setup" : "Complete your account setup"}
+              <p className={cn("text-base font-bold", profile.setup_complete ? "text-emerald-900" : "text-amber-900")}>
+                {profile.setup_complete ? "Review / Update Account Setup" : "Complete Your Account Setup"}
               </p>
-              <p className={cn("text-xs mt-0.5", authorProfile.setup_complete ? "text-muted-foreground" : "text-amber-700")}>
-                {authorProfile.setup_complete
-                  ? "Payment, tax info, and author bio settings."
-                  : "Add your payment details, tax info, and author bio to start earning royalties."}
+              <p className={cn("text-sm mt-1", profile.setup_complete ? "text-emerald-700" : "text-amber-700")}>
+                {profile.setup_complete
+                  ? "Payment, tax info, and author bio settings"
+                  : "Add payment details, tax info, and author bio to start earning royalties"}
               </p>
             </div>
           </div>
-          <ArrowRight className={cn("w-4 h-4 shrink-0", authorProfile.setup_complete ? "text-muted-foreground" : "text-amber-600")} />
+          <ArrowRight className={cn("w-5 h-5 shrink-0", profile.setup_complete ? "text-emerald-600" : "text-amber-600")} />
         </div>
-      </Link>
+      </Link> */}
 
       {/* Identity Hero */}
-      <div className="bg-card border rounded-2xl overflow-hidden">
-        <div className="bg-gradient-to-br from-primary/10 via-accent/20 to-transparent px-6 py-6 flex items-center gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground text-2xl font-bold shrink-0 shadow-lg shadow-primary/20">
+      <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-md">
+        <div className="bg-gradient-to-br from-primary/15 via-accent/25 to-primary/5 px-8 py-8 flex items-center gap-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-primary-foreground text-3xl font-bold shrink-0 shadow-xl shadow-primary/30 relative z-10 border-4 border-white/20">
             {initials}
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-lg leading-tight">{authorProfile.full_name}</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">{authorProfile.email}</p>
-            <div className="flex flex-wrap items-center gap-2 mt-2.5">
-              <Badge className={cn('text-[10px] gap-1', authorProfile.setup_complete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')}>
-                {authorProfile.setup_complete ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                {authorProfile.setup_complete ? 'Verified Author' : 'Setup Incomplete'}
+          <div className="flex-1 min-w-0 relative z-10">
+            <h3 className="font-bold text-2xl leading-tight">{profile.full_name}</h3>
+            <p className="text-base text-muted-foreground mt-1 flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              {profile.email}
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <Badge className={cn('text-xs gap-1.5 px-3 py-1 font-semibold shadow-sm', profile.setup_complete ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-amber-500 text-white hover:bg-amber-600')}>
+                {profile.setup_complete ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                {profile.setup_complete ? 'Verified Author' : 'Setup Incomplete'}
               </Badge>
-              {authorProfile.us_person !== undefined && (
-                <Badge variant="outline" className="text-[10px]">
-                  {authorProfile.us_person ? 'US Author' : 'International Author'}
+              {profile.us_person !== undefined && (
+                <Badge variant="secondary" className="text-xs px-3 py-1 font-medium shadow-sm">
+                  {profile.us_person ? '🇺🇸 US Author' : '🌍 International Author'}
                 </Badge>
               )}
-              <span className="text-[11px] text-muted-foreground">Member since {memberSince}</span>
+              <span className="text-xs text-muted-foreground bg-white/50 px-3 py-1 rounded-full">Member since {memberSince}</span>
             </div>
           </div>
         </div>
 
         {/* Bio */}
-        <div className="px-6 py-5 border-t">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Author Biography</p>
-            {editing !== 'bio' && (
-              <button onClick={() => startEdit('bio')} className="text-xs text-primary hover:underline flex items-center gap-1">
-                <Pencil className="w-3 h-3" /> Edit
-              </button>
-            )}
+        <div className="px-8 py-6 border-t bg-gradient-to-b from-transparent to-secondary/10">
+          <div className="flex items-center gap-2 mb-4">
+            <BookOpen className="w-4 h-4 text-primary" />
+            <p className="text-sm font-bold text-foreground uppercase tracking-wide">Author Biography</p>
           </div>
-          {editing === 'bio' ? (
-            <div className="space-y-3">
-              <Textarea
-                value={editData.author_bio}
-                onChange={e => set('author_bio', e.target.value)}
-                placeholder="Write a short biography shown on your book listings…"
-                className="text-sm min-h-[120px]"
-              />
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={cancel} disabled={saving}>
-                  <X className="w-3 h-3" /> Cancel
-                </Button>
-                <Button size="sm" className="h-8 text-xs gap-1" onClick={handleSave} disabled={saving}>
-                  <Check className="w-3 h-3" /> {saving ? 'Saving…' : 'Save'}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <p className={cn('text-sm leading-relaxed', !authorProfile.author_bio && 'text-muted-foreground italic')}>
-              {authorProfile.author_bio || 'No bio added yet. Click "Edit" to add one — it appears on all your book listings.'}
+          <div className={cn('text-sm leading-relaxed p-4 rounded-lg border-2 border-dashed', profile.author_bio ? 'bg-white border-border' : 'bg-muted/30 border-muted')}>
+            <p className={cn(!profile.author_bio && 'text-muted-foreground italic text-center')}>
+              {profile.author_bio || '📝 No biography added yet. Go to Account Setup to add one — it will appear on all your book listings and help readers connect with you.'}
             </p>
-          )}
+          </div>
         </div>
       </div>
 
       {/* Contact Info */}
-      <SectionCard
-        icon={Mail} title="Contact Information"
-        editable editing={editing === 'contact'}
-        onEdit={() => startEdit('contact')}
-        onSave={handleSave} onCancel={cancel} saving={saving}
-      >
-        {editing === 'contact' ? (
-          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Email</label>
-              <Input value={editData.email} onChange={e => set('email', e.target.value)} placeholder="your@email.com" />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Phone</label>
-              <Input value={editData.phone} onChange={e => set('phone', e.target.value)} placeholder="+1 555 000 0000" />
-            </div>
-          </div>
-        ) : (
-          <>
-            <InfoRow label="Email" value={authorProfile.email} />
-            <InfoRow label="Phone" value={authorProfile.phone} placeholder="Not provided" />
-          </>
-        )}
+      <SectionCard icon={Mail} title="Contact Information">
+        <InfoRow label="Email" value={profile.email} />
+        <InfoRow label="Phone" value={profile.phone} placeholder="Not provided" />
       </SectionCard>
 
       {/* Online Presence */}
-      <SectionCard
-        icon={Globe} title="Online Presence"
-        editable editing={editing === 'social'}
-        onEdit={() => startEdit('social')}
-        onSave={handleSave} onCancel={cancel} saving={saving}
-      >
-        {editing === 'social' ? (
-          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { key: 'website', label: 'Website', placeholder: 'https://yoursite.com' },
-              { key: 'twitter_handle', label: 'X / Twitter', placeholder: 'username (no @)' },
-              { key: 'instagram_handle', label: 'Instagram', placeholder: 'username (no @)' },
-              { key: 'facebook_url', label: 'Facebook', placeholder: 'https://facebook.com/...' },
-              { key: 'linkedin_url', label: 'LinkedIn', placeholder: 'https://linkedin.com/in/...' },
-              { key: 'youtube_url', label: 'YouTube', placeholder: 'https://youtube.com/@...' },
-            ].map(({ key, label, placeholder }) => (
-              <div key={key}>
-                <label className="text-xs text-muted-foreground font-medium mb-1.5 block">{label}</label>
-                <Input value={editData[key]} onChange={e => set(key, e.target.value)} placeholder={placeholder} />
+      <SectionCard icon={Globe} title="Online Presence">
+        <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[
+            { icon: Globe, label: 'Website', value: profile.website, color: 'text-blue-600' },
+            { icon: Twitter, label: 'X/Twitter', value: profile.twitter_handle ? `@${profile.twitter_handle}` : null, color: 'text-sky-500' },
+            { icon: Instagram, label: 'Instagram', value: profile.instagram_handle ? `@${profile.instagram_handle}` : null, color: 'text-pink-600' },
+            { icon: Facebook, label: 'Facebook', value: profile.facebook_url, color: 'text-blue-700' },
+            { icon: Linkedin, label: 'LinkedIn', value: profile.linkedin_url, color: 'text-blue-600' },
+            { icon: Youtube, label: 'YouTube', value: profile.youtube_url, color: 'text-red-600' },
+          ].map(({ icon: Icon, label, value, color }) => (
+            <div key={label} className={cn(
+              'flex items-center gap-3 p-4 rounded-xl border-2 transition-all hover:shadow-sm',
+              value ? 'border-border bg-white hover:border-primary/30' : 'border-dashed border-muted/50 bg-muted/20 opacity-50'
+            )}>
+              <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center shrink-0', value ? 'bg-primary/10' : 'bg-muted')}>
+                <Icon className={cn('w-5 h-5', value ? color : 'text-muted-foreground')} />
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="px-5 py-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {[
-              { icon: Globe, label: 'Website', value: authorProfile.website },
-              { icon: Twitter, label: 'X/Twitter', value: authorProfile.twitter_handle ? `@${authorProfile.twitter_handle}` : null },
-              { icon: Instagram, label: 'Instagram', value: authorProfile.instagram_handle ? `@${authorProfile.instagram_handle}` : null },
-              { icon: Facebook, label: 'Facebook', value: authorProfile.facebook_url },
-              { icon: Linkedin, label: 'LinkedIn', value: authorProfile.linkedin_url },
-              { icon: Youtube, label: 'YouTube', value: authorProfile.youtube_url },
-            ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className={cn(
-                'flex items-center gap-2 p-3 rounded-lg border transition-colors',
-                value ? 'border-border bg-secondary/30' : 'border-dashed border-muted opacity-40'
-              )}>
-                <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
-                  <p className="text-xs font-medium truncate">{value || 'Not set'}</p>
-                </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
+                <p className="text-sm font-medium truncate mt-0.5">{value || 'Not connected'}</p>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </SectionCard>
 
       {/* Address — read-only */}
       <SectionCard icon={MapPin} title="Address & Location" badge={<ReadOnly />}>
-        <InfoRow label="Address" value={authorProfile.address_line1} />
-        {authorProfile.address_line2 && <InfoRow label="Line 2" value={authorProfile.address_line2} />}
-        <InfoRow label="City" value={authorProfile.city} />
-        <InfoRow label="State" value={authorProfile.state} />
-        <InfoRow label="ZIP" value={authorProfile.zip} />
-        <InfoRow label="Country" value={authorProfile.country} />
-        <div className="px-5 py-3 bg-secondary/10 border-t flex items-center gap-2">
-          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <p className="text-xs text-muted-foreground">Address is used for legal and tax purposes. Contact support to update.</p>
+        <InfoRow label="Address" value={profile.address_line1} />
+        {profile.address_line2 && <InfoRow label="Line 2" value={profile.address_line2} />}
+        <InfoRow label="City" value={profile.city} />
+        <InfoRow label="State" value={profile.state} />
+        <InfoRow label="ZIP" value={profile.zip} />
+        <InfoRow label="Country" value={profile.country} />
+        <div className="px-6 py-4 bg-blue-50/50 border-t border-blue-100 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+            <AlertCircle className="w-4 h-4 text-blue-600" />
+          </div>
+          <p className="text-xs text-blue-700 font-medium">Address is used for legal and tax purposes. Contact support to update.</p>
         </div>
       </SectionCard>
 
       {/* Payment — read-only */}
       <SectionCard icon={CreditCard} title="Payment Method" badge={<ReadOnly />}>
-        <InfoRow label="Method" value={authorProfile.payment_method === 'paypal' ? 'PayPal' : authorProfile.payment_method === 'bank_transfer' ? 'Bank Transfer' : null} placeholder="Not configured" />
-        {authorProfile.payment_method === 'paypal' && <InfoRow label="PayPal Email" value={authorProfile.paypal_email} />}
-        {authorProfile.payment_method === 'bank_transfer' && (
+        <InfoRow label="Method" value={profile.payment_method === 'paypal' ? 'PayPal' : profile.payment_method === 'bank_transfer' ? 'Bank Transfer' : null} placeholder="Not configured" />
+        {profile.payment_method === 'paypal' && <InfoRow label="PayPal Email" value={profile.paypal_email} />}
+        {profile.payment_method === 'bank_transfer' && (
           <>
-            <InfoRow label="Account Name" value={authorProfile.bank_account_name} />
-            <InfoRow label="Account No." value={authorProfile.bank_account_number ? `****${authorProfile.bank_account_number.slice(-4)}` : null} />
-            <InfoRow label="Routing/IBAN" value={authorProfile.bank_routing_number ? `****${authorProfile.bank_routing_number.slice(-4)}` : null} />
+            <InfoRow label="Account Name" value={profile.bank_account_name} />
+            <InfoRow label="Account No." value={profile.bank_account_number} />
+            <InfoRow label="Routing/IBAN" value={profile.bank_routing_number} />
           </>
         )}
-        <div className="px-5 py-3 bg-secondary/10 border-t flex items-center gap-2">
-          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <p className="text-xs text-muted-foreground">Payment details are protected. Contact support to update.</p>
+        <div className="px-6 py-4 bg-green-50/50 border-t border-green-100 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+            <Shield className="w-4 h-4 text-green-600" />
+          </div>
+          <p className="text-xs text-green-700 font-medium">Payment details are encrypted and protected. Contact support to update.</p>
         </div>
       </SectionCard>
 
       {/* Tax — read-only */}
       <SectionCard icon={FileText} title="Tax Information" badge={<ReadOnly />}>
-        <InfoRow label="US Person" value={authorProfile.us_person === true ? 'Yes — W-9' : authorProfile.us_person === false ? 'No — W-8BEN' : null} />
-        <InfoRow label="Tax Country" value={authorProfile.tax_country} />
-        <InfoRow label="Tax ID Type" value={authorProfile.tax_id_type?.toUpperCase()} />
-        <InfoRow label="Tax ID" value={authorProfile.tax_id ? `****${authorProfile.tax_id.slice(-4)}` : null} placeholder="Not provided" />
-        {authorProfile.us_person !== undefined && (
+        <InfoRow label="US Person" value={profile.us_person === true ? 'Yes — W-9' : profile.us_person === false ? 'No — W-8BEN' : null} />
+        <InfoRow label="Tax Country" value={profile.tax_country} />
+        <InfoRow label="Tax ID Type" value={profile.tax_id_type?.toUpperCase()} />
+        <InfoRow label="Tax ID" value={profile.tax_id} placeholder="Not provided" />
+        {profile.us_person !== undefined && (
           <div className="px-5 py-4 border-t flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
               <div>
-                <p className="text-sm font-medium">IRS Form {authorProfile.us_person ? 'W-9' : 'W-8BEN'}</p>
-                <p className="text-xs text-muted-foreground">Signed during account setup · {authorProfile.esignature ? `Signed by ${authorProfile.esignature}` : 'On file'}</p>
+                <p className="text-sm font-medium">IRS Form {profile.us_person ? 'W-9' : 'W-8BEN'}</p>
+                <p className="text-xs text-muted-foreground">Signed during account setup · {profile.esignature ? `Signed by ${profile.esignature}` : 'On file'}</p>
               </div>
             </div>
             <Button variant="outline" size="sm" className="gap-1.5 text-xs shrink-0" onClick={() => toast.info('Document download is available via Classpedia support.')}>
@@ -362,9 +330,11 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
             </Button>
           </div>
         )}
-        <div className="px-5 py-3 bg-secondary/10 border-t flex items-center gap-2">
-          <AlertCircle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <p className="text-xs text-muted-foreground">Tax information is legally sensitive. Contact support to update.</p>
+        <div className="px-6 py-4 bg-amber-50/50 border-t border-amber-100 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+            <Shield className="w-4 h-4 text-amber-600" />
+          </div>
+          <p className="text-xs text-amber-700 font-medium">Tax information is legally sensitive and encrypted. Contact support to update.</p>
         </div>
       </SectionCard>
     </div>
