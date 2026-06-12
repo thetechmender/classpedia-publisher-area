@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   BookOpen, CreditCard, User, LayoutDashboard,
@@ -53,7 +53,24 @@ function getNotificationCount(authorProfile, books = []) {
 export default function Sidebar({ activeTab, onTabChange, authorProfile, books = [] }) {
   const { logout, user } = useAuth();
   const location = useLocation();
-  const firstName = authorProfile?.full_name?.split(' ')[0] || user?.publisherFullName?.split(' ')[0] || 'Author';
+  const [localStorageData, setLocalStorageData] = useState({
+    fullName: '',
+    email: ''
+  });
+
+  useEffect(() => {
+    const publisherFullName = localStorage.getItem('publisher_full_name');
+    const publisherEmail = localStorage.getItem('publisher_email');
+    
+    setLocalStorageData({
+      fullName: publisherFullName || '',
+      email: publisherEmail || ''
+    });
+  }, []);
+
+  const displayName = localStorageData.fullName || authorProfile?.full_name || user?.publisherFullName || 'Author';
+  const displayEmail = localStorageData.email || authorProfile?.email || '';
+  const firstName = displayName.split(' ')[0] || 'Author';
   const notifCount = getNotificationCount(authorProfile, books);
 
   // Determine active item based on current URL path
@@ -118,8 +135,8 @@ export default function Sidebar({ activeTab, onTabChange, authorProfile, books =
             {firstName[0]}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium truncate">{authorProfile?.full_name || 'Author'}</p>
-            <p className="text-[10px] text-muted-foreground truncate">{authorProfile?.email || ''}</p>
+            <p className="text-xs font-medium truncate">{displayName}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{displayEmail}</p>
           </div>
           <button
             onClick={() => logout()}
