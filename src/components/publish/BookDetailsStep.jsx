@@ -533,7 +533,15 @@ export default function BookDetailsStep({ data, onChange, errors, onNext, submit
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  {READING_AGES.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                  {READING_AGES.map((a, idx) => {
+                    const maxIdx = data.readingAgeMax ? READING_AGES.indexOf(data.readingAgeMax) : -1;
+                    const isDisabled = maxIdx !== -1 && idx > maxIdx;
+                    return (
+                      <SelectItem key={a} value={a} disabled={isDisabled}>
+                        {a}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -544,7 +552,15 @@ export default function BookDetailsStep({ data, onChange, errors, onNext, submit
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  {READING_AGES.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                  {READING_AGES.map((a, idx) => {
+                    const minIdx = data.readingAgeMin ? READING_AGES.indexOf(data.readingAgeMin) : -1;
+                    const isDisabled = minIdx !== -1 && idx < minIdx;
+                    return (
+                      <SelectItem key={a} value={a} disabled={isDisabled}>
+                        {a}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

@@ -623,6 +623,8 @@ function buildSpreads(book, onNavigateToSpread) {
           : () => <RightBlankPage />,
         leftLabel: labelOf(leftPage),
         rightLabel: labelOf(rightPage),
+        leftPageNum: leftPage.pageNumber,
+        rightPageNum: rightPage?.pageNumber ?? null,
       });
     }
   } else if (book.manuscript_url) {
@@ -840,6 +842,9 @@ export default function BookPreviewer({ book, onClose }) {
   const displaySpread = flipping ? SPREADS[flipping.fromSpread] : currentSpread;
   const nextSpread = flipping ? SPREADS[flipping.toSpread] : null;
 
+  const totalPages = SPREADS.reduce((max, s) => Math.max(max, s.rightPageNum ?? s.leftPageNum ?? 0), 0) || total;
+  const currentPageDisplay = currentSpread.leftPageNum ?? (spreadIndex + 1);
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#0c0e14' }} onClick={onClose}>
       {/* Grain overlay */}
@@ -868,7 +873,7 @@ export default function BookPreviewer({ book, onClose }) {
             {/* Page counter - show on mobile too */}
             <div className="flex items-center gap-1.5 bg-white/[0.06] rounded-lg px-2.5 sm:px-3 h-8">
               <span className="text-white/60 text-[11px] font-medium tabular-nums">
-                {spreadIndex + 1} <span className="text-white/20">/</span> {total}
+                {currentPageDisplay} <span className="text-white/20">/</span> {totalPages}
               </span>
             </div>
 
@@ -984,14 +989,6 @@ export default function BookPreviewer({ book, onClose }) {
                   )}
                 </div>
 
-                {/* Bottom reflection */}
-                <div className="absolute top-full left-0 right-0 h-20 rounded-b-sm overflow-hidden pointer-events-none"
-                  style={{ transform: 'scaleY(-1)', opacity: 0.07, filter: 'blur(4px)', transformOrigin: 'top' }}>
-                  <div className="w-full h-full flex">
-                    <div className="flex-1 bg-[#f5f3ee]" />
-                    <div className="flex-1 bg-slate-900" />
-                  </div>
-                </div>
               </div>
               </div>
 
@@ -1006,7 +1003,48 @@ export default function BookPreviewer({ book, onClose }) {
               </button>
             </div>
 
-            {/* Spread dots + label */}
+            {/* Page select dropdown + label */}
+            {/* <div className="flex flex-col items-center gap-1.5 z-10">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-white/35 font-medium tracking-wide shrink-0">Page No.</span>
+                <select
+                  value={spreadIndex}
+                  onChange={(e) => {
+                    const i = parseInt(e.target.value);
+                    if (i === spreadIndex || flipping) return;
+                    playPageFlipSound();
+                    setSpreadIndex(i);
+                  }}
+                  className="text-[11px] font-medium text-white/70 rounded-lg px-2 py-1.5 outline-none cursor-pointer appearance-none pr-5"
+                  style={{
+                    width: '72px',
+                    background: 'rgba(255,255,255,0.07)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 5px center',
+                  }}
+                >
+                  {SPREADS.map((s, i) => {
+                    const label = s.leftPageNum != null ? s.leftPageNum : (s.leftLabel || s.rightLabel || i + 1);
+                    return (
+                      <option key={i} value={i} style={{ background: '#1a1d2e', color: '#ffffffcc' }}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              <div className="flex items-center gap-3 px-2">
+                <p className="text-white/50 text-[10px] sm:text-[11px] font-medium text-center truncate max-w-[280px]">
+                  {[currentSpread.leftLabel, currentSpread.rightLabel].filter(Boolean).join(' · ') || `Spread ${spreadIndex + 1}`}
+                </p>
+                <span className="hidden sm:inline text-white/15 text-[10px]">·</span>
+                <p className="hidden sm:block text-white/20 text-[10px]">← → Arrow keys · Esc to close</p>
+              </div>
+            </div> */}
+
+            {/* Spread dots — commented out for now, kept for future use */}
             <div className="flex flex-col items-center gap-2 sm:gap-3 z-10">
               <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto max-w-full px-2">
                 {SPREADS.map((_, i) => (
@@ -1034,6 +1072,7 @@ export default function BookPreviewer({ book, onClose }) {
                 <p className="hidden sm:block text-white/20 text-[10px]">← → Arrow keys · Esc to close</p>
               </div>
             </div>
+           
           </div>
 
         </div>

@@ -182,18 +182,26 @@ export default function OverviewTab({ books: propBooks, authorProfile, onTabChan
       subtitle: item.description,
       cta: item.ctaText,
       ctaFn: () => {
-        // Handle internal navigation
-        if (item.ctaLink.startsWith('/')) {
+        // Map action types to proper routes
+        const routeMap = {
+          payment: '/payments',
+          tax: '/payments',
+          bio: '/profile',
+          profile: '/profile',
+          book: '/books',
+        };
+        
+        // If ctaLink is provided and starts with '/', use it directly
+        if (item.ctaLink && item.ctaLink.startsWith('/')) {
           window.location.href = item.ctaLink;
-        } else {
-          // Handle tab changes
-          const tabMap = {
-            payments: 'payments',
-            profile: 'profile',
-            books: 'books',
-          };
-          const tab = tabMap[item.ctaLink] || item.ctaLink;
-          onTabChange(tab);
+        } 
+        // Otherwise, map based on item type
+        else if (routeMap[item.type]) {
+          window.location.href = routeMap[item.type];
+        }
+        // Fallback to tab change if no route found
+        else {
+          onTabChange(item.ctaLink || item.type);
         }
       },
       urgency: urgencyMap[item.urgency] || 'medium',

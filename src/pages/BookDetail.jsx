@@ -254,7 +254,7 @@ export default function BookDetail() {
               <DetailRow label="Created" value={book.created_date ? format(new Date(book.created_date), 'MMM d, yyyy') : null} />
               <DetailRow label="Published" value={book.publication_date ? format(new Date(book.publication_date), 'MMM d, yyyy') : 'Not published'} />
               <DetailRow label="Edition" value={book.edition_number} />
-              <DetailRow label="Series" value={book.seriesName ? `${book.seriesName} #${book.seriesNumber}` : null} />
+              <DetailRow label="Series" value={book.seriesName ? `${book.seriesName}` : null} />
             </div>
           </div>
 
