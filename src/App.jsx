@@ -53,6 +53,7 @@ const AuthenticatedApp = () => {
         <Route path="/payments" element={isAuthenticated ? <Dashboard initialTab="payments" /> : <Login />} />
         <Route path="/profile" element={isAuthenticated ? <Dashboard initialTab="profile" /> : <Login />} />
         <Route path="/notifications" element={isAuthenticated ? <Dashboard initialTab="notifications" /> : <Login />} />
+        <Route path="/support" element={isAuthenticated ? <Dashboard initialTab="support" /> : <Login />} />
         <Route path="/account-setup" element={<AccountSetup />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
