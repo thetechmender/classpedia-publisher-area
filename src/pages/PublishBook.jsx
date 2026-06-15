@@ -83,7 +83,7 @@ const DRAFT_EXPIRY_DAYS = 7; // Drafts expire after 7 days
 export default function PublishBook() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(2);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [errors, setErrors] = useState({});
   const [publishing, setPublishing] = useState(false);
@@ -575,9 +575,9 @@ export default function PublishBook() {
           <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <div className="max-w-3xl mx-auto w-full">
               <div className="bg-card border rounded-2xl p-5 sm:p-6 lg:p-8 shadow-sm">
-                {currentStep === 1 && (
+                {/* {currentStep === 1 && (
                   <BookDetailsStep data={bookData} onChange={updateData} errors={errors} onNext={handleStep1Next} submitting={submitting} />
-                )}
+                )} */}
                 {currentStep === 2 && (
                   <ContentStep data={bookData} onChange={updateData} errors={errors} onNext={handleStep2Next} onBack={() => goToStep(1)} submitting={submitting} contentProgress={contentProgress} />
                 )}

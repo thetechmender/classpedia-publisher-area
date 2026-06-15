@@ -766,6 +766,7 @@ export default function BookPreviewer({ book, onClose }) {
   const [isMobileView, setIsMobileView] = useState(false);
   const [scale, setScale] = useState(1);
   const canvasRef = useRef(null);
+  const dotsRef = useRef(null);
 
   // Navigation callback for TOC
   const handleNavigateToSpread = useCallback((targetSpreadIndex) => {
@@ -837,6 +838,13 @@ export default function BookPreviewer({ book, onClose }) {
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, [deviceConfig.w, deviceConfig.h, isMobileView]);
+
+  // Auto-scroll active dot into view when spread changes
+  useEffect(() => {
+    if (!dotsRef.current) return;
+    const activeDot = dotsRef.current.children[spreadIndex];
+    if (activeDot) activeDot.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [spreadIndex]);
 
   const currentSpread = SPREADS[spreadIndex];
   const displaySpread = flipping ? SPREADS[flipping.fromSpread] : currentSpread;
@@ -1044,27 +1052,53 @@ export default function BookPreviewer({ book, onClose }) {
               </div>
             </div> */}
 
-            {/* Spread dots — commented out for now, kept for future use */}
-            <div className="flex flex-col items-center gap-2 sm:gap-3 z-10">
-              <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto max-w-full px-2">
-                {SPREADS.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      if (i === spreadIndex || flipping) return;
-                      playPageFlipSound();
-                      setSpreadIndex(i);
-                    }}
-                    className={cn('rounded-full transition-all duration-300 shrink-0',
-                      i === spreadIndex
-                        ? 'w-5 h-1.5 sm:w-6 sm:h-2 bg-indigo-400'
-                        : 'w-1.5 h-1.5 sm:w-2 sm:h-2 hover:bg-white/40'
-                    )}
-                    style={{ background: i === spreadIndex ? undefined : 'rgba(255,255,255,0.2)' }}
-                  />
-                ))}
+            {/* Spread dots — carousel */}
+            <div className="flex flex-col items-center gap-2 z-10" style={{ width: deviceConfig.w * scale }}>
+              <div className="flex items-center gap-2 w-full">
+                {/* Carousel left */}
+                <button
+                  onClick={() => dotsRef.current?.scrollBy({ left: -150, behavior: 'smooth' })}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 shrink-0 transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </button>
+
+                {/* Dots strip */}
+                <div
+                  ref={dotsRef}
+                  className="flex items-center gap-1.5 flex-1 overflow-x-hidden px-1"
+                  style={{ scrollbarWidth: 'none' }}
+                >
+                  {SPREADS.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        if (i === spreadIndex || flipping) return;
+                        playPageFlipSound();
+                        setSpreadIndex(i);
+                      }}
+                      className={cn('rounded-full transition-all duration-300 shrink-0',
+                        i === spreadIndex
+                          ? 'w-5 h-2 bg-indigo-400'
+                          : 'w-2 h-2 hover:bg-white/40'
+                      )}
+                      style={{ background: i === spreadIndex ? undefined : 'rgba(255,255,255,0.2)' }}
+                    />
+                  ))}
+                </div>
+
+                {/* Carousel right */}
+                <button
+                  onClick={() => dotsRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 shrink-0 transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </button>
               </div>
-              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 px-2">
+
+              <div className="flex items-center gap-3 px-2">
                 <p className="text-white/50 text-[10px] sm:text-[11px] font-medium text-center truncate max-w-[280px]">
                   {[currentSpread.leftLabel, currentSpread.rightLabel].filter(Boolean).join(' · ') || `Spread ${spreadIndex + 1}`}
                 </p>
