@@ -149,10 +149,10 @@ export default function ReviewsTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold font-serif">Reviews & Issues</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">Reviews & Issues</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Monitor reader feedback and track content issues.</p>
       </div>
 
@@ -166,8 +166,8 @@ export default function ReviewsTab() {
           { label: 'Open Issues',    value: stats.openIssues,    color: 'text-destructive' },
           { label: 'Critical',       value: stats.criticalIssues, color: 'text-orange-600' },
         ].map(s => (
-          <div key={s.label} className="bg-card border rounded-xl px-4 py-3.5 text-center">
-            <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+          <div key={s.label} className="bg-card border rounded-2xl px-4 py-3.5 text-center">
+            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
           </div>
         ))}
@@ -234,7 +234,7 @@ export default function ReviewsTab() {
 
           {/* Rating distribution bar */}
           {reviews.length > 0 && (
-            <div className="bg-card border rounded-xl px-5 py-4">
+            <div className="bg-card border rounded-2xl px-5 py-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Rating Distribution</p>
               <div className="space-y-1.5">
                 {stats.dist.map(({ rating, count, pct }) => (
@@ -251,7 +251,7 @@ export default function ReviewsTab() {
           )}
 
           {/* Reviews list */}
-          <div className="bg-card border rounded-xl overflow-hidden">
+          <div className="bg-card border rounded-2xl overflow-hidden">
             {loadingReviews ? (
               <div className="py-16 text-center text-sm text-muted-foreground">Loading reviews…</div>
             ) : pagedReviews.length === 0 ? (
@@ -358,7 +358,7 @@ export default function ReviewsTab() {
             </Select>
           </div>
 
-          <div className="bg-card border rounded-xl overflow-hidden">
+          <div className="bg-card border rounded-2xl overflow-hidden">
             {loadingIssues ? (
               <div className="py-16 text-center text-sm text-muted-foreground">Loading issues…</div>
             ) : filteredIssues.length === 0 ? (

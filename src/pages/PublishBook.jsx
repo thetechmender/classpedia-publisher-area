@@ -8,10 +8,10 @@ import BookDetailsStep from '@/components/publish/BookDetailsStep';
 import ContentStep from '@/components/publish/ContentStep';
 import PricingStep from '@/components/publish/PricingStep';
 import ReviewStep from '@/components/publish/ReviewStep';
-import {
-  BookOpen, ArrowLeft, ChevronLeft, CheckCircle2, Upload, DollarSign, Eye,
-  FileText, Image, Tag, Clock, Save
-} from 'lucide-react';
+import Sidebar from '@/components/dashboard/Sidebar';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, BookOpen, Tag, Upload, DollarSign, Eye } from 'lucide-react';
+import SubmissionToast from '@/components/publish/SubmissionToast';
 
 const validateStep1 = (data) => {
   const errors = {};
@@ -21,6 +21,8 @@ const validateStep1 = (data) => {
   else if (data.description.trim().length < 50) errors.description = 'Description must be at least 50 characters';
   else if (data.description.trim().length > 4000) errors.description = 'Description cannot exceed 4,000 characters';
   if (!data.language) errors.language = 'Please select a language';
+  if (!data.categories || data.categories.length === 0) errors.categories = 'Please select at least one category';
+  if (!data.keywords || data.keywords.length === 0) errors.keywords = 'Please add at least one keyword';
   if (data.preorder_type === 'preorder' && !data.preorder_date) {
     errors.preorder_date = 'Please set a pre-order release date';
   }
@@ -30,7 +32,10 @@ const validateStep1 = (data) => {
 const validateStep2 = (data) => {
   const errors = {};
   if (!data.manuscript_url) errors.manuscript_url = 'Please upload your manuscript';
-  if (!data.cover_url) errors.cover_url = 'Please upload a cover image';
+  if (!data.cover_url) errors.cover_url = 'Please upload a front cover image';
+  if (!data.back_cover_url) errors.back_cover_url = 'Please upload a back cover image';
+  if (!data.spine_url) errors.spine_url = 'Please upload a spine image';
+  if (!data.sample_page_end) errors.sample_page_end = 'Please select a sample chapter range';
   return errors;
 };
 
@@ -40,8 +45,8 @@ const validateStep3 = (data) => {
     errors.list_price = 'Please enter a valid price';
   } else if (data.list_price < 1.99) {
     errors.list_price = 'Price must be at least $1.99';
-  } else if (data.list_price > 199.99) {
-    errors.list_price = 'Price cannot exceed $199.99';
+  } else if (data.list_price > 49.99) {
+    errors.list_price = 'Price cannot exceed $49.99';
   }
   if (data.territories === 'specific' && (!data.selected_countries || data.selected_countries.length === 0)) {
     errors.territories = 'Please select at least one country';
@@ -58,7 +63,10 @@ const validateAll = (data) => {
   else if (data.description.trim().length > 4000) errors.push('Description cannot exceed 4,000 characters');
   if (!data.language) errors.push('Language is required');
   if (!data.manuscript_url) errors.push('Manuscript upload is required');
-  if (!data.cover_url) errors.push('Cover image is required');
+  if (!data.cover_url) errors.push('Front cover image is required');
+  if (!data.back_cover_url) errors.push('Back cover image is required');
+  if (!data.spine_url) errors.push('Spine image is required');
+  if (!data.sample_page_end) errors.push('Sample chapter range is required');
   if (!data.list_price || data.list_price <= 0) errors.push('Valid price is required');
   return errors;
 };
@@ -73,22 +81,51 @@ const STEP_INFO = [
 export default function PublishBook() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const editBookId = new URLSearchParams(window.location.search).get('bookId');
+
+  const { data: authorProfile } = useQuery({ queryKey: ['author-profile'], queryFn: () => base44.entities.AuthorProfile.list(), select: d => d?.[0] });
+  const { data: books = [] } = useQuery({ queryKey: ['books'], queryFn: () => base44.entities.Book.list() });
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [errors, setErrors] = useState({});
   const [publishing, setPublishing] = useState(false);
+  const [initialized, setInitialized] = useState(!editBookId);
+  const [previewApproved, setPreviewApproved] = useState(false);
   const [bookData, setBookData] = useState({
     language: 'English',
     territories: 'worldwide',
     currency: 'USD',
-    drm: false,
+    drm: true,
     age_range: 'not_specified',
     keywords: [],
     categories: [],
     contributors: [],
   });
   const [lastSaved, setLastSaved] = useState(null);
+
   const saveTimeoutRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+
+  // Load existing book when editing
+  useEffect(() => {
+    if (editBookId && books.length > 0 && !initialized) {
+      const existing = books.find(b => b.id === editBookId);
+      if (existing) {
+        setBookData({
+          language: 'English',
+          territories: 'worldwide',
+          currency: 'USD',
+          drm: false,
+          keywords: [],
+          categories: [],
+          contributors: [],
+          ...existing,
+          _editId: existing.id,
+        });
+      }
+      setInitialized(true);
+    }
+  }, [editBookId, books, initialized]);
 
   const updateData = useCallback((updates) => {
     setBookData(prev => ({ ...prev, ...updates }));
@@ -100,11 +137,15 @@ export default function PublishBook() {
   // Auto-save draft every 30 seconds
   const saveDraftMutation = useMutation({
     mutationFn: async (data) => {
+      const { _editId, ...payload } = data;
+      if (_editId) {
+        return await base44.entities.Book.update(_editId, payload);
+      }
       const existing = await base44.entities.Book.filter({ title: data.title, status: 'draft' });
       if (existing && existing.length > 0) {
-        return await base44.entities.Book.update(existing[0].id, data);
+        return await base44.entities.Book.update(existing[0].id, payload);
       }
-      return await base44.entities.Book.create({ ...data, status: 'draft' });
+      return await base44.entities.Book.create({ ...payload, status: 'draft' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
@@ -132,8 +173,15 @@ export default function PublishBook() {
 
   const goToStep = (step) => {
     setCurrentStep(step);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Scroll to top when step changes
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTop = 0;
+    }
+  }, [currentStep]);
 
   const handleNext = (stepValidation, nextStep) => {
     const stepErrors = stepValidation(bookData);
@@ -156,16 +204,26 @@ export default function PublishBook() {
       }
     }
     setPublishing(true);
-    const payload = { ...bookData, status };
+    const { _editId, ...rest } = bookData;
+    const payload = { ...rest, status };
     if (payload.series_number === '' || payload.series_number === null || isNaN(payload.series_number)) {
       delete payload.series_number;
     } else {
       payload.series_number = Number(payload.series_number);
     }
-    await base44.entities.Book.create(payload);
+    if (_editId) {
+      await base44.entities.Book.update(_editId, payload);
+    } else {
+      await base44.entities.Book.create(payload);
+    }
     setPublishing(false);
-    toast.success(status === 'draft' ? 'Draft saved successfully!' : 'eBook submitted for publishing!');
-    navigate('/');
+    queryClient.invalidateQueries({ queryKey: ['books'] });
+    if (status === 'draft') {
+      toast.success('Draft saved successfully!');
+      navigate('/');
+    } else {
+      navigate('/', { state: { submittedBook: bookData.title } });
+    }
   };
 
   const progressPct = ((completedSteps.length) / 4) * 100;
@@ -179,93 +237,17 @@ export default function PublishBook() {
       <div className="fixed top-0 right-0 w-[500px] h-[350px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <div className="fixed bottom-0 left-0 w-[400px] h-[300px] bg-accent/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative flex min-h-screen">
+      <div className="relative flex min-h-screen overflow-hidden">
 
-        {/* Left sidebar panel */}
-        <aside className="hidden lg:flex flex-col w-72 shrink-0 border-r bg-card/80 backdrop-blur-sm min-h-screen sticky top-0">
-          {/* Brand */}
-          <div className="px-6 py-5 border-b flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <BookOpen className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold leading-none">Classpedia</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Publishing Platform</p>
-              </div>
-            </Link>
-          </div>
-
-          {/* Publish header */}
-          <div className="px-6 py-5 border-b">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">New Publication</p>
-              {lastSaved && (
-                <p className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              )}
-            </div>
-            <h2 className="text-base font-semibold">Publish Your eBook</h2>
-            <p className="text-xs text-muted-foreground mt-1">Complete all 4 steps to submit for review</p>
-            {/* Progress bar */}
-            <div className="mt-4">
-              <div className="flex justify-between text-[10px] text-muted-foreground mb-1.5">
-                <span>{completedSteps.length} of 4 complete</span>
-                <span>{Math.round(progressPct)}%</span>
-              </div>
-              <div className="w-full bg-secondary rounded-full h-1.5">
-                <div className="bg-primary h-1.5 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
-              </div>
-            </div>
-          </div>
-
-          {/* Step list */}
-          <nav className="flex-1 px-4 py-4 space-y-1">
-            {STEP_INFO.map(({ step, label, icon: Icon, desc }) => {
-              const isCompleted = completedSteps.includes(step);
-              const isCurrent = currentStep === step;
-              const isReachable = step === 1 || completedSteps.includes(step - 1) || isCompleted;
-              return (
-                <button
-                  key={step}
-                  onClick={() => isReachable && goToStep(step)}
-                  disabled={!isReachable}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all ${
-                    isCurrent
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : isCompleted
-                        ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                        : isReachable
-                          ? 'hover:bg-secondary text-muted-foreground hover:text-foreground'
-                          : 'opacity-40 cursor-not-allowed text-muted-foreground'
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                    isCurrent ? 'bg-primary-foreground/20' : isCompleted ? 'bg-emerald-100' : 'bg-secondary'
-                  }`}>
-                    {isCompleted
-                      ? <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      : <Icon className={`w-4 h-4 ${isCurrent ? 'text-primary-foreground' : ''}`} />
-                    }
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium leading-none">{label}</p>
-                    <p className={`text-[10px] mt-0.5 truncate ${isCurrent ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{desc}</p>
-                  </div>
-                  <div className={`ml-auto text-[10px] font-bold shrink-0 ${isCurrent ? 'text-primary-foreground/60' : 'text-muted-foreground/40'}`}>
-                    {step}
-                  </div>
-                </button>
-              );
-            })}
-          </nav>
-
-
-        </aside>
+        <Sidebar
+          activeTab="books"
+          onTabChange={(tab) => navigate(`/?tab=${tab}`)}
+          authorProfile={authorProfile}
+          books={books}
+        />
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div ref={scrollContainerRef} className="flex-1 flex flex-col min-w-0 overflow-y-auto h-screen">
           {/* Top bar */}
           <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-30">
             <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -302,18 +284,19 @@ export default function PublishBook() {
 
           <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <div className="max-w-3xl mx-auto w-full">
+              <StepIndicator currentStep={currentStep} completedSteps={completedSteps} onStepClick={goToStep} />
               <div className="bg-card border rounded-2xl p-5 sm:p-6 lg:p-8 shadow-sm">
               {currentStep === 1 && (
                 <BookDetailsStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep1, 2)} />
               )}
               {currentStep === 2 && (
-                <ContentStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep2, 3)} onBack={() => goToStep(1)} />
+                <ContentStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep2, 3)} onBack={() => goToStep(1)} previewApproved={previewApproved} onApprove={() => setPreviewApproved(true)} />
               )}
               {currentStep === 3 && (
                 <PricingStep data={bookData} onChange={updateData} errors={errors} onNext={() => handleNext(validateStep3, 4)} onBack={() => goToStep(2)} />
               )}
               {currentStep === 4 && (
-                <ReviewStep data={bookData} onBack={() => goToStep(3)} onPublish={handlePublish} onEdit={goToStep} publishing={publishing} validationErrors={validateAll(bookData)} />
+                <ReviewStep data={bookData} onBack={() => goToStep(3)} onPublish={handlePublish} onEdit={goToStep} publishing={publishing} validationErrors={validateAll(bookData)} previewApproved={previewApproved} onApprove={() => setPreviewApproved(true)} />
               )}
               </div>
             </div>

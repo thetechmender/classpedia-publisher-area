@@ -8,11 +8,25 @@
     },
     "email": {
       "type": "string",
-      "description": "Contact email"
+      "description": "Primary contact email"
+    },
+    "additional_emails": {
+      "type": "array",
+      "description": "Additional email addresses",
+      "items": {
+        "type": "string"
+      }
     },
     "phone": {
       "type": "string",
-      "description": "Phone number"
+      "description": "Primary phone number"
+    },
+    "additional_phones": {
+      "type": "array",
+      "description": "Additional phone numbers",
+      "items": {
+        "type": "string"
+      }
     },
     "country": {
       "type": "string",
@@ -70,14 +84,14 @@
       "type": "string",
       "enum": [
         "ssn",
-        "ein",
-        "foreign"
+        "itin",
+        "ein"
       ],
       "description": "Tax ID type"
     },
     "tax_id": {
       "type": "string",
-      "description": "Tax ID / SSN / EIN"
+      "description": "Tax ID / SSN / ITIN / EIN"
     },
     "us_person": {
       "type": "boolean",
@@ -96,6 +110,10 @@
     "esignature": {
       "type": "string",
       "description": "Author's electronic signature (typed full legal name)"
+    },
+    "profile_photo_url": {
+      "type": "string",
+      "description": "Author profile photo URL"
     },
     "author_bio": {
       "type": "string",

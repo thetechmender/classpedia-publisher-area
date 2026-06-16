@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import {
   User, Mail, Phone, MapPin, Globe, CreditCard, FileText,
   Pencil, Check, X, AlertCircle, Shield, Twitter,
-  Instagram, Facebook, Linkedin, Youtube, CheckCircle2, Clock, BookOpen, ArrowRight, Bell
+  Instagram, Facebook, Linkedin, Youtube, CheckCircle2, Clock, BookOpen, ArrowRight,
+  Plus, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 function SectionCard({ icon: Icon, title, badge, editable, onEdit, saving, onSave, onCancel, editing, children }) {
   return (
-    <div className="bg-card border rounded-xl overflow-hidden">
+    <div className="bg-card border rounded-2xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3.5 border-b bg-secondary/20">
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-muted-foreground" />
@@ -63,15 +64,17 @@ const ReadOnly = () => (
   </span>
 );
 
-export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onShowNotifications }) {
+export default function AuthorProfileTab({ authorProfile, onProfileUpdated }) {
   const [editing, setEditing] = useState(null); // which section is editing: 'bio' | 'contact' | 'social'
   const [saving, setSaving] = useState(false);
   const [editData, setEditData] = useState({});
+  const [additionalEmails, setAdditionalEmails] = useState([]);
+  const [additionalPhones, setAdditionalPhones] = useState([]);
 
   if (!authorProfile) return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold font-serif">Author Profile</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">Author Profile</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Your public identity, contact details, and account information.</p>
       </div>
       <Link to="/account-setup">
@@ -103,19 +106,25 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
       linkedin_url:      authorProfile.linkedin_url || '',
       youtube_url:       authorProfile.youtube_url || '',
     });
+    setAdditionalEmails(authorProfile.additional_emails || []);
+    setAdditionalPhones(authorProfile.additional_phones || []);
     setEditing(section);
   };
 
   const handleSave = async () => {
     setSaving(true);
-    await base44.entities.AuthorProfile.update(authorProfile.id, editData);
+    await base44.entities.AuthorProfile.update(authorProfile.id, {
+      ...editData,
+      additional_emails: additionalEmails,
+      additional_phones: additionalPhones,
+    });
     setSaving(false);
     setEditing(null);
     toast.success('Profile updated');
     if (onProfileUpdated) onProfileUpdated();
   };
 
-  const cancel = () => { setEditing(null); setEditData({}); };
+  const cancel = () => { setEditing(null); setEditData({}); setAdditionalEmails([]); setAdditionalPhones([]); };
   const set = (key, val) => setEditData(p => ({ ...p, [key]: val }));
 
   const initials = (authorProfile.full_name || '?')[0].toUpperCase();
@@ -124,27 +133,17 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
     : 'Unknown';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold font-serif">Author Profile</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Your public identity, contact details, and account information.</p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="shrink-0 gap-2"
-          onClick={onShowNotifications}
-        >
-          <Bell className="w-4 h-4" /> Notifications
-        </Button>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">Author Profile</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">Your public identity, contact details, and account information.</p>
       </div>
 
       {/* Account Setup CTA — always visible */}
       <Link to="/account-setup">
         <div className={cn(
-          "flex items-center justify-between gap-4 rounded-xl px-5 py-4 transition-colors cursor-pointer border",
+          "flex items-center justify-between gap-4 rounded-xl px-5 py-5 transition-colors cursor-pointer border my-5",
           authorProfile.setup_complete
             ? "bg-secondary/40 border-border hover:bg-secondary/70"
             : "bg-amber-50 border-amber-200 hover:bg-amber-100"
@@ -243,20 +242,111 @@ export default function AuthorProfileTab({ authorProfile, onProfileUpdated, onSh
         onSave={handleSave} onCancel={cancel} saving={saving}
       >
         {editing === 'contact' ? (
-          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-5 space-y-4">
             <div>
-              <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Email</label>
+              <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Primary Email</label>
               <Input value={editData.email} onChange={e => set('email', e.target.value)} placeholder="your@email.com" />
             </div>
+            
             <div>
-              <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Phone</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs text-muted-foreground font-medium">Additional Emails</label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-xs gap-1"
+                  onClick={() => setAdditionalEmails([...additionalEmails, ''])}
+                >
+                  <Plus className="w-3 h-3" /> Add Email
+                </Button>
+              </div>
+              {additionalEmails.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">No additional emails</p>
+              ) : (
+                <div className="space-y-2">
+                  {additionalEmails.map((email, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={email}
+                        onChange={e => {
+                          const updated = [...additionalEmails];
+                          updated[idx] = e.target.value;
+                          setAdditionalEmails(updated);
+                        }}
+                        placeholder="another@email.com"
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 w-9 p-0"
+                        onClick={() => setAdditionalEmails(additionalEmails.filter((_, i) => i !== idx))}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground font-medium mb-1.5 block">Primary Phone</label>
               <Input value={editData.phone} onChange={e => set('phone', e.target.value)} placeholder="+1 555 000 0000" />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs text-muted-foreground font-medium">Additional Phones</label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-xs gap-1"
+                  onClick={() => setAdditionalPhones([...additionalPhones, ''])}
+                >
+                  <Plus className="w-3 h-3" /> Add Phone
+                </Button>
+              </div>
+              {additionalPhones.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">No additional phones</p>
+              ) : (
+                <div className="space-y-2">
+                  {additionalPhones.map((phone, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={phone}
+                        onChange={e => {
+                          const updated = [...additionalPhones];
+                          updated[idx] = e.target.value;
+                          setAdditionalPhones(updated);
+                        }}
+                        placeholder="+1 555 999 9999"
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 w-9 p-0"
+                        onClick={() => setAdditionalPhones(additionalPhones.filter((_, i) => i !== idx))}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : (
           <>
             <InfoRow label="Email" value={authorProfile.email} />
+            {authorProfile.additional_emails?.length > 0 && authorProfile.additional_emails.map((email, idx) => (
+              <InfoRow key={idx} label={`Email ${idx + 2}`} value={email} />
+            ))}
             <InfoRow label="Phone" value={authorProfile.phone} placeholder="Not provided" />
+            {authorProfile.additional_phones?.length > 0 && authorProfile.additional_phones.map((phone, idx) => (
+              <InfoRow key={idx} label={`Phone ${idx + 2}`} value={phone} />
+            ))}
           </>
         )}
       </SectionCard>

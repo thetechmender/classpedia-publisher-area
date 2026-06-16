@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import SubmissionToast from '@/components/publish/SubmissionToast';
+import SetupCompleteToast from '@/components/setup/SetupCompleteToast';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -13,11 +15,12 @@ import OverviewTab from '@/components/dashboard/OverviewTab';
 import BooksTab from '@/components/dashboard/BooksTab';
 import PaymentsTab from '@/components/dashboard/PaymentsTab';
 import AuthorProfileTab from '@/components/dashboard/AuthorProfileTab';
-import ReviewsTab from '@/components/dashboard/ReviewsTab';
 import RoyaltiesTab from '@/components/dashboard/RoyaltiesTab';
 
 import SupportTab from '@/components/dashboard/SupportTab';
 import NotificationsTab from '@/components/dashboard/NotificationsTab';
+import IssuesTab from '@/components/dashboard/IssuesTab';
+import PromotionsTab from '@/components/dashboard/PromotionsTab';
 
 const TAB_ALIAS = {};
 
@@ -30,9 +33,14 @@ const MOBILE_NAV = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('overview');       // raw sidebar id
-  const [resolvedTab, setResolvedTab] = useState('overview');   // actual component to render
+  const initialTab = new URLSearchParams(window.location.search).get('tab') || 'overview';
+  const [submittedBook, setSubmittedBook] = useState(location.state?.submittedBook || null);
+  const [setupComplete, setSetupComplete] = useState(location.state?.setupComplete || false);
+  const [setupAuthorName, setSetupAuthorName] = useState(location.state?.authorName || '');
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [resolvedTab, setResolvedTab] = useState(TAB_ALIAS[initialTab] || initialTab);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const { data: authorProfiles, isFetched: isProfileFetched } = useQuery({
@@ -50,16 +58,27 @@ export default function Dashboard() {
 
   const authorProfile = authorProfiles?.[0] ?? null;
 
-  const { data: books = [], isLoading: isBooksLoading } = useQuery({
+  const { data: books = [], isLoading: isBooksLoading, refetch } = useQuery({
     queryKey: ['books'],
     queryFn: () => base44.entities.Book.list('-created_date'),
     enabled: (authorProfiles?.length ?? 0) > 0,
+    staleTime: 0, // Always refetch when tab becomes active
   });
+
+  // Refresh books when switching to books tab
+  useEffect(() => {
+    if (activeTab === 'books') {
+      refetch();
+    }
+  }, [activeTab, refetch]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setResolvedTab(TAB_ALIAS[tab] || tab);
     setMobileSidebarOpen(false);
+    // Scroll main content to top
+    const main = document.querySelector('main');
+    main?.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   if (!isProfileFetched) {
@@ -71,7 +90,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background relative">
+    <div className="flex h-screen overflow-hidden bg-background relative">
+      {submittedBook && <SubmissionToast bookTitle={submittedBook} onDismiss={() => setSubmittedBook(null)} />}
+      {setupComplete && <SetupCompleteToast authorName={setupAuthorName} onDismiss={() => setSetupComplete(false)} />}
 
       {/* Subtle grid background pattern */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.025]"
@@ -98,7 +119,7 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col min-w-0 relative">
 
         {/* Desktop top bar */}
-        <TopBar authorProfile={authorProfile} books={books} />
+        <TopBar authorProfile={authorProfile} books={books} onTabChange={handleTabChange} />
 
         {/* Mobile top bar */}
         <div className="md:hidden border-b bg-card/90 backdrop-blur-sm sticky top-0 z-30 px-4 py-3 flex items-center justify-between">
@@ -126,16 +147,16 @@ export default function Dashboard() {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 p-5 md:p-8 max-w-6xl w-full mx-auto pb-24 md:pb-8">
+        <main className="flex-1 overflow-y-auto p-5 md:p-8 max-w-6xl w-full mx-auto pb-24 md:pb-8">
           {resolvedTab === 'overview'  && <OverviewTab books={books} authorProfile={authorProfile} onTabChange={handleTabChange} />}
           {resolvedTab === 'books'     && <BooksTab books={books} isLoading={isBooksLoading} />}
-          {resolvedTab === 'reviews'   && <ReviewsTab books={books} />}
           {resolvedTab === 'royalties' && <RoyaltiesTab books={books} />}
           {resolvedTab === 'payments'  && <PaymentsTab books={books} authorProfile={authorProfile} />}
 
-          {resolvedTab === 'profile'   && <AuthorProfileTab authorProfile={authorProfile} onProfileUpdated={() => queryClient.invalidateQueries({ queryKey: ['author-profile'] })} onShowNotifications={() => handleTabChange('notifications')} />}
-          {resolvedTab === 'notifications' && <NotificationsTab books={books} authorProfile={authorProfile} onTabChange={handleTabChange} />}
-          {resolvedTab === 'support'   && <SupportTab />}
+          {resolvedTab === 'profile'   && <AuthorProfileTab authorProfile={authorProfile} onProfileUpdated={() => queryClient.invalidateQueries({ queryKey: ['author-profile'] })} />}
+          {resolvedTab === 'issues'      && <IssuesTab books={books} />}
+          {resolvedTab === 'promotions' && <PromotionsTab books={books} />}
+          {resolvedTab === 'support'    && <SupportTab />}
         </main>
 
         {/* Mobile bottom nav */}

@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import PublishBook from './pages/PublishBook';
 import BookDetail from './pages/BookDetail';
 import AccountSetup from './pages/AccountSetup';
+import Notifications from './pages/Notifications';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -40,6 +41,7 @@ const AuthenticatedApp = () => {
       <Route path="/publish" element={<PublishBook />} />
       <Route path="/book/:id" element={<BookDetail />} />
       <Route path="/account-setup" element={<AccountSetup />} />
+      <Route path="/notifications" element={<Notifications />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
@@ -61,6 +63,3 @@ function App() {
 }
 
 export default App
-
-
-//Fahad

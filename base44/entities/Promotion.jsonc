@@ -1,0 +1,76 @@
+{
+  "name": "Promotion",
+  "type": "object",
+  "properties": {
+    "book_id": {
+      "type": "string",
+      "description": "ID of the enrolled book"
+    },
+    "book_title": {
+      "type": "string",
+      "description": "Title of the book (denormalized)"
+    },
+    "program": {
+      "type": "string",
+      "enum": [
+        "60_day_visibility"
+      ],
+      "default": "60_day_visibility",
+      "description": "Promotion program type"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "expired",
+        "not_enrolled"
+      ],
+      "default": "active",
+      "description": "Promotion status"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Program start date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Program end date (start + 60 days)"
+    },
+    "free_promo_days_used": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of free promo days used (max 3)"
+    },
+    "free_promo_dates": {
+      "type": "array",
+      "description": "Selected free promo dates",
+      "items": {
+        "type": "string",
+        "format": "date"
+      }
+    },
+    "free_downloads": {
+      "type": "number",
+      "default": 0,
+      "description": "Total downloads during free promo days"
+    },
+    "paid_sales_after_promo": {
+      "type": "number",
+      "default": 0,
+      "description": "Paid sales tracked after promo days"
+    },
+    "original_price": {
+      "type": "number",
+      "description": "Book price before promotion (restored after promo days)"
+    }
+  },
+  "required": [
+    "book_id",
+    "book_title",
+    "start_date",
+    "end_date"
+  ]
+}

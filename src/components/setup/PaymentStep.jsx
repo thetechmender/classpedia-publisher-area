@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, CreditCard, AlertCircle, Info, Building2, Wallet } from 'lucide-react';
+import ValidationSummary from '@/components/shared/ValidationSummary';
 import { cn } from '@/lib/utils';
 
 const FieldError = ({ msg }) => msg ? (
@@ -157,10 +158,16 @@ export default function PaymentStep({ data, onChange, errors, onNext, onBack }) 
         </div>
       </div>
 
-      <div className="flex justify-between pt-2">
-        <Button variant="outline" onClick={onBack} className="gap-2">
-          <ChevronLeft className="w-4 h-4" /> Back
-        </Button>
+      <ValidationSummary errors={errors} />
+      <div className="flex justify-between gap-3 pt-2">
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onBack} className="gap-2">
+            <ChevronLeft className="w-4 h-4" /> Back
+          </Button>
+          <Button variant="outline" className="gap-2 text-foreground">
+            💾 Save as Draft
+          </Button>
+        </div>
         <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20">
           Save & Continue <ChevronRight className="w-4 h-4" />
         </Button>

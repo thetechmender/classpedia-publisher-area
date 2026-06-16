@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { X, Plus, ChevronRight, BookOpen, Info, Users, Tag, Clock, AlertCircle, CheckCircle2, Search, ChevronDown } from 'lucide-react';
+import ValidationSummary from '@/components/shared/ValidationSummary';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -35,14 +36,15 @@ const CONTRIBUTOR_ROLES = [
 
 const READING_AGES = ['0-2', '3-5', '6-8', '9-11', '12-14', '15-17', '18+', 'Adult'];
 
+// Shared section wrapper used across all steps
 const Section = ({ icon: Icon, title, subtitle, children }) => (
-  <div className="rounded-xl border border-border bg-card shadow-sm">
-    <div className="flex items-start gap-3 px-5 py-4 bg-secondary/40 border-b border-border">
-      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-        <Icon className="w-4 h-4 text-primary" />
+  <div className="rounded-xl border border-border bg-card">
+    <div className="flex items-center gap-3 px-5 py-3.5 border-b border-border">
+      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        <Icon className="w-3.5 h-3.5 text-primary" />
       </div>
       <div>
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        <h3 className="text-sm font-semibold text-foreground leading-none flex items-center gap-1">{title}</h3>
         {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
       </div>
     </div>
@@ -50,22 +52,25 @@ const Section = ({ icon: Icon, title, subtitle, children }) => (
   </div>
 );
 
-const FieldLabel = ({ label, required, tooltip }) => (
-  <div className="flex items-center gap-1.5 mb-1.5">
-    <Label className="text-sm font-medium text-foreground">
-      {label}
-      {required && <span className="text-destructive ml-0.5">*</span>}
-    </Label>
-    {tooltip && (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs text-xs">{tooltip}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    )}
+const FieldLabel = ({ label, required, tooltip, hint }) => (
+  <div className="mb-1.5">
+    <div className="flex items-center gap-1.5">
+      <Label className="text-sm font-medium text-foreground">
+        {label}
+        {required && <span className="text-destructive ml-0.5">*</span>}
+      </Label>
+      {tooltip && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="w-3.5 h-3.5 text-muted-foreground/60 cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs text-xs">{tooltip}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </div>
+    {hint && <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>}
   </div>
 );
 
@@ -76,52 +81,42 @@ const ErrorMsg = ({ msg }) =>
     </p>
   ) : null;
 
-// ── Series Details Component ──────────────────────────────────────────────────
 function SeriesDetails({ data, onChange }) {
   return (
-    <div className="mt-3 p-3 bg-secondary/40 border border-border rounded-lg space-y-3">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Series Details</p>
-      <div>
-        <FieldLabel label="Book Number in Series" tooltip="Which number is this book in the series? (e.g. 3 = Book 3)" />
-        <Input
-          type="number"
-          min="1"
-          value={data.series_number ?? ''}
-          onChange={(e) => {
-            const val = e.target.value;
-            const n = parseInt(val);
-            onChange({ series_number: !val || isNaN(n) ? null : n });
-          }}
-          placeholder="e.g. 3"
-          className="bg-background max-w-[120px]"
-        />
-        <p className="text-xs text-muted-foreground mt-1">Leave blank if this is the only book or Book 1.</p>
-      </div>
+    <div className="mt-3 p-3 bg-secondary/40 border border-border rounded-lg">
+      <p className="text-xs font-medium text-muted-foreground mb-2">Series Position</p>
+      <Input
+        type="number"
+        min="1"
+        value={data.series_number ?? ''}
+        onChange={(e) => {
+          const val = e.target.value;
+          const n = parseInt(val);
+          onChange({ series_number: !val || isNaN(n) ? null : n });
+        }}
+        placeholder="e.g. 3"
+        className="bg-background max-w-[120px]"
+      />
+      <p className="text-xs text-muted-foreground mt-1.5">Volume number within the series</p>
     </div>
   );
 }
 
-// ── Category Picker Component ─────────────────────────────────────────────────
 function CategoryPicker({ selected, onChange, error }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const containerRef = useRef(null);
   const atMax = selected.length >= 3;
 
-  const filtered = query.trim()
-    ? CATEGORIES.filter(c => c.toLowerCase().includes(query.toLowerCase()) && !selected.includes(c))
-    : CATEGORIES.filter(c => !selected.includes(c));
+  const allFiltered = query.trim()
+    ? CATEGORIES.filter(c => c.toLowerCase().includes(query.toLowerCase()))
+    : CATEGORIES;
 
-  const showAddCustom = query.trim() &&
-    !CATEGORIES.some(c => c.toLowerCase() === query.toLowerCase()) &&
-    !selected.some(c => c.toLowerCase() === query.toLowerCase());
-
-  const add = (cat) => {
-    if (!atMax && !selected.includes(cat)) {
-      const next = [...selected, cat];
-      onChange(next);
-      setQuery('');
-      if (next.length >= 3) setOpen(false);
+  const toggle = (cat) => {
+    if (selected.includes(cat)) {
+      onChange(selected.filter(c => c !== cat));
+    } else if (!atMax) {
+      onChange([...selected, cat]);
     }
   };
 
@@ -136,81 +131,92 @@ function CategoryPicker({ selected, onChange, error }) {
   return (
     <div ref={containerRef} className="space-y-2">
       {error && <ErrorMsg msg={error} />}
-
-      {/* Selected chips */}
-      {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {selected.map(cat => (
-            <span key={cat} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/25">
-              {cat}
-              <button type="button" onClick={() => remove(cat)} className="hover:text-destructive transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Trigger / search input */}
-      {!atMax ? (
-        <div className="relative">
-          <div
-            className={cn(
-              'flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 cursor-text',
-              open && 'ring-1 ring-ring border-ring'
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen(v => !v)}
+          className={cn(
+            'w-full flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm text-left transition-all min-h-[38px]',
+            open && 'ring-1 ring-ring border-ring'
+          )}
+        >
+          <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <div className="flex-1 flex flex-wrap gap-1.5">
+            {selected.length === 0 ? (
+              <span className="text-muted-foreground">Select up to 3 categories…</span>
+            ) : (
+              selected.map(cat => (
+                <span
+                  key={cat}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/25"
+                >
+                  {cat}
+                  <span
+                    role="button"
+                    onMouseDown={e => { e.stopPropagation(); e.preventDefault(); remove(cat); }}
+                    className="hover:text-destructive transition-colors cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </span>
+                </span>
+              ))
             )}
-            onClick={() => setOpen(true)}
-          >
-            <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            <input
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
-              placeholder="Search or type a custom category…"
-              value={query}
-              onChange={e => { setQuery(e.target.value); setOpen(true); }}
-              onFocus={() => setOpen(true)}
-            />
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           </div>
+          <ChevronDown className={cn('w-3.5 h-3.5 text-muted-foreground transition-transform shrink-0', open && 'rotate-180')} />
+        </button>
 
-          {open && (
-            <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
-              {!query.trim() && (
-                <p className="px-3 pt-2 pb-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-                  All Categories
-                </p>
+        {open && (
+          <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
+            <div className="p-2 border-b border-border">
+              <input
+                autoFocus
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search categories…"
+                className="w-full text-sm px-2 py-1.5 bg-background border border-border rounded-md outline-none"
+              />
+            </div>
+            {atMax && (
+              <p className="px-3 py-1.5 text-[11px] text-amber-700 bg-amber-50 border-b border-amber-100">
+                Maximum 3 selected. Remove one to change.
+              </p>
+            )}
+            <div className="max-h-56 overflow-y-auto py-1">
+              {allFiltered.length === 0 && (
+                <p className="px-3 py-2 text-xs text-muted-foreground">No categories found.</p>
               )}
-              <div className="max-h-52 overflow-y-auto py-1">
-                {filtered.length === 0 && !showAddCustom && (
-                  <p className="px-3 py-2 text-xs text-muted-foreground">No categories found.</p>
-                )}
-                {filtered.map(cat => (
+              {allFiltered.map(cat => {
+                const isSelected = selected.includes(cat);
+                const isDisabled = atMax && !isSelected;
+                return (
                   <button
                     key={cat}
                     type="button"
-                    onMouseDown={e => { e.preventDefault(); add(cat); }}
-                    className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                    onMouseDown={e => { e.preventDefault(); toggle(cat); }}
+                    disabled={isDisabled}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2 text-sm text-left transition-colors',
+                      isSelected ? 'bg-primary/5 text-primary' : isDisabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-accent hover:text-accent-foreground'
+                    )}
                   >
+                    <div className={cn(
+                      'w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
+                      isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40 bg-background'
+                    )}>
+                      {isSelected && <span className="text-white text-[9px] font-bold">✓</span>}
+                    </div>
                     {cat}
                   </button>
-                ))}
-                {showAddCustom && (
-                  <button
-                    type="button"
-                    onMouseDown={e => { e.preventDefault(); add(query.trim()); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-primary/5 transition-colors border-t border-border"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add "{query.trim()}"
-                  </button>
-                )}
-              </div>
+                );
+              })}
             </div>
-          )}
-        </div>
-      ) : (
-        <p className="text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 border border-border">
-          Maximum 3 categories selected — remove one to change.
-        </p>
-      )}
+            <div className="border-t border-border px-3 py-2 flex justify-between items-center bg-secondary/20">
+              <span className="text-xs text-muted-foreground">{selected.length}/3 selected</span>
+              <button type="button" onMouseDown={e => { e.preventDefault(); setOpen(false); }} className="text-xs text-primary font-medium hover:underline">Done</button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -239,34 +245,19 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
   const removeContributor = (index) =>
     onChange({ contributors: (data.contributors || []).filter((_, i) => i !== index) });
 
-  const addCategory = (cat) => {
-    if (!(data.categories || []).includes(cat) && (data.categories || []).length < 3) {
-      onChange({ categories: [...(data.categories || []), cat] });
-    }
-  };
-
-  const removeCategory = (cat) =>
-    onChange({ categories: (data.categories || []).filter(c => c !== cat) });
-
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-3 pb-4 border-b">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <BookOpen className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold font-serif text-foreground">Book Details</h2>
-          <p className="text-sm text-muted-foreground">Enter the details that describe your eBook to readers</p>
-        </div>
+      {/* Step header */}
+      <div className="pb-4 border-b">
+        <h2 className="text-lg font-semibold text-foreground">Book Details</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">Metadata that appears on your book's product page</p>
       </div>
 
       {/* ── 1. BOOK IDENTITY ── */}
-      <Section icon={BookOpen} title="Book Identity" subtitle="Core information about your title and author">
+      <Section icon={BookOpen} title="Book Identity" subtitle="Title, author, and series information">
 
-        {/* Language */}
-        <div className="mb-5">
-          <FieldLabel label="Language" required tooltip="The primary language your book is written in" />
+        <div className="mb-4">
+          <FieldLabel label="Language" required />
           <Select value={data.language || ''} onValueChange={(v) => onChange({ language: v })}>
             <SelectTrigger className={cn('bg-background', errors.language && 'border-destructive')}>
               <SelectValue placeholder="Select language…" />
@@ -278,10 +269,9 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
           <ErrorMsg msg={errors.language} />
         </div>
 
-        {/* Title & Subtitle */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <FieldLabel label="Book Title" required tooltip="The main title as it will appear on the product page" />
+            <FieldLabel label="Book Title" required />
             <Input
               value={data.title || ''}
               onChange={(e) => onChange({ title: e.target.value })}
@@ -291,27 +281,26 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             <ErrorMsg msg={errors.title} />
           </div>
           <div>
-            <FieldLabel label="Subtitle" tooltip="An optional subtitle for your book" />
+            <FieldLabel label="Subtitle (Optional)" />
             <Input
               value={data.subtitle || ''}
               onChange={(e) => onChange({ subtitle: e.target.value })}
-              placeholder="Enter subtitle (optional)"
+              placeholder="Enter subtitle"
               className="bg-background"
             />
           </div>
         </div>
 
-        {/* Series & Edition */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <FieldLabel label="Series Name" tooltip="If this book is part of a series, enter the series name" />
+            <FieldLabel label="Series Name (Optional)" hint="If this book is part of a series" />
             <Input
               value={data.series_name || ''}
               onChange={(e) => {
                 const val = e.target.value;
                 onChange({ series_name: val, ...(val === '' ? { series_number: '', series_books: [] } : {}) });
               }}
-              placeholder="Series name (optional)"
+              placeholder="Series name"
               className="bg-background"
             />
             {data.series_name && (
@@ -319,7 +308,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             )}
           </div>
           <div>
-            <FieldLabel label="Edition" tooltip="Leave blank if this is the first edition" />
+            <FieldLabel label="Edition (Optional)" hint="Leave blank for first edition" />
             <Input
               value={data.edition_number || ''}
               onChange={(e) => onChange({ edition_number: e.target.value })}
@@ -329,41 +318,39 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
           </div>
         </div>
 
-        {/* Author */}
-        <div className="mb-5">
-          <FieldLabel label="Author Name" required tooltip="Enter the primary author or contributor. Pen names are allowed. To include a middle name or prefix, add it to the first name field. Suffixes should be added to the last name." />
+        <div className="mb-4">
+          <FieldLabel
+            label="Author Name"
+            required
+            hint="Pen names are allowed. Include middle names or prefixes in the first name field."
+          />
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Input
-                value={data.author_first_name || ''}
-                onChange={(e) => {
-                  const first = e.target.value;
-                  const last = data.author_last_name || '';
-                  onChange({ author_first_name: first, author_name: `${first} ${last}`.trim() });
-                }}
-                placeholder="First name"
-                className={cn('bg-background', errors.author_name && 'border-destructive')}
-              />
-            </div>
-            <div>
-              <Input
-                value={data.author_last_name || ''}
-                onChange={(e) => {
-                  const last = e.target.value;
-                  const first = data.author_first_name || '';
-                  onChange({ author_last_name: last, author_name: `${first} ${last}`.trim() });
-                }}
-                placeholder="Last name"
-                className={cn('bg-background', errors.author_name && 'border-destructive')}
-              />
-            </div>
+            <Input
+              value={data.author_first_name || ''}
+              onChange={(e) => {
+                const first = e.target.value;
+                const last = data.author_last_name || '';
+                onChange({ author_first_name: first, author_name: `${first} ${last}`.trim() });
+              }}
+              placeholder="First name"
+              className={cn('bg-background', errors.author_name && 'border-destructive')}
+            />
+            <Input
+              value={data.author_last_name || ''}
+              onChange={(e) => {
+                const last = e.target.value;
+                const first = data.author_first_name || '';
+                onChange({ author_last_name: last, author_name: `${first} ${last}`.trim() });
+              }}
+              placeholder="Last name"
+              className={cn('bg-background', errors.author_name && 'border-destructive')}
+            />
           </div>
           <ErrorMsg msg={errors.author_name} />
         </div>
 
-        {/* Contributors */}
         <div>
-          <FieldLabel label="Contributors" tooltip="Add editors, illustrators, translators, and other contributors" />
+          <FieldLabel label="Additional Contributors (Optional)" hint="Editors, illustrators, translators, etc." />
           {(data.contributors || []).length > 0 && (
             <div className="space-y-2 mb-3">
               {data.contributors.map((c, i) => (
@@ -381,7 +368,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
             <Input
               value={newContributor.name}
               onChange={(e) => setNewContributor({ ...newContributor, name: e.target.value })}
-              placeholder="Contributor name"
+              placeholder="Full Name"
               className="flex-1 bg-background"
             />
             <Select value={newContributor.role} onValueChange={(v) => setNewContributor({ ...newContributor, role: v })}>
@@ -404,33 +391,34 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
       </Section>
 
       {/* ── 2. DESCRIPTION & KEYWORDS ── */}
-      <Section icon={Tag} title="Description & Keywords" subtitle="Help readers find and understand your book">
+      <Section icon={Tag} title="Description & Keywords" subtitle="Helps readers find and decide on your book">
         <div className="mb-5">
-          <FieldLabel label="Book Description" required tooltip="A compelling description that appears on your book's product page. Minimum 50 characters, maximum 4,000 characters." />
+          <FieldLabel label="Book Description" required hint="50–4,000 characters. This appears on your book's product page." />
           <Textarea
             value={data.description || ''}
             onChange={(e) => onChange({ description: e.target.value })}
-            placeholder="Write a compelling book description that hooks readers… (50–4,000 characters)"
-            className={cn('min-h-[180px] bg-background resize-none', errors.description && 'border-destructive')}
+            placeholder="Write a compelling description that hooks readers…"
+            className={cn('min-h-[160px] bg-background resize-none', errors.description && 'border-destructive')}
             maxLength={4000}
           />
-          <div className="flex justify-between items-start mt-1.5 gap-2">
+          <div className="flex justify-between items-center mt-1.5 gap-2">
             <div className="flex-1">
               <ErrorMsg msg={errors.description} />
               {(data.description || '').length > 0 && (data.description || '').length < 50 && (
-                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                <p className="text-xs text-amber-600 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3 shrink-0" /> {50 - (data.description || '').length} more characters needed
                 </p>
               )}
             </div>
-            <span className={cn('text-xs shrink-0 font-medium', (data.description || '').length > 3800 ? 'text-destructive' : 'text-muted-foreground')}>
-              {(data.description || '').length} / 4,000
+            <span className={cn('text-xs shrink-0 tabular-nums', (data.description || '').length > 3800 ? 'text-destructive font-medium' : 'text-muted-foreground')}>
+              {(data.description || '').length.toLocaleString()} / 4,000
             </span>
           </div>
         </div>
 
         <div>
-          <FieldLabel label="Keywords" tooltip="Up to 7 keywords to help readers discover your book through search" />
+          <FieldLabel label="Search Keywords" required hint="Up to 7 keywords that help readers discover your book." />
+          {errors.keywords && <ErrorMsg msg={errors.keywords} />}
           {(data.keywords || []).length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
               {data.keywords.map(kw => (
@@ -443,12 +431,12 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
               ))}
             </div>
           )}
-          {(data.keywords || []).length < 7 && (
+          {(data.keywords || []).length < 7 ? (
             <div className="flex gap-2">
               <Input
                 value={keywordInput}
                 onChange={(e) => setKeywordInput(e.target.value)}
-                placeholder="Type a keyword and press Enter or Add"
+                placeholder="Type a keyword and press Enter"
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
                 className="flex-1 bg-background"
               />
@@ -457,16 +445,19 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
                 Add
               </Button>
             </div>
+          ) : (
+            <p className="text-xs text-primary font-medium flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> 7/7 keywords added
+            </p>
           )}
-          <p className="text-xs text-muted-foreground mt-1.5">
-            {(data.keywords || []).length}/7 keywords
-            {(data.keywords || []).length === 7 && <span className="ml-2 text-primary font-medium">✓ Maximum reached</span>}
-          </p>
+          {(data.keywords || []).length > 0 && (data.keywords || []).length < 7 && (
+            <p className="text-xs text-muted-foreground mt-1">{(data.keywords || []).length}/7 added</p>
+          )}
         </div>
       </Section>
 
       {/* ── 3. CATEGORIES ── */}
-      <Section icon={Tag} title="Categories" subtitle="Choose up to 3 categories that best describe your book">
+      <Section icon={Tag} title={<>Browse Categories <span className="text-destructive">*</span></>} subtitle="Select up to 3 categories — readers browse these to find your book">
         <CategoryPicker
           selected={data.categories || []}
           onChange={(cats) => onChange({ categories: cats })}
@@ -475,33 +466,32 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
       </Section>
 
       {/* ── 4. PRIMARY AUDIENCE ── */}
-      <Section icon={Users} title="Primary Audience" subtitle="Define who your book is intended for">
+      <Section icon={Users} title="Audience" subtitle="Content rating and target age group">
 
-        {/* Sexually Explicit */}
         <div className="mb-5">
-          <p className="text-sm font-medium text-foreground mb-1">Sexually Explicit Images or Title</p>
+          <p className="text-sm font-medium text-foreground mb-1">Sexually Explicit Content</p>
           <p className="text-xs text-muted-foreground mb-3">
-            Does the book's cover or interior contain sexually explicit images, or does the book's title contain sexually explicit language?
+            Does this book's cover, title, or interior contain sexually explicit material?
           </p>
           <RadioGroup
             value={data.sexually_explicit ? 'yes' : 'no'}
             onValueChange={(v) => onChange({ sexually_explicit: v === 'yes' })}
-            className="flex gap-6"
+            className="flex gap-4"
           >
-            <label className="flex items-center gap-2 cursor-pointer group">
+            <label className="flex items-center gap-2 cursor-pointer">
               <RadioGroupItem value="yes" className="text-primary" />
-              <span className="text-sm group-hover:text-primary transition-colors">Yes</span>
+              <span className="text-sm">Yes</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer group">
+            <label className="flex items-center gap-2 cursor-pointer">
               <RadioGroupItem value="no" className="text-primary" />
-              <span className="text-sm group-hover:text-primary transition-colors">No</span>
+              <span className="text-sm">No</span>
             </label>
           </RadioGroup>
           {data.sexually_explicit && (
             <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
               <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
               <p className="text-xs text-amber-700">
-                Books with explicit content have restricted distribution and may not be available in all territories.
+                Explicit content has restricted distribution and may not be available in all territories.
               </p>
             </div>
           )}
@@ -509,17 +499,12 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
 
         <Separator className="mb-5" />
 
-        {/* Reading Age */}
         <div>
-          <p className="text-sm font-medium text-foreground mb-0.5">
-            Reading Age <span className="text-muted-foreground font-normal">(Optional)</span>
-          </p>
-          <p className="text-xs text-muted-foreground mb-3">
-            Select the appropriate age range. Recommended for children's and young adult books.
-          </p>
-          <div className="grid grid-cols-2 gap-4">
+          <p className="text-sm font-medium text-foreground mb-0.5">Reading Age <span className="text-muted-foreground font-normal">(Optional)</span></p>
+          <p className="text-xs text-muted-foreground mb-3">Recommended for children's and young adult books.</p>
+          <div className="grid grid-cols-2 gap-4 max-w-xs">
             <div>
-              <FieldLabel label="Minimum Age" />
+              <FieldLabel label="Min Age" />
               <Select value={data.reading_age_min || ''} onValueChange={(v) => onChange({ reading_age_min: v })}>
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select" />
@@ -530,7 +515,7 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
               </Select>
             </div>
             <div>
-              <FieldLabel label="Maximum Age" />
+              <FieldLabel label="Max Age" />
               <Select value={data.reading_age_max || ''} onValueChange={(v) => onChange({ reading_age_max: v })}>
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select" />
@@ -544,47 +529,39 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
         </div>
       </Section>
 
-      {/* ── 5. PRE-ORDER ── */}
-      <Section icon={Clock} title="Release & Pre-order" subtitle="Choose when your book becomes available to readers">
+      {/* ── 5. RELEASE ── */}
+      <Section icon={Clock} title="Release" subtitle="Choose when your book becomes available">
         <RadioGroup
           value={data.preorder_type || 'release_now'}
           onValueChange={(v) => onChange({ preorder_type: v, preorder_date: v === 'release_now' ? '' : data.preorder_date })}
           className="space-y-3"
         >
           <label className={cn(
-            'flex items-start gap-3 rounded-xl border-2 px-4 py-4 cursor-pointer transition-all',
+            'flex items-start gap-3 rounded-xl border-2 px-4 py-3.5 cursor-pointer transition-all',
             (data.preorder_type || 'release_now') === 'release_now'
-              ? 'border-primary bg-primary/5 shadow-sm'
+              ? 'border-primary bg-primary/5'
               : 'border-border hover:border-primary/40'
           )}>
             <RadioGroupItem value="release_now" className="mt-0.5 text-primary" />
             <div>
-              <p className={cn('text-sm font-medium', (data.preorder_type || 'release_now') === 'release_now' ? 'text-primary' : 'text-foreground')}>
-                I am ready to release my book now
-              </p>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                After you submit for publication, it can take up to 72 hours to go live. During this time, edits cannot be made to your book.
-              </p>
+              <p className="text-sm font-medium text-foreground">Release now</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Goes live within 72 hours of submission. Edits are locked during review.</p>
             </div>
           </label>
 
           <label className={cn(
-            'flex items-start gap-3 rounded-xl border-2 px-4 py-4 cursor-pointer transition-all',
+            'flex items-start gap-3 rounded-xl border-2 px-4 py-3.5 cursor-pointer transition-all',
             data.preorder_type === 'preorder'
-              ? 'border-primary bg-primary/5 shadow-sm'
+              ? 'border-primary bg-primary/5'
               : 'border-border hover:border-primary/40'
           )}>
             <RadioGroupItem value="preorder" className="mt-0.5 text-primary" />
             <div className="flex-1">
-              <p className={cn('text-sm font-medium', data.preorder_type === 'preorder' ? 'text-primary' : 'text-foreground')}>
-                Make my eBook available for Pre-order
-              </p>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                Allow readers to purchase before the release date. Pre-orders count toward your launch-day sales rank.
-              </p>
+              <p className="text-sm font-medium text-foreground">Make available for pre-order</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Readers can purchase before launch. Pre-orders count toward your sales rank.</p>
               {data.preorder_type === 'preorder' && (
                 <div className="mt-4 pt-3 border-t border-primary/15">
-                  <FieldLabel label="Pre-order Release Date" required tooltip="The date your book will be delivered to pre-order customers. Must be at least 10 days from today." />
+                  <FieldLabel label="Pre-order Release Date" required />
                   <Input
                     type="date"
                     value={data.preorder_date || ''}
@@ -592,16 +569,11 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
                     min={new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                     className="bg-background max-w-xs"
                   />
-                  <div className="flex items-start gap-1.5 mt-2">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
-                    <p className="text-xs text-muted-foreground">
-                      Pre-order date must be <span className="font-medium text-foreground">at least 10 days from today</span>. The first 10 days from today are unavailable to allow Classpedia time to set up your pre-order listing.
-                    </p>
-                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">Must be at least 10 days from today to allow listing setup time.</p>
                   {data.preorder_date && (
                     <p className="text-xs text-primary mt-1.5 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
-                      Release scheduled for {new Date(data.preorder_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      Scheduled for {new Date(data.preorder_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   )}
                 </div>
@@ -611,9 +583,12 @@ export default function BookDetailsStep({ data, onChange, errors, onNext }) {
         </RadioGroup>
       </Section>
 
-      {/* Next Button */}
-      <div className="flex justify-end pt-2">
-        <Button onClick={onNext} className="gap-2 px-8 h-11 text-sm font-medium shadow-md shadow-primary/20 hover:shadow-primary/30 transition-shadow">
+      <ValidationSummary errors={errors} />
+      <div className="flex justify-between pt-4 border-t">
+        <Button variant="outline" className="gap-2 h-10 text-sm font-medium text-foreground">
+          💾 Save as Draft
+        </Button>
+        <Button onClick={onNext} className="gap-2 h-10 px-8 text-sm font-medium">
           Save & Continue <ChevronRight className="w-4 h-4" />
         </Button>
       </div>

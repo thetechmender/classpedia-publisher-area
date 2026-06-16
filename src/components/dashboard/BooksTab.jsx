@@ -2,43 +2,98 @@ import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { base44 } from '@/api/base44Client';
+import { Plus, Search, BookOpen, ChevronDown, X, SlidersHorizontal, CheckCircle2, Clock, FileEdit } from 'lucide-react';
 import {
-  Plus, Search, BookOpen, ArrowUpDown, CheckCircle2, Clock,
-  FileEdit, XCircle, ChevronRight, DollarSign, Calendar, Filter, Trash2, Archive, Eye, EyeOff
-} from 'lucide-react';
-import { formatDate } from '@/utils/date';
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from
+'@/components/ui/dropdown-menu';
+
+import BookGridRow from '@/components/books/BookGridRow';
+import PageHeader from '@/components/shared/PageHeader';
 
 const SORT_OPTIONS = [
-  { value: 'newest',     label: 'Newest first' },
-  { value: 'oldest',     label: 'Oldest first' },
-  { value: 'title',      label: 'Title A–Z' },
-  { value: 'price_desc', label: 'Price (high–low)' },
-];
+{ value: 'newest', label: 'Newest first' },
+{ value: 'oldest', label: 'Oldest first' },
+{ value: 'title', label: 'Title A–Z' },
+{ value: 'price_desc', label: 'Price ↓' },
+{ value: 'price_asc', label: 'Price ↑' }];
 
-const STATUS_CONFIG = {
-  draft:       { label: 'Draft',       icon: FileEdit,     bg: 'bg-slate-100',    text: 'text-slate-600',  dot: 'bg-slate-400' },
-  in_review:   { label: 'In Review',   icon: Clock,        bg: 'bg-amber-100',    text: 'text-amber-700',  dot: 'bg-amber-500' },
-  published:   { label: 'Published',   icon: CheckCircle2, bg: 'bg-emerald-100',  text: 'text-emerald-700',dot: 'bg-emerald-500' },
-  unpublished: { label: 'Unpublished', icon: XCircle,      bg: 'bg-red-100',      text: 'text-red-700',    dot: 'bg-red-500' },
+
+const STATUS_FILTERS = [
+{ value: 'all', label: 'All Books', color: null },
+{ value: 'published', label: 'Published', color: 'emerald' },
+{ value: 'in_review', label: 'In Review', color: 'amber' },
+{ value: 'draft', label: 'Drafts', color: 'slate' }];
+
+
+export const COL_CLASS = 'grid-cols-[1fr_160px_120px_90px_120px_150px]';
+
+const DOT_COLORS = {
+  emerald: 'bg-emerald-500',
+  amber: 'bg-amber-400',
+  slate: 'bg-slate-400',
+  red: 'bg-red-400'
 };
 
-const STATUS_FILTERS = ['all', 'published', 'in_review', 'draft', 'unpublished'];
-
-function StatusPill({ status }) {
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.draft;
+function KpiCard({ icon: Icon, label, value, sub, subColor, iconColor, iconBg, onClick }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${cfg.bg} ${cfg.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-      {cfg.label}
-    </span>
-  );
+    <button
+      onClick={onClick}
+      className="bg-card border border-border rounded-2xl p-5 text-left group w-full relative overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
+      
+      <div className="relative">
+        <div className="flex items-center gap-3 mb-4">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+            <Icon className={`w-4 h-4 ${iconColor}`} strokeWidth={1.8} />
+          </div>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.12em] flex-1">{label}</p>
+        </div>
+        <p className="text-4xl font-bold tracking-tight text-foreground leading-none mb-3">{value}</p>
+        {sub &&
+        <p className={`text-[11px] font-medium ${subColor || 'text-muted-foreground'} transition-opacity duration-200`}>{sub}</p>
+        }
+      </div>
+    </button>);
+
+}
+
+function GridHeader() {
+  return (
+    <div className={cn('grid items-center gap-4 px-5 py-2.5 bg-muted/40 border-b border-border/60', COL_CLASS)}>
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Book Title</p>
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Author Name</p>
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Date Added</p>
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</p>
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Price</p>
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Actions</p>
+    </div>);
+
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="divide-y divide-border/60">
+      {Array(4).fill(0).map((_, i) =>
+      <div key={i} className={cn('grid items-center gap-4 px-5 py-2.5', COL_CLASS)}>
+          <div className="flex items-center gap-3.5">
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-3.5 w-36" />
+              <Skeleton className="h-2.5 w-20" />
+            </div>
+          </div>
+          <Skeleton className="h-3.5 w-24" />
+          <Skeleton className="h-3.5 w-20" />
+          <Skeleton className="h-6 w-24 rounded-full" />
+          <Skeleton className="h-4 w-16" />
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <Skeleton className="h-8 w-8 rounded-lg" />
+          </div>
+        </div>
+      )}
+    </div>);
+
 }
 
 export default function BooksTab({ books, isLoading }) {
@@ -46,293 +101,206 @@ export default function BooksTab({ books, isLoading }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sort, setSort] = useState('newest');
-  const [selectedBooks, setSelectedBooks] = useState(new Set());
-  const [showBulkActions, setShowBulkActions] = useState(false);
 
   const stats = useMemo(() => ({
-    total:      books.length,
-    published:  books.filter(b => b.status === 'published').length,
-    in_review:  books.filter(b => b.status === 'in_review').length,
-    draft:      books.filter(b => b.status === 'draft').length,
-    unpublished: books.filter(b => b.status === 'unpublished').length,
+    total: books.length,
+    published: books.filter((b) => b.status === 'published').length,
+    in_review: books.filter((b) => b.status === 'in_review').length,
+    draft: books.filter((b) => b.status === 'draft').length,
+    unpublished: books.filter((b) => b.status === 'unpublished').length,
+    earnings: (() => {
+      const pub = books.filter((b) => b.status === 'published');
+      if (!pub.length) return null;
+      return pub.reduce((s, b) => s + (b.list_price ? b.list_price * 0.70 : 0), 0) / pub.length;
+    })()
   }), [books]);
 
   const filteredBooks = useMemo(() => {
-    let result = books.filter(book => {
-      const matchesSearch = !search ||
-        book.title?.toLowerCase().includes(search.toLowerCase()) ||
-        book.author_name?.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || book.status === statusFilter;
-      return matchesSearch && matchesStatus;
+    let r = books.filter((b) => {
+      const q = search.toLowerCase();
+      const matchSearch = !search || b.title?.toLowerCase().includes(q) || b.author_name?.toLowerCase().includes(q) || b.isbn?.toLowerCase().includes(q);
+      const matchStatus = statusFilter === 'all' || b.status === statusFilter;
+      return matchSearch && matchStatus;
     });
     switch (sort) {
-      case 'oldest':     result = [...result].sort((a, b) => new Date(a.created_date) - new Date(b.created_date)); break;
-      case 'title':      result = [...result].sort((a, b) => (a.title || '').localeCompare(b.title || '')); break;
-      case 'price_desc': result = [...result].sort((a, b) => (b.list_price || 0) - (a.list_price || 0)); break;
-      default:           result = [...result].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      case 'oldest':r = [...r].sort((a, b) => new Date(a.created_date) - new Date(b.created_date));break;
+      case 'title':r = [...r].sort((a, b) => (a.title || '').localeCompare(b.title || ''));break;
+      case 'price_desc':r = [...r].sort((a, b) => (b.list_price || 0) - (a.list_price || 0));break;
+      case 'price_asc':r = [...r].sort((a, b) => (a.list_price || 0) - (b.list_price || 0));break;
+      default:r = [...r].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     }
-    return result;
+    return r;
   }, [books, search, statusFilter, sort]);
 
-  const toggleSelect = (bookId) => {
-    const newSelected = new Set(selectedBooks);
-    if (newSelected.has(bookId)) {
-      newSelected.delete(bookId);
-    } else {
-      newSelected.add(bookId);
-    }
-    setSelectedBooks(newSelected);
-    setShowBulkActions(newSelected.size > 0);
-  };
+  const sortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label || 'Sort';
+  const hasActiveFilters = search || statusFilter !== 'all';
 
-  const toggleSelectAll = () => {
-    if (selectedBooks.size === filteredBooks.length) {
-      setSelectedBooks(new Set());
-      setShowBulkActions(false);
-    } else {
-      setSelectedBooks(new Set(filteredBooks.map(b => b.id)));
-      setShowBulkActions(true);
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (!confirm(`Delete ${selectedBooks.size} selected books? This cannot be undone.`)) return;
-    try {
-      for (const bookId of selectedBooks) {
-        await base44.entities.Book.delete(bookId);
-      }
-      toast.success(`Deleted ${selectedBooks.size} book${selectedBooks.size > 1 ? 's' : ''}`);
-      setSelectedBooks(new Set());
-      setShowBulkActions(false);
-    } catch {
-      toast.error('Failed to delete books');
-    }
-  };
-
-  const handleBulkUnpublish = async () => {
-    if (!confirm(`Unpublish ${selectedBooks.size} selected books?`)) return;
-    try {
-      for (const bookId of selectedBooks) {
-        const book = books.find(b => b.id === bookId);
-        if (book?.status === 'published') {
-          await base44.entities.Book.update(bookId, { status: 'unpublished' });
-        }
-      }
-      toast.success(`Unpublished ${selectedBooks.size} book${selectedBooks.size > 1 ? 's' : ''}`);
-      setSelectedBooks(new Set());
-      setShowBulkActions(false);
-    } catch {
-      toast.error('Failed to unpublish books');
-    }
-  };
+  const getCount = (val) => val === 'all' ? books.length : stats[val] ?? 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold">My Books</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage your eBook catalog and publishing pipeline.</p>
-        </div>
-        <Link to="/publish">
-          <Button className="gap-2 shadow-sm shadow-primary/20">
-            <Plus className="w-4 h-4" /> Publish New Book
-          </Button>
-        </Link>
+    <div className="space-y-5">
+
+      {/* Page Header */}
+      <PageHeader
+        title="My Books"
+        description={books.length > 0 ?
+        `${books.length} ${books.length === 1 ? 'title' : 'titles'} in your catalog` :
+        'Your eBook publishing catalog'}
+        action={{
+          label: 'Publish New Book',
+          icon: Plus,
+          component: Link,
+          to: '/publish',
+          className: 'shadow-sm shadow-primary/20 font-semibold'
+        }} />
+      
+
+      {/* ── KPI Strip (first 4 cards from Overview) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KpiCard
+          icon={BookOpen}
+          label="Total Books"
+          value={stats.total}
+          sub={stats.total === 0 ? 'No books yet' : `${stats.published} published · ${stats.in_review} in review · ${stats.draft} draft${stats.draft !== 1 ? 's' : ''}`}
+          subColor="text-muted-foreground"
+          iconBg="bg-slate-100"
+          iconColor="text-slate-600"
+          onClick={() => setStatusFilter('all')} />
+        
+        <KpiCard
+          icon={CheckCircle2}
+          label="Published Books"
+          value={stats.published}
+          sub={stats.published === 0 ? 'No published books' : 'Live on platform'}
+          subColor={stats.published > 0 ? 'text-emerald-600' : 'text-muted-foreground'}
+          iconBg="bg-emerald-100"
+          iconColor="text-emerald-600"
+          onClick={() => setStatusFilter('published')} />
+        
+        <KpiCard
+          icon={Clock}
+          label="Books in Review"
+          value={stats.in_review}
+          sub={stats.in_review > 0 ? 'Estimated approval within 72 hrs' : 'No books in review'}
+          subColor={stats.in_review > 0 ? 'text-amber-600' : 'text-muted-foreground'}
+          iconBg="bg-amber-100"
+          iconColor="text-amber-600"
+          onClick={() => setStatusFilter('in_review')} />
+        
+        <KpiCard
+          icon={FileEdit}
+          label="Drafts"
+          value={stats.draft}
+          sub={stats.draft > 0 ? 'Incomplete · needs action' : 'No drafts'}
+          subColor={stats.draft > 0 ? 'text-violet-600' : 'text-muted-foreground'}
+          iconBg="bg-violet-100"
+          iconColor="text-violet-600"
+          onClick={() => setStatusFilter('draft')} />
       </div>
 
-      {/* Stat strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Total',       value: stats.total,      color: 'text-foreground',    bg: 'bg-secondary/50' },
-          { label: 'Published',   value: stats.published,  color: 'text-emerald-600',   bg: 'bg-emerald-50' },
-          { label: 'In Review',   value: stats.in_review,  color: 'text-amber-600',     bg: 'bg-amber-50' },
-          { label: 'Drafts',      value: stats.draft,      color: 'text-slate-500',     bg: 'bg-slate-50' },
-        ].map(s => (
-          <button
-            key={s.label}
-            onClick={() => setStatusFilter(s.label === 'Total' ? 'all' : s.label.toLowerCase().replace(' ', '_'))}
-            className={`${s.bg} border rounded-xl px-4 py-3 text-left hover:shadow-sm transition-all`}
-          >
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
-          </button>
-        ))}
-      </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center flex-1">
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search books…" className="pl-9" />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              
+
+
+
+              
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 rounded-xl shadow-xl border-border/80">
+              {SORT_OPTIONS.map((o) =>
+              <DropdownMenuItem
+                key={o.value}
+                onClick={() => setSort(o.value)}
+                className={cn('text-sm cursor-pointer rounded-lg mx-1 my-0.5', sort === o.value && 'bg-accent font-medium text-accent-foreground')}>
+                
+                  {o.label}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+
+
+      {/* Table card */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        
+
+
+        
+        <div className="px-5 py-4 border-b bg-muted/30 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="font-semibold text-sm text-foreground">Book Catalog</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Manage and track all your published and draft books</p>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {STATUS_FILTERS.map(s => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
-                  statusFilter === s
-                    ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                    : 'bg-card text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
-                )}
-              >
-                {s === 'all' ? `All (${stats.total})` :
-                 s === 'published' ? `Published (${stats.published})` :
-                 s === 'in_review' ? `In Review (${stats.in_review})` :
-                 s === 'draft' ? `Drafts (${stats.draft})` :
-                 `Unpublished (${stats.unpublished})`}
-              </button>
-            ))}
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5 h-9 px-3 text-xs font-medium border-border rounded-lg bg-card shrink-0">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+                {sortLabel}
+                <ChevronDown className="w-3 h-3 text-muted-foreground ml-0.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 rounded-xl shadow-xl border-border/80">
+              {SORT_OPTIONS.map((o) =>
+              <DropdownMenuItem
+                key={o.value}
+                onClick={() => setSort(o.value)}
+                className={cn('text-sm cursor-pointer rounded-lg mx-1 my-0.5', sort === o.value && 'bg-accent font-medium text-accent-foreground')}>
+                {o.label}
+              </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger className="w-40 gap-2 shrink-0">
-            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SORT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Bulk Actions Toolbar */}
-      {showBulkActions && (
-        <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center gap-3">
-            <Checkbox
-              checked={selectedBooks.size === filteredBooks.length && filteredBooks.length > 0}
-              onCheckedChange={toggleSelectAll}
-              className="shrink-0"
-            />
-            <p className="text-sm font-medium text-primary">{selectedBooks.size} selected</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={handleBulkUnpublish} className="text-xs gap-1.5">
-              <EyeOff className="w-3.5 h-3.5" /> Unpublish
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleBulkDelete} className="text-xs gap-1.5 text-destructive hover:text-destructive">
-              <Trash2 className="w-3.5 h-3.5" /> Delete
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => { setSelectedBooks(new Set()); setShowBulkActions(false); }} className="text-xs">
-              Clear
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Book List */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array(3).fill(0).map((_, i) => (
-            <div key={i} className="bg-card border rounded-xl p-4 flex gap-4">
-              <Skeleton className="w-16 h-22 rounded-lg shrink-0" />
-              <div className="flex-1 space-y-2 py-1">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-                <Skeleton className="h-3 w-1/3" />
-              </div>
+        {isLoading ?
+        <LoadingSkeleton /> :
+        filteredBooks.length === 0 ?
+        <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+            <div className="w-14 h-14 bg-secondary rounded-2xl flex items-center justify-center mb-4">
+              <BookOpen className="w-7 h-7 text-muted-foreground" />
             </div>
-          ))}
-        </div>
-      ) : filteredBooks.length === 0 ? (
-        <div className="text-center py-20 bg-card border rounded-2xl">
-          <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="w-8 h-8 text-accent-foreground" />
-          </div>
-          <h3 className="text-lg font-semibold mb-2">
-            {books.length === 0 ? 'No books yet' : 'No matching books'}
-          </h3>
-          <p className="text-sm text-muted-foreground mb-6">
-            {books.length === 0 ? 'Publish your first eBook to start earning royalties.' : 'Try adjusting your search or filters.'}
-          </p>
-          {books.length === 0 && (
-            <Link to="/publish"><Button className="gap-2"><Plus className="w-4 h-4" /> Publish New Book</Button></Link>
-          )}
-        </div>
-      ) : (
-        <div className="bg-card border rounded-2xl overflow-hidden">
-          {/* Table header */}
-          <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 border-b bg-secondary/30">
-            <div className="col-span-1 flex items-center">
-              <Checkbox
-                checked={selectedBooks.size === filteredBooks.length && filteredBooks.length > 0}
-                onCheckedChange={toggleSelectAll}
-                onClick={(e) => e.stopPropagation()}
-              />
+            <h3 className="text-base font-semibold mb-1">
+              {books.length === 0 ? 'No books yet' : 'No matching books'}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-5 max-w-xs leading-relaxed">
+              {books.length === 0 ?
+            'Publish your first eBook to start earning royalties on Classpedia.' :
+            "Try adjusting your search or filter to find what you're looking for."}
+            </p>
+            {books.length === 0 ?
+          <Link to="/publish"><Button className="gap-2"><Plus className="w-4 h-4" /> Publish New Book</Button></Link> :
+          <Button variant="outline" onClick={() => {setSearch('');setStatusFilter('all');}} className="gap-2 rounded-xl"><X className="w-3.5 h-3.5" /> Clear Filters</Button>
+          }
+          </div> :
+
+        <>
+            <GridHeader />
+            <div className="divide-y divide-border/50">
+              {filteredBooks.map((book) =>
+            <BookGridRow key={book.id} book={book} colClass={COL_CLASS} />
+            )}
             </div>
-            <span className="col-span-4 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Book</span>
-            <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</span>
-            <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Price</span>
-            <span className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Royalty/Sale</span>
-            <span className="col-span-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right">Action</span>
-          </div>
-          <div className="divide-y">
-            {filteredBooks.map(book => {
-              const rate = parseFloat(book.royalty_plan || 70) / 100;
-              const perSale = book.list_price ? book.list_price * rate : null;
-              return (
-                <div
-                  key={book.id}
-                  className="flex md:grid md:grid-cols-12 gap-3 px-5 py-4 items-center hover:bg-secondary/20 transition-colors cursor-pointer group"
-                  onClick={() => navigate(`/book/${book.id}`)}
-                >
-                  {/* Checkbox */}
-                  <div className="col-span-1 flex items-center md:flex hidden" onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={selectedBooks.has(book.id)}
-                      onCheckedChange={() => toggleSelect(book.id)}
-                    />
-                  </div>
-                  {/* Book */}
-                  <div className="col-span-4 flex items-center gap-3 flex-1 min-w-0">
-                    {book.cover_url
-                      ? <img src={book.cover_url} alt={book.title} className="w-10 h-14 object-cover rounded-lg shadow-sm shrink-0" />
-                      : <div className="w-10 h-14 bg-secondary rounded-lg flex items-center justify-center shrink-0">
-                          <BookOpen className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                    }
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm truncate">{book.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">by {book.author_name}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(book.created_date)}
-                      </p>
-                    </div>
-                  </div>
-                  {/* Status */}
-                  <div className="col-span-2 hidden md:block">
-                    <StatusPill status={book.status} />
-                  </div>
-                  {/* Price */}
-                  <div className="col-span-2 hidden md:block text-right">
-                    <p className="text-sm font-semibold">{book.list_price ? `$${book.list_price.toFixed(2)}` : '—'}</p>
-                    <p className="text-[10px] text-muted-foreground">{book.currency || 'USD'}</p>
-                  </div>
-                  {/* Royalty */}
-                  <div className="col-span-2 hidden md:block text-right">
-                    <p className={`text-sm font-bold ${perSale ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                      {perSale ? `$${perSale.toFixed(2)}` : '—'}
-                    </p>
-                    {perSale && <p className="text-[10px] text-muted-foreground">{book.royalty_plan || 70}% plan</p>}
-                  </div>
-                  {/* Action */}
-                  <div className="col-span-1 flex justify-end">
-                    <span className="text-xs text-primary font-medium flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {book.status === 'draft' ? 'Continue' : 'View'}
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+            <div className="px-5 py-3 border-t border-border/60 bg-muted/20 flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">{filteredBooks.length}</span>
+                {filteredBooks.length !== books.length && <span> of <span className="font-semibold text-foreground">{books.length}</span></span>}
+                {' '}books
+              </p>
+              {hasActiveFilters &&
+            <button
+              onClick={() => {setSearch('');setStatusFilter('all');}}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 font-medium">
+              
+                  <X className="w-3 h-3" /> Reset filters
+                </button>
+            }
+            </div>
+          </>
+        }
+      </div>
+
+    </div>);
+
 }
